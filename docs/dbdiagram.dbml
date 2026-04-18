@@ -1,0 +1,127 @@
+// TicketRush Database Schema
+// Paste this into https://dbdiagram.io to visualize
+// Team can edit and share the link
+
+Table users {
+  id int [pk, increment]
+  email varchar(255) [unique, not null]
+  password_hash varchar(255) [not null]
+  full_name varchar(100) [not null]
+  phone varchar(20)
+  gender enum('male','female','other') [note: 'Cho thống kê khán giả']
+  birth_date date [note: 'Cho thống kê độ tuổi']
+  role enum('customer','admin') [default: 'customer']
+  created_at timestamp [default: `now()`]
+}
+
+Table events {
+  id int [pk, increment]
+  title varchar(255) [not null]
+  description text
+  category enum('music','stage','sports','workshop','other') [default: 'other', note: 'Danh mục sự kiện']
+  venue varchar(255) [not null]
+  event_date datetime [not null]
+  poster_url varchar(500)
+  status enum('draft','published','cancelled','completed') [default: 'draft']
+  created_by int [not null]
+  created_at timestamp [default: `now()`]
+}
+
+Table seat_zones {
+  id int [pk, increment]
+  event_id int [not null]
+  name varchar(50) [not null, note: 'VIP, Standard A, Standard B...']
+  price decimal(12,0) [not null, note: 'VND']
+  color varchar(7) [not null, note: 'Hex color cho UI']
+  total_rows int [not null]
+  total_cols int [not null]
+}
+
+Table seats {
+  id int [pk, increment]
+  zone_id int [not null]
+  row_label varchar(5) [not null, note: 'A, B, C...']
+  col_number int [not null]
+  status enum('available','locked','sold') [default: 'available', note: 'Core lifecycle']
+  locked_by int [note: 'User đang giữ ghế']
+  locked_at timestamp [note: 'Cronjob check: > 10 phút thì release']
+
+  indexes {
+    (zone_id, row_label, col_number) [unique, name: 'uq_seat_position']
+    (status, locked_at) [name: 'idx_seat_release']
+  }
+}
+
+Table bookings {
+  id int [pk, increment]
+  user_id int [not null]
+  event_id int [not null]
+  promo_code_id int [note: 'Mã giảm giá đã áp dụng (nếu có)']
+  discount_amount decimal(12,0) [default: 0, note: 'Số tiền được giảm']
+  total_amount decimal(12,0) [not null, note: 'Số tiền sau giảm giá']
+  status enum('pending','confirmed','cancelled') [default: 'pending']
+  expires_at timestamp [not null, note: 'created_at + 10 phút']
+  confirmed_at timestamp
+  created_at timestamp [default: `now()`]
+}
+
+Table booking_seats {
+  id int [pk, increment]
+  booking_id int [not null]
+  seat_id int [unique, not null, note: '1 ghế chỉ thuộc 1 booking']
+  price decimal(12,0) [not null, note: 'Snapshot giá tại thời điểm đặt']
+}
+
+Table tickets {
+  id int [pk, increment]
+  booking_id int [not null]
+  seat_id int [not null]
+  qr_code varchar(500) [unique, not null]
+  status enum('active','used','cancelled') [default: 'active']
+  checked_in_at timestamp [note: 'Thời điểm soát vé']
+  created_at timestamp [default: `now()`]
+}
+
+Table reviews {
+  id int [pk, increment]
+  user_id int [not null]
+  event_id int [not null]
+  rating tinyint [not null, note: '1-5 sao']
+  comment text
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    (user_id, event_id) [unique, name: 'uq_user_event_review', note: 'Mỗi user chỉ review 1 lần/event']
+  }
+}
+
+Table promo_codes {
+  id int [pk, increment]
+  code varchar(50) [unique, not null, note: 'VD: SUMMER2026']
+  discount_type enum('percent','fixed') [not null, note: 'Giảm % hoặc số tiền cố định']
+  discount_value decimal(12,0) [not null, note: '% hoặc VND']
+  max_uses int [note: 'Tổng lượt dùng tối đa, NULL = không giới hạn']
+  used_count int [default: 0]
+  event_id int [note: 'Áp dụng cho event cụ thể, NULL = toàn hệ thống']
+  min_amount decimal(12,0) [default: 0, note: 'Đơn tối thiểu để áp dụng']
+  starts_at timestamp [not null]
+  expires_at timestamp [not null]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+}
+
+// === RELATIONSHIPS ===
+Ref: events.created_by > users.id
+Ref: seat_zones.event_id > events.id [delete: cascade]
+Ref: seats.zone_id > seat_zones.id [delete: cascade]
+Ref: seats.locked_by > users.id [delete: set null]
+Ref: bookings.user_id > users.id
+Ref: bookings.event_id > events.id
+Ref: bookings.promo_code_id > promo_codes.id [delete: set null]
+Ref: booking_seats.booking_id > bookings.id [delete: cascade]
+Ref: booking_seats.seat_id > seats.id
+Ref: tickets.booking_id > bookings.id
+Ref: tickets.seat_id > seats.id
+Ref: reviews.user_id > users.id
+Ref: reviews.event_id > events.id
+Ref: promo_codes.event_id > events.id [delete: set null]

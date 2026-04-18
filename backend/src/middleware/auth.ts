@@ -5,7 +5,6 @@ import { AppError } from '../shared/AppError';
 
 export interface AuthPayload {
   userId: number;
-  email: string;
   role: 'customer' | 'admin';
 }
 
