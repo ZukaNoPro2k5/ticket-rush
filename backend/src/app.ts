@@ -38,19 +38,19 @@ import authRoutes from './modules/auth/routes';
 import userRoutes from './modules/users/routes';
 import bookingRoutes from './modules/bookings/routes';
 import ticketRoutes from './modules/tickets/routes';
+import seatRoutes from './modules/seats/routes';
 
 app.use('/api/auth',     authRoutes);
 app.use('/api/users',    userRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/tickets',  ticketRoutes);
+app.use('/api/events/:eventId/seats', seatRoutes); // A6
 
 // Dev 2 routes (TODO: uncomment khi Dev 2 hoàn thành)
 import eventRoutes from './modules/events/routes';
 import seatZoneRoutes from './modules/seat-zones/routes';
-import seatRoutes from './modules/seats/routes';
 // app.use('/api/events',   eventRoutes);
 // app.use('/api/events/:eventId/zones', seatZoneRoutes);
-// app.use('/api/events/:eventId/seats', seatRoutes);
 
 // Dev 3 routes (TODO: uncomment khi Dev 3 hoàn thành)
 import promoRoutes from './modules/promo-codes/routes';

@@ -151,6 +151,9 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
 
     await conn.commit();
 
+    // expires_at mirrors DATE_ADD(NOW(), INTERVAL 10 MINUTE) in the INSERT above
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
     return {
       id: bookingId,
       event_id: input.event_id,
@@ -160,6 +163,7 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
       total_amount: totalAmount,
       promo_code: input.promo_code ?? null,
       status: 'pending',
+      expires_at: expiresAt,
     };
   } catch (err) {
     await conn.rollback();

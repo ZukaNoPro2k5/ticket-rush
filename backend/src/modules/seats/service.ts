@@ -5,12 +5,33 @@ import { AppError } from '../../shared/AppError';
 interface SeatRow extends RowDataPacket {
   id: number;
   zone_id: number;
+  zone_name: string;
+  zone_color: string;
+  zone_price: number;
   row_label: string;
   col_number: number;
   status: string;
 }
 
-// TODO: Dev 2 — listByEvent
+/**
+ * A6 — List all seats for an event with zone info
+ */
+export async function listByEvent(eventId: number) {
+  const [rows] = await pool.execute<SeatRow[]>(
+    `SELECT
+       s.id, s.zone_id,
+       sz.name AS zone_name, sz.color AS zone_color, sz.price AS zone_price,
+       s.row_label, s.col_number, s.status
+     FROM seats s
+     JOIN seat_zones sz ON sz.id = s.zone_id
+     WHERE sz.event_id = ?
+     ORDER BY sz.id, s.row_label, s.col_number`,
+    [eventId],
+  );
+  return rows;
+}
+
+// TODO: Dev 2 — listByZone
 
 /**
  * Lock ghế cho user — sử dụng SELECT ... FOR UPDATE để tránh race condition
