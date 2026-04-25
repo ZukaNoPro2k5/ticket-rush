@@ -19,19 +19,23 @@ import type { DisplayEvent } from '@/types';
 
 export default function HomePage() {
   const [homeEvents, setHomeEvents] = useState<DisplayEvent[]>([]);
+  const [heroReady, setHeroReady] = useState(false);
 
   useEffect(() => {
     listEvents({ limit: 40, sort: 'event_date', order: 'asc' })
-      .then((r) => setHomeEvents(r.events.map(toDisplayEvent)))
+      .then((r) => {
+        setHomeEvents(r.events.map(toDisplayEvent));
+        setHeroReady(true);
+      })
       .catch(() => {
-        /* fail silently — sections show skeletons */
+        setHeroReady(true); // show fallback on error, don't stay on skeleton
       });
   }, []);
 
   return (
     <main className="min-h-screen bg-stone-50">
       <Navbar />
-      <HeroCarousel events={homeEvents} />
+      <HeroCarousel events={homeEvents} loading={!heroReady} />
       <CategoriesGrid />
       <ThisWeekSection allEvents={homeEvents} />
       <TrendingLeaderboard events={homeEvents} />

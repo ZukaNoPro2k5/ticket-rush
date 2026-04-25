@@ -30,8 +30,11 @@ function eventsToSlides(events: DisplayEvent[]): HeroSlide[] {
   }));
 }
 
-export function HeroCarousel({ events }: { events?: DisplayEvent[] }) {
-  const slides: HeroSlide[] = (events && events.length > 0) ? eventsToSlides(events) : HERO_SLIDES;
+export function HeroCarousel({ events, loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
+  // Only fall back to HERO_SLIDES after loading is done (no empty array = loaded but 0 results)
+  const slides: HeroSlide[] = loading
+    ? HERO_SLIDES  // hidden behind skeleton, just needs to exist
+    : (events && events.length > 0) ? eventsToSlides(events) : HERO_SLIDES;
   const [active, setActive] = useState(0);
   const slide = slides[active];
 
@@ -40,9 +43,10 @@ export function HeroCarousel({ events }: { events?: DisplayEvent[] }) {
   }, [slides.length]);
 
   useEffect(() => {
+    if (loading) return;
     const t = setInterval(() => setActive((i) => (i + 1) % slides.length), AUTOPLAY_MS);
     return () => clearInterval(t);
-  }, [slides.length]);
+  }, [slides.length, loading]);
 
   const prev = () => setActive((i) => (i - 1 + slides.length) % slides.length);
   const next = () => setActive((i) => (i + 1) % slides.length);
@@ -52,13 +56,39 @@ export function HeroCarousel({ events }: { events?: DisplayEvent[] }) {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Loading skeleton — shown while API hasn't responded yet
+  if (loading) {
+    return (
+      <section className="relative h-screen min-h-[600px] w-full overflow-hidden bg-stone-900">
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-stone-800 via-stone-900 to-stone-950" />
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/55 to-stone-900/15" />
+        <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-44 pt-24 sm:pb-52 lg:px-8">
+          <div className="max-w-2xl space-y-4">
+            <div className="h-5 w-28 rounded-full bg-stone-700" />
+            <div className="h-14 w-3/4 rounded-xl bg-stone-700" />
+            <div className="h-14 w-1/2 rounded-xl bg-stone-700" />
+            <div className="h-4 w-40 rounded bg-stone-700" />
+            <div className="h-11 w-32 rounded-full bg-stone-700" />
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-stone-950/85 via-stone-950/55 to-transparent pb-3 pt-10 sm:pb-4">
+          <div className="mx-auto flex max-w-7xl gap-3 px-4 lg:px-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-20 w-40 flex-shrink-0 rounded-xl bg-stone-800" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative h-screen min-h-[600px] w-full overflow-hidden">
       {/* Image stack with crossfade */}
       {slides.map((s, i) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          key={s.id}
+          key={`${s.id}-${i}`}
           src={s.image}
           alt={s.title}
           loading={i === 0 ? 'eager' : 'lazy'}
@@ -127,13 +157,14 @@ export function HeroCarousel({ events }: { events?: DisplayEvent[] }) {
       {/* Bottom overlay: thumbnails + scroll cue */}
       <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-stone-950/85 via-stone-950/55 to-transparent pb-3 pt-10 sm:pb-4">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          {/* Desktop thumbnails */}
-          <div className={`hidden gap-2 sm:grid sm:gap-3`} style={{ gridTemplateColumns: `repeat(${slides.length}, minmax(0, 1fr))` }}>
+          {/* Desktop thumbnails — flex with fixed width so they never stretch */}
+          <div className="hidden gap-2 sm:flex sm:gap-3">
             {slides.map((s, i) => (
               <button
                 key={`${s.id}-${i}`}
                 onClick={() => setActive(i)}
                 aria-label={`Đến slide ${i + 1}: ${s.title}`}
+                style={{ flex: '0 0 auto', width: `clamp(120px, calc((100% - ${(slides.length - 1) * 12}px) / ${slides.length}), 220px)` }}
                 className={`group relative aspect-[16/10] overflow-hidden rounded-xl border-2 text-left transition-all duration-300 ${
                   i === active
                     ? 'border-amber-400 shadow-lift'
