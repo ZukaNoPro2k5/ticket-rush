@@ -201,6 +201,212 @@ VALUES
     '2026-04-24 09:00:00',
     'https://images.unsplash.com/photo-1531058020387-3be344556be6?w=1600&q=80',
     'published', 1
+  ),
+
+  -- ── MUSIC (tiếp theo) ─────────────────────────────────
+  (
+    'Mỹ Tâm "Tâm 9" Live Concert – Đà Nẵng 2026',
+    'Đêm nhạc kỷ niệm 25 năm sự nghiệp của "Diva" Mỹ Tâm mang tên "Tâm 9" — con số 9 đánh dấu album thứ 9 trong sự nghiệp và sự tổng hòa của 9 màu âm nhạc suốt 1/4 thế kỷ. Khán giả sẽ được nghe lại những bản hit vượt thời gian như Đừng Nói Xa Nhau, Ước Gì, Hãy Đến Với Em, Đừng Hỏi Em, Ngẫu Hứng và nhiều ca khúc từ album mới nhất. Dàn dựng bởi ekip quốc tế với hơn 5.000 ghế ngồi.',
+    'music',
+    'Nhà thi đấu Tiên Sơn, 281 Trần Phú, Hải Châu, Đà Nẵng',
+    '2026-07-05 20:00:00',
+    'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Hoàng Dũng "ALOHA" Concert Tour – TP.HCM',
+    'Chuyến lưu diễn "ALOHA" của Hoàng Dũng — tên tour lấy cảm hứng từ triết lý sống của người Hawaii: yêu thương, hòa bình và hiện diện trọn vẹn. Đêm nhạc tại GEM Center sẽ là hành trình xuyên suốt qua các album Solo, Cá, Hoàng và những ca khúc hợp tác đình đám với Hà Anh Tuấn, Tùng Dương. Sân khấu thiết kế tông màu ấm, concept bohemian fusion.',
+    'music',
+    'GEM Center, 8 Nguyễn Bỉnh Khiêm, Đa Kao, Quận 1, TP. Hồ Chí Minh',
+    '2026-06-06 20:00:00',
+    'https://images.unsplash.com/photo-1549924231-f129b911e442?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'MONO "22" Live in Hà Nội',
+    'Sau album "22" gây sốt toàn khu vực, MONO lần đầu tổ chức concert solo quy mô lớn tại Hà Nội. Đêm nhạc sẽ trình diễn toàn bộ album "22" theo thứ tự bài và cả những ca khúc được yêu thích nhất trong sự nghiệp. MONO nổi tiếng với giọng ca đặc trưng và phong cách trình diễn tinh tế, điềm đạm nhưng cuốn hút không kém bất kỳ ngôi sao K-pop nào.',
+    'music',
+    'Cung Văn hóa Hữu nghị Hà Nội, 91 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội',
+    '2026-05-10 20:00:00',
+    'https://images.unsplash.com/photo-1540039155733-5bb30b4f8a61?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'tlinh "GLOW" Mini Concert – TP.HCM',
+    'Nữ rapper tlinh trở lại với concept mini concert "GLOW" — đêm nhạc thân mật chỉ có 500 khán giả, nơi cô thoải mái thể hiện toàn bộ những gì không fit trong một concert lớn: freestyle, kể chuyện sau bài hát, jam cùng ban nhạc. Setlist tập trung vào bộ đôi album "Địa Đàng" và "Bơ" cùng những bản collab đình đám với MCK, tlinh, Dế Choắt.',
+    'music',
+    'Nhà máy Bia Sài Gòn – Bến Thành, 187 Nguyễn Chí Thanh, Quận 5, TP. Hồ Chí Minh',
+    '2026-05-23 20:30:00',
+    'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Vũ. "Vũ-Verse 2026" Concert – Hà Nội',
+    '"Vũ-Verse" là vũ trụ âm nhạc mà Vũ. xây dựng qua 5 năm — từ những bài hát phòng ngủ đến concert nghìn người. Đêm diễn tại Hà Nội mở ra cánh cổng vào thế giới đó: acoustic, raw, đầy cảm xúc. Setlist bao gồm toàn bộ những bài được yêu nhất từ các EP "Hoàng", "Về Nghe Nhạc Đi" cùng những ca khúc mới viết riêng cho tour này.',
+    'music',
+    'Cung Thể thao Quần Ngựa, Đào Tấn, Ba Đình, Hà Nội',
+    '2026-06-13 20:00:00',
+    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Đen Vâu "Cháy Cùng" Dor – Hà Nội',
+    'Sau album phòng thu thứ 5, Đen Vâu ra mắt đêm diễn "Cháy Cùng" — concert đầu tiên tại sân khấu lớn Hà Nội sau 3 năm. Không khói, không pháo hoa — chỉ có từ ngữ, nhịp điệu và những thông điệp chạm thẳng vào ký ức thế hệ. Lineup hỗ trợ bao gồm nhiều nghệ sĩ đã cộng tác với Đen qua nhiều năm: Justatee, Ngọc Linh, Ngô Lan Hương.',
+    'music',
+    'Trung tâm Hội nghị Quốc gia, 57 Phạm Hùng, Mỹ Đình, Hà Nội',
+    '2026-07-12 19:30:00',
+    'https://images.unsplash.com/photo-1493559711823-0f56789cd001?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Sơn Tùng M-TP "SKY TOUR" World Tour 2026 – Hà Nội',
+    'Lần đầu tiên trong sự nghiệp, Sơn Tùng M-TP tổ chức world tour quy mô quốc tế với điểm dừng tại Hà Nội. Với hơn 40.000 chỗ ngồi và sân khấu cao 30m được dựng tại sân vận động Mỹ Đình, đây hứa hẹn là đêm diễn lớn nhất của một nghệ sĩ Việt từ trước đến nay. Setlist 28 bài xuyên suốt sự nghiệp từ Cơn Mưa Ngang Qua đến những hit mới nhất.',
+    'music',
+    'Sân vận động Mỹ Đình, Phạm Hùng, Nam Từ Liêm, Hà Nội',
+    '2026-08-22 19:00:00',
+    'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'SOOBIN "I Said I Love You" Concert Tour – TP.HCM',
+    'SOOBIN mang đêm nhạc "I Said I Love You" đến TP.HCM — concert riêng đầu tiên sau thành công vang dội của album cùng tên đã đạt 50 triệu streams. Đêm nhạc kết hợp giữa R&B, pop và dance performance, với phần dàn dựng sân khấu hoành tráng theo concept "thư tình viết bằng ánh sáng".',
+    'music',
+    'Nhà hát Hòa Bình, 240 3 Tháng 2, Quận 10, TP. Hồ Chí Minh',
+    '2026-06-27 19:30:00',
+    'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Indie Music Festival – Hanoi Open Air 2026',
+    'Liên hoan âm nhạc indie lớn nhất miền Bắc — 2 ngày, 4 sân khấu, hơn 60 ban nhạc và nghệ sĩ độc lập từ khắp Việt Nam. Từ folk, blues, jazz đến indie pop và post-rock, Open Air 2026 là không gian tôn vinh những tiếng nói âm nhạc không theo khuôn mẫu. Đặc biệt có khu trao đổi vinyl, nhạc cụ và workshop làm nhạc cụ dân tộc.',
+    'music',
+    'Công viên Thống Nhất, Hai Bà Trưng, Hà Nội',
+    '2026-09-19 15:00:00',
+    'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Lê Cát Trọng Lý "Giữa Hai Khoảng Lặng" Concert',
+    'Lê Cát Trọng Lý — giọng hát được mệnh danh là "cây đàn chân mây" của âm nhạc Việt — trở lại Nhà hát Lớn với concert thính phòng mang tên "Giữa Hai Khoảng Lặng". Chỉ có 1 đêm duy nhất, 400 ghế. Piano, guitar, bộ dây — không thêm gì nữa. Những bài hát của cô vốn dĩ đã đủ đầy.',
+    'music',
+    'Nhà hát Lớn Hà Nội, 1 Tràng Tiền, Hoàn Kiếm, Hà Nội',
+    '2026-07-25 20:00:00',
+    'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=1600&q=80',
+    'published', 1
+  ),
+
+  -- ── STAGE (tiếp theo) ────────────────────────────────────
+  (
+    'Nhà hát Tuổi Trẻ: Người Cầm Lái',
+    'Vở kịch "Người Cầm Lái" — tái dựng cuộc đời và hành trình tư tưởng của Chủ tịch Hồ Chí Minh qua những năm tháng hoạt động cách mạng bí mật tại Paris, Quảng Châu và Hà Nội. Đạo diễn NSƯT Chí Trung dàn dựng theo phong cách phi tuyến tính với kỹ thuật sân khấu hiện đại, xen kẽ hồi ức và hiện tại.',
+    'stage',
+    'Nhà hát Tuổi Trẻ, 11 Ngô Thì Nhậm, Hai Bà Trưng, Hà Nội',
+    '2026-05-19 19:30:00',
+    'https://images.unsplash.com/photo-1486591978090-58e619d37fe7?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Nhà hát Múa Rối Thăng Long: Giao Mùa',
+    '"Giao Mùa" là chương trình múa rối nước đặc biệt kết hợp nghệ thuật truyền thống 1000 năm với công nghệ chiếu mapping 3D xuống mặt nước. 45 phút hành trình qua 12 tháng trong năm — từ mùa gặt lúa đến tết Nguyên Đán — được kể bởi những con rối tre và ánh sáng. Phù hợp mọi lứa tuổi.',
+    'stage',
+    'Nhà hát Múa Rối Thăng Long, 57B Đinh Tiên Hoàng, Hoàn Kiếm, Hà Nội',
+    '2026-05-08 20:00:00',
+    'https://images.unsplash.com/photo-1519985176271-adb1088fa94c?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn',
+    'Vở diễn "Ký Ức Sài Gòn" — hành trình qua những giai đoạn lịch sử của thành phố từ thời Pháp thuộc đến ngày đổi mới qua câu chuyện của một gia đình ba thế hệ sống tại con hẻm nhỏ Quận 1. Bi, hài, cảm động đan xen — phong cách đặc trưng của Nhà hát Kịch TP.HCM dưới sự dàn dựng của NSND Trần Ngọc Giàu.',
+    'stage',
+    'Nhà hát Kịch TP.HCM, 7 Trần Hưng Đạo, Quận 1, TP. Hồ Chí Minh',
+    '2026-06-06 19:30:00',
+    'https://images.unsplash.com/photo-1527224538127-2104bb71c51b?w=1600&q=80',
+    'published', 1
+  ),
+
+  -- ── SPORTS (tiếp theo) ───────────────────────────────────
+  (
+    'V-League 2026 – CLB TP.HCM vs. Bình Dương FC (Vòng 16)',
+    'Cuộc đối đầu giữa CLB TP.HCM và Bình Dương FC — hai đội có lịch sử cạnh tranh căng thẳng nhất ở phía Nam. Trận đấu vòng 16 V-League 2026 diễn ra tại sân Thống Nhất với dự kiến hơn 10.000 khán giả. CLB TP.HCM đang trong chuỗi 4 trận thắng liên tiếp, trong khi Bình Dương vừa có tân HLV trưởng người Brazil.',
+    'sports',
+    'Sân vận động Thống Nhất, 138 Đài Thắng Lợi, Quận 10, TP. Hồ Chí Minh',
+    '2026-05-10 17:00:00',
+    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B)',
+    'Trận đấu được cả khu vực mong đợi nhất tại AFF Cup 2026 — đại chiến truyền thống Việt Nam vs Thái Lan. Dưới sự dẫn dắt của HLV Kim Sang-sik, đội tuyển Việt Nam hướng đến mục tiêu vô địch lần thứ 3 trong lịch sử. Sân Mỹ Đình dự kiến cháy vé từ sớm với 40.000 ghế.',
+    'sports',
+    'Sân vận động Mỹ Đình, Phạm Hùng, Nam Từ Liêm, Hà Nội',
+    '2026-12-10 19:30:00',
+    'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'VCT Pacific Kickoff 2026 – Chung Kết Khu Vực',
+    'Valorant Champions Tour Pacific Kickoff 2026 — giải đấu esports đỉnh cao Châu Á – Thái Bình Dương lần đầu tiên tổ chức trận chung kết tại Việt Nam. 8 đội mạnh nhất khu vực tranh tài, trong đó có Paper Rex (Singapore), T1 (Hàn Quốc) và BOOM Esports (Indonesia). TP.HCM đón hàng chục nghìn fan esports quốc tế.',
+    'sports',
+    'SECC – Saigon Exhibition & Convention Center, 799 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh',
+    '2026-06-14 13:00:00',
+    'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Giải Cầu Lông Vô Địch Quốc Gia 2026 – Ngày Chung Kết',
+    'Ngày thi đấu cuối cùng và căng thẳng nhất của giải Cầu Lông Vô Địch Quốc Gia 2026. Các trận tranh huy chương vàng đơn nam, đơn nữ, đôi nam, đôi nữ và đôi hỗn hợp diễn ra liên tiếp từ sáng đến tối. Nguyễn Tiến Minh (38 tuổi) được kỳ vọng tham dự lần cuối trong sự nghiệp.',
+    'sports',
+    'Nhà thi đấu Phú Thọ, 1 Lữ Gia, Quận 11, TP. Hồ Chí Minh',
+    '2026-07-20 08:00:00',
+    'https://images.unsplash.com/photo-1547347298-4074fc3086f0?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'ONE Championship: Vietnam Warriors',
+    'ONE Championship mang sự kiện MMA và Muay Thai đẳng cấp thế giới đến TP.HCM với "Vietnam Warriors" — đêm thi đấu đặc biệt quy tụ 8 trận đấu, gồm 3 trận có võ sĩ người Việt Nam. Điểm nhấn là trận bảo vệ đai hạng cân Featherweight giữa đương kim vô địch Martin Nguyen và thách thức viên từ Nhật Bản.',
+    'sports',
+    'Nhà thi đấu Tinh Võ, 248 Nơ Trang Long, Bình Thạnh, TP. Hồ Chí Minh',
+    '2026-05-31 18:00:00',
+    'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Vietnam Open Tennis 2026 – Chung Kết Đơn Nam/Nữ',
+    'Giải quần vợt mở rộng Vietnam Open 2026 — sự kiện ATP 250 đầu tiên được tổ chức trên đất Việt, thu hút hơn 32 tay vợt trong top 200 thế giới. Ngày chung kết đơn nam và đơn nữ sẽ diễn ra cùng ngày với khán đài dự kiến chật kín. Sân đấu mặt cứng tiêu chuẩn ATP được lắp đặt tại Cung TDTT Mỹ Đình.',
+    'sports',
+    'Cung Thể dục Thể thao Mỹ Đình, Phạm Hùng, Nam Từ Liêm, Hà Nội',
+    '2026-07-05 10:00:00',
+    'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1600&q=80',
+    'published', 1
+  ),
+
+  -- ── WORKSHOP (tiếp theo) ────────────────────────────────
+  (
+    'UX/UI Design Masterclass 2026 – Google x FPT Software',
+    'Khóa học thiết kế sản phẩm thực chiến do Google Design Advocate và senion designer từ FPT Software đồng giảng. 1 ngày đầy ắp: từ research user, wireframe, prototype trên Figma đến handoff với developer và design system. Mỗi học viên nhận chứng chỉ hoàn thành từ Google và FPT Software, cùng feedback 1-on-1 từ giảng viên.',
+    'workshop',
+    'FPT Tower, 10 Phạm Văn Bạch, Cầu Giấy, Hà Nội',
+    '2026-05-24 09:00:00',
+    'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Hội Chợ Ẩm Thực Đường Phố Sài Gòn 2026',
+    'Sự kiện ẩm thực đường phố thường niên lớn nhất tại TP.HCM với hơn 120 gian hàng từ các quán ăn đường phố nổi tiếng, chef local và thương hiệu F&B mới nổi. 3 ngày liên tục từ 17:00–23:00 trên Phố đi bộ Nguyễn Huệ. Ngoài ẩm thực còn có biểu diễn âm nhạc live, cooking class và chợ phiên thủ công.',
+    'workshop',
+    'Phố đi bộ Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
+    '2026-05-01 17:00:00',
+    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&q=80',
+    'published', 1
+  ),
+  (
+    'Workshop Nhiếp Ảnh "Khoảnh Khắc Vàng" – Mạnh Đăng x Leica',
+    'Nhiếp ảnh gia Mạnh Đăng — được biết đến với những khoảnh khắc đường phố Hà Nội đã xuất hiện trên National Geographic và TIME — hợp tác với Leica Camera Vietnam tổ chức workshop nhiếp ảnh street/portrait chuyên sâu. Học viên sẽ đi thực địa cùng giảng viên, học kỹ thuật ánh sáng tự nhiên và hậu kỳ. Thiết bị Leica cho mượn tại chỗ.',
+    'workshop',
+    'The Workshop, 27 Hoàng Diệu 2, Linh Chiểu, Thủ Đức, TP. Hồ Chí Minh',
+    '2026-05-11 10:00:00',
+    'https://images.unsplash.com/photo-1452780212441-51d6a531d3f9?w=1600&q=80',
+    'published', 1
   );
 
 -- =============================================

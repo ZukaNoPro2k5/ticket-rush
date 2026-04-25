@@ -21,7 +21,7 @@ export default function HomePage() {
   const [homeEvents, setHomeEvents] = useState<DisplayEvent[]>([]);
 
   useEffect(() => {
-    listEvents({ limit: 12, sort: 'event_date', order: 'asc' })
+    listEvents({ limit: 40, sort: 'event_date', order: 'asc' })
       .then((r) => setHomeEvents(r.events.map(toDisplayEvent)))
       .catch(() => {
         /* fail silently — sections show skeletons */
@@ -34,7 +34,7 @@ export default function HomePage() {
       <HeroCarousel />
       <CategoriesGrid />
       <ThisWeekSection allEvents={homeEvents} />
-      <TrendingLeaderboard />
+      <TrendingLeaderboard events={homeEvents} />
       <ForYouSection events={homeEvents.slice(0, 4)} />
       <NewEventsGrid events={homeEvents.slice(0, 8)} />
       <NewsSection />

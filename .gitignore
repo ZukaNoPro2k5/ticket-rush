@@ -5,6 +5,7 @@ node_modules/
 
 # Build
 frontend/.next/
+.next/
 frontend/out/
 backend/dist/
 

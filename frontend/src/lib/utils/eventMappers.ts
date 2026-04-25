@@ -26,6 +26,20 @@ export function deriveCityFromVenue(venue: string): string {
 export function toDisplayEvent(e: Event): DisplayEvent {
   const d = new Date(e.event_date);
   const pad = (n: number) => String(n).padStart(2, '0');
+
+  const total = e.total_seats ?? 0;
+  const available = e.available_seats ?? total;
+  const soldPercent = total > 0 ? Math.round(((total - available) / total) * 100) : 0;
+
+  let badge: DisplayEvent['badge'];
+  if (soldPercent >= 90) badge = 'almost-sold';
+  else if (soldPercent >= 70) badge = 'hot';
+  else {
+    const createdAt = new Date(e.created_at);
+    const ageMs = Date.now() - createdAt.getTime();
+    if (ageMs < 7 * 24 * 60 * 60 * 1000) badge = 'new';
+  }
+
   return {
     id: e.id,
     title: e.title,
@@ -38,8 +52,8 @@ export function toDisplayEvent(e: Event): DisplayEvent {
     timeLabel: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
     poster: e.poster_url ?? FALLBACK_POSTER,
     priceFrom: e.min_price ?? 0,
-    priceTo: e.min_price ?? 0,
-    soldPercent: 0,
-    badge: undefined,
+    priceTo: e.max_price ?? e.min_price ?? 0,
+    soldPercent,
+    badge,
   };
 }

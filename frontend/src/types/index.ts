@@ -61,6 +61,9 @@ export interface Event {
   created_by: number;
   created_at: string;
   min_price: number | null;
+  max_price: number | null;
+  available_seats: number | null;
+  total_seats: number | null;
 }
 
 /** Matches backend GET /api/events/:id (includes seat_zones) */

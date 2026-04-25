@@ -15,15 +15,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
   const related = ALL_NEWS.filter((a) => a.id !== article.id && a.category === article.category).slice(0, 3);
 
-  // Mock body paragraphs generated from excerpt for demo
-  const paragraphs = [
-    article.excerpt,
-    'Trong một cuộc trò chuyện vừa diễn ra tại studio ở Quận 1, ê-kíp sản xuất chia sẻ rằng họ đã dành 6 tháng chỉ để lên ý tưởng. Đây là giai đoạn khó nhất — khi mọi thứ chỉ nằm trên giấy và bản phác thảo 3D.',
-    '"Chúng tôi không muốn đây chỉ là một đêm diễn khác. Khán giả bây giờ sành lắm, mỗi lần đến show là mỗi lần kỳ vọng cao hơn" — đại diện ê-kíp nói. Quả thật, áp lực này đến từ chính người hâm mộ: cộng đồng fan ngày càng hoạt động mạnh trên mạng xã hội, chia sẻ từng chi tiết nhỏ về trải nghiệm.',
-    'Về mặt kỹ thuật, sân khấu mới sử dụng hệ thống LED cong ôm sát khán giả, kết hợp với hiệu ứng haze và laser được đồng bộ theo từng nhịp bài hát. Ba đạo diễn ánh sáng đã được mời từ Hàn Quốc — nơi công nghệ trình diễn concert đã đi trước Việt Nam khoảng 5-7 năm.',
-    'Điều đáng chú ý là giá vé sẽ được chia thành 6 hạng — từ phổ thông đến VIP kèm meet & greet. Thông tin chi tiết sẽ mở bán trên TicketRush sau khi ê-kíp hoàn tất các khâu cuối cùng.',
-    'Nhìn rộng ra, đây là một tín hiệu tích cực cho thị trường sự kiện giải trí trong nước. Các nghệ sĩ Việt bắt đầu đầu tư nghiêm túc hơn cho sản phẩm live — điều mà trước đây chỉ các đêm diễn quốc tế mới có.',
-  ];
+  // Body paragraphs from article data
+  const paragraphs = article.body ?? [article.excerpt];
 
   return (
     <>
@@ -82,9 +75,11 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           </p>
           {paragraphs.slice(1, 3).map((p, i) => <p key={i}>{p}</p>)}
 
-          <blockquote className="my-8 border-l-4 border-amber-500 bg-amber-50/50 px-6 py-4 font-display text-xl italic leading-snug text-stone-800 md:text-2xl">
-            &ldquo;Khán giả bây giờ sành lắm. Mỗi lần đến show là mỗi lần kỳ vọng cao hơn.&rdquo;
-          </blockquote>
+          {article.quote && (
+            <blockquote className="my-8 border-l-4 border-amber-500 bg-amber-50/50 px-6 py-4 font-display text-xl italic leading-snug text-stone-800 md:text-2xl">
+              &ldquo;{article.quote}&rdquo;
+            </blockquote>
+          )}
 
           {paragraphs.slice(3).map((p, i) => <p key={i}>{p}</p>)}
         </div>
@@ -93,7 +88,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         <div className="mt-12 flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
           <div className="h-12 w-12 flex-shrink-0 rounded-full bg-gradient-to-br from-amber-400 to-amber-600" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-stone-900">TicketRush Newsroom</p>
+            <p className="text-sm font-semibold text-stone-900">{article.author ?? 'TicketRush Newsroom'}</p>
             <p className="text-xs text-stone-500">Đội ngũ biên tập — viết vì người yêu show.</p>
           </div>
           <Link href="/news" className="text-xs font-semibold text-amber-700 hover:text-amber-800">

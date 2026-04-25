@@ -149,8 +149,9 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
   );
 }
 
-export function TrendingLeaderboard() {
+export function TrendingLeaderboard({ events }: { events?: DisplayEvent[] }) {
   const { ref, inView } = useSectionInView(0.1);
+  const data = events && events.length > 0 ? events.slice(0, 10) : TRENDING_LEADERBOARD;
 
   return (
     <section className="bg-stone-50 py-12 lg:py-16">
@@ -182,7 +183,7 @@ export function TrendingLeaderboard() {
             ))}
           </div>
 
-          {TRENDING_LEADERBOARD.map((ev, i) => (
+          {data.map((ev, i) => (
             <LeaderboardRow key={ev.id} ev={ev} rank={i + 1} />
           ))}
         </motion.div>

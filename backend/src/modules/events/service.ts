@@ -15,6 +15,9 @@ interface EventRow extends RowDataPacket {
   created_by: number;
   created_at: string;
   min_price: number | null;
+  max_price: number | null;
+  available_seats: number | null;
+  total_seats: number | null;
 }
 
 interface SeatZoneRow extends RowDataPacket {
@@ -50,9 +53,13 @@ export async function listEvents(query: ListEventsQuery) {
   const [rows] = await pool.query<EventRow[]>(
     `SELECT e.id, e.title, e.description, e.category, e.venue, e.event_date,
             e.poster_url, e.status, e.created_by, e.created_at,
-            MIN(sz.price) AS min_price
+            MIN(sz.price) AS min_price,
+            MAX(sz.price) AS max_price,
+            COUNT(s.id) AS total_seats,
+            SUM(CASE WHEN s.status = 'available' THEN 1 ELSE 0 END) AS available_seats
      FROM events e
      LEFT JOIN seat_zones sz ON sz.event_id = e.id
+     LEFT JOIN seats s ON s.zone_id = sz.id
      WHERE ${where}
      GROUP BY e.id
      ORDER BY ${orderCol} ${orderDir}
