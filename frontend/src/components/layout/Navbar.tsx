@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
 import { Menu, Newspaper, Tag, Ticket } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -30,7 +29,6 @@ export function Navbar({ variant = 'overlay' }: { variant?: NavbarVariant }) {
 
   const handleLogout = () => {
     clearAuth();
-    void signOut({ redirect: false });
   };
 
   const shellCls = scrolled

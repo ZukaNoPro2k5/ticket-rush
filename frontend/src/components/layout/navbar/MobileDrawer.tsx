@@ -121,6 +121,7 @@ export function MobileDrawer({
                       height={40}
                       className="h-10 w-10 rounded-full object-cover ring-2 ring-white"
                       referrerPolicy="no-referrer"
+                      unoptimized
                     />
                   ) : (
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-bold text-white">

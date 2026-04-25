@@ -7,11 +7,11 @@ import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { useAuthStore } from '@/stores/authStore';
-import { OAuthButtons } from '@/components/auth/OAuthButtons';
 import { extractApiError, isValidEmail } from './authUtils';
 import {
-  AuthDivider, FieldError, FormError, SubmitBtn, fieldClass,
+  FieldError, FormError, SubmitBtn, fieldClass, AuthDivider,
 } from './AuthFormAtoms';
+import { OAuthButtons } from './OAuthButtons';
 
 interface LoginResponse {
   success: boolean;
@@ -82,7 +82,8 @@ export function LoginForm({ onSuccess }: Props) {
   return (
     <div>
       <OAuthButtons mode="login" onSuccess={onSuccess} />
-      <AuthDivider label="hoặc dùng email" />
+
+      <AuthDivider label="hoặc đăng nhập bằng email" />
 
       <motion.form
         key={shakeKey}

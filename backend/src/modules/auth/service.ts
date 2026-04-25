@@ -15,6 +15,7 @@ interface UserRow extends RowDataPacket {
   gender: 'male' | 'female' | 'other' | null;
   birth_date: string | null;
   role: 'customer' | 'admin';
+  avatar_url: string | null;
   created_at: string;
 }
 
@@ -55,7 +56,7 @@ export async function register(input: RegisterInput) {
   );
 
   const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE id = ?',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE id = ?',
     [result.insertId],
   );
 
@@ -67,7 +68,7 @@ export async function register(input: RegisterInput) {
 
 export async function login(input: LoginInput) {
   const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, password_hash, full_name, phone, gender, birth_date, role, created_at FROM users WHERE email = ? LIMIT 1',
+    'SELECT id, email, password_hash, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE email = ? LIMIT 1',
     [input.email],
   );
 
@@ -89,7 +90,7 @@ export async function login(input: LoginInput) {
 
 export async function getProfile(userId: number) {
   const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE id = ? LIMIT 1',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE id = ? LIMIT 1',
     [userId],
   );
 
@@ -105,7 +106,7 @@ export async function oauthSync(input: OAuthSyncInput) {
 
   // Try to find by oauth provider first, then fall back to email
   const [byOAuth] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE oauth_provider = ? AND oauth_provider_id = ? LIMIT 1',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE oauth_provider = ? AND oauth_provider_id = ? LIMIT 1',
     [provider, providerAccountId],
   );
 
@@ -117,16 +118,16 @@ export async function oauthSync(input: OAuthSyncInput) {
 
   // Check if an account with this email already exists (link oauth)
   const [byEmail] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE email = ? LIMIT 1',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE email = ? LIMIT 1',
     [email],
   );
 
   if (byEmail.length > 0) {
     const user = byEmail[0];
-    // Link oauth provider to existing account
+    // Link oauth provider to existing account; update avatar if not set yet
     await pool.execute(
-      'UPDATE users SET oauth_provider = ?, oauth_provider_id = ? WHERE id = ?',
-      [provider, providerAccountId, user.id],
+      'UPDATE users SET oauth_provider = ?, oauth_provider_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?',
+      [provider, providerAccountId, avatar ?? null, user.id],
     );
     const token = signToken({ userId: user.id, role: user.role });
     return { token, user: sanitizeUser(user), isNewUser: false };
@@ -134,13 +135,13 @@ export async function oauthSync(input: OAuthSyncInput) {
 
   // Create new user (no password_hash for OAuth accounts)
   const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO users (email, password_hash, full_name, oauth_provider, oauth_provider_id)
-     VALUES (?, '', ?, ?, ?)`,
-    [email, name ?? email.split('@')[0], provider, providerAccountId],
+    `INSERT INTO users (email, password_hash, full_name, avatar_url, oauth_provider, oauth_provider_id)
+     VALUES (?, '', ?, ?, ?, ?)`,
+    [email, name ?? email.split('@')[0], avatar ?? null, provider, providerAccountId],
   );
 
   const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE id = ?',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE id = ?',
     [result.insertId],
   );
 

@@ -32,6 +32,7 @@ function Avatar({ user, size, ring }: { user: UserLike; size: number; ring: stri
         className={`rounded-full object-cover ${ring}`}
         style={{ height: size, width: size }}
         referrerPolicy="no-referrer"
+        unoptimized
       />
     );
   }

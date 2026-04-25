@@ -27,14 +27,20 @@ export default function AuthCallbackPage() {
         id?: string | number;
         email?: string | null;
         name?: string | null;
+        image?: string | null;
       };
 
       if (opener) {
         opener.postMessage(
           {
-            type:  'oauth-success',
-            token: backendToken ?? null,
-            user:  { id: u.id ?? 0, email: u.email ?? '', name: u.name ?? '' },
+            type:       'oauth-success',
+            token:      backendToken ?? null,
+            user: {
+              id:         u.id ?? 0,
+              email:      u.email ?? '',
+              name:       u.name ?? '',
+              avatar_url: u.image ?? null,
+            },
           },
           window.location.origin,
         );

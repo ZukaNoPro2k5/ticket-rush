@@ -8,11 +8,11 @@ import { Check, Eye, EyeOff, Lock, Mail, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { useAuthStore } from '@/stores/authStore';
-import { OAuthButtons } from '@/components/auth/OAuthButtons';
 import { extractApiError, isValidEmail } from './authUtils';
 import {
   AuthDivider, FieldError, FormError, SubmitBtn, fieldClass,
 } from './AuthFormAtoms';
+import { OAuthButtons } from './OAuthButtons';
 import { PasswordStrength } from './PasswordStrength';
 
 interface RegisterResponse {
@@ -106,6 +106,7 @@ export function RegisterForm({ onSuccess }: Props) {
   return (
     <div>
       <OAuthButtons mode="register" onSuccess={onSuccess} />
+
       <AuthDivider label="hoặc đăng ký bằng email" />
 
       <motion.form

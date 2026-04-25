@@ -87,14 +87,15 @@ export function OAuthButtons({ mode = 'login', onSuccess }: { mode?: 'login' | '
       if (ev.data?.type === 'oauth-success') {
         const { token, user } = ev.data as {
           token: string | null;
-          user: { id: number | string; email: string; name: string };
+          user: { id: number | string; email: string; name: string; avatar_url?: string | null };
         };
         if (token) {
           setAuth(token, {
-            id:        Number(user.id),
-            email:     user.email,
-            full_name: user.name,
-            role:      'customer',
+            id:         Number(user.id),
+            email:      user.email,
+            full_name:  user.name,
+            role:       'customer',
+            avatar_url: user.avatar_url ?? null,
           });
           toast.success(`Chào mừng, ${user.name.split(' ').pop()}!`);
           if (onSuccess) {
