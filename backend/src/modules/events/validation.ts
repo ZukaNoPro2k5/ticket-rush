@@ -30,7 +30,7 @@ export const listEventsQuerySchema = z.object({
   status: statusEnum.optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(12),
+  limit: z.coerce.number().int().min(1).max(200).default(12),
   sort: z.enum(['event_date', 'created_at']).default('event_date'),
   order: z.enum(['asc', 'desc']).default('asc'),
 });

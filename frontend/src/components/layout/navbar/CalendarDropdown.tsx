@@ -17,7 +17,7 @@ export function CalendarDropdown({ linkCls }: Props) {
 
   // Pre-fetch on mount so data is ready when the user opens the dropdown
   useEffect(() => {
-    listEvents({ limit: 200, sort: 'event_date', order: 'asc' })
+    listEvents({ limit: 100, sort: 'event_date', order: 'asc' })
       .then((r) => setEvents(r.events.map(toDisplayEvent)))
       .catch(() => {});
   }, []);
