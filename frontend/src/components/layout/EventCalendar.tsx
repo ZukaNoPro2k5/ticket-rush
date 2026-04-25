@@ -1,28 +1,41 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Clock, ArrowRight } from 'lucide-react';
-import { THIS_WEEK_EVENTS } from '@/data/uiConfig';
 import type { DisplayEvent } from '@/types';
 import { EASE_OUT_EXPO } from '@/lib/motion';
+import { listEvents } from '@/lib/api/events';
+import { toDisplayEvent } from '@/lib/utils/eventMappers';
 
 export function EventCalendar({ onClose }: { onClose: () => void }) {
   const [viewDate, setViewDate] = useState(() => new Date());
   const [selected, setSelected] = useState<number | null>(null);
+  const [allEvents, setAllEvents] = useState<DisplayEvent[]>([]);
+
+  // Fetch once — get enough events to populate the calendar
+  useEffect(() => {
+    listEvents({ limit: 100, sort: 'event_date', order: 'asc' })
+      .then((r) => setAllEvents(r.events.map(toDisplayEvent)))
+      .catch(() => {});
+  }, []);
 
   const eventsByDay = useMemo(() => {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
     const map: Record<number, { hot: boolean; events: DisplayEvent[] }> = {};
-    const baseDays = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29];
-    baseDays.forEach((d, i) => {
-      const start = (i * 2) % THIS_WEEK_EVENTS.length;
-      const slice = THIS_WEEK_EVENTS.slice(start, start + 2 + (i % 2));
-      map[d] = { hot: i % 3 === 0, events: slice };
+    allEvents.forEach((e) => {
+      const d = new Date(e.date);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        const day = d.getDate();
+        if (!map[day]) map[day] = { hot: false, events: [] };
+        map[day].events.push(e);
+        if (e.badge === 'hot' || e.badge === 'almost-sold') map[day].hot = true;
+      }
     });
-    map[17] = { hot: true, events: THIS_WEEK_EVENTS.slice(0, 8) };
     return map;
-  }, []);
+  }, [allEvents, viewDate]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();

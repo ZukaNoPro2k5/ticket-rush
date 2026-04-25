@@ -415,57 +415,57 @@ VALUES
 
 -- EXO PLANET (event 1)
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'DIAMOND – Sân khấu',     4_500_000, '#E8D5B7', 3, 20 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
+SELECT id, 'DIAMOND – Sân khấu',     4500000, '#E8D5B7', 3, 20 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'GOLD – Khu A',           2_800_000, '#FFD700', 5, 30 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
+SELECT id, 'GOLD – Khu A',           2800000, '#FFD700', 5, 30 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'SILVER – Khu B',         1_500_000, '#C0C0C0', 8, 40 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
+SELECT id, 'SILVER – Khu B',         1500000, '#C0C0C0', 8, 40 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'FAN PIT – Đứng',           900_000, '#FF6B6B', 2, 60 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
+SELECT id, 'FAN PIT – Đứng',           900000, '#FF6B6B', 2, 60 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
 
 -- Mr. Siro Fan Concert (event 2)
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'VIP – Hàng đầu',         2_200_000, '#9B59B6', 4, 20 FROM events WHERE title LIKE 'Mr. Siro Fan Concert%' LIMIT 1;
+SELECT id, 'VIP – Hàng đầu',         2200000, '#9B59B6', 4, 20 FROM events WHERE title LIKE 'Mr. Siro Fan Concert%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'Hạng A',                 1_500_000, '#3498DB', 6, 25 FROM events WHERE title LIKE 'Mr. Siro Fan Concert%' LIMIT 1;
+SELECT id, 'Hạng A',                 1500000, '#3498DB', 6, 25 FROM events WHERE title LIKE 'Mr. Siro Fan Concert%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'Hạng B – Tiêu chuẩn',     800_000, '#4ECDC4', 8, 30 FROM events WHERE title LIKE 'Mr. Siro Fan Concert%' LIMIT 1;
+SELECT id, 'Hạng B – Tiêu chuẩn',     800000, '#4ECDC4', 8, 30 FROM events WHERE title LIKE 'Mr. Siro Fan Concert%' LIMIT 1;
 
 -- GAI Home Concert (event 3)
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'PREMIUM',               2_000_000, '#E74C3C', 3, 15 FROM events WHERE title LIKE 'GAI Home Concert%' LIMIT 1;
+SELECT id, 'PREMIUM',               2000000, '#E74C3C', 3, 15 FROM events WHERE title LIKE 'GAI Home Concert%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'STANDARD',             1_000_000, '#2ECC71', 6, 25 FROM events WHERE title LIKE 'GAI Home Concert%' LIMIT 1;
+SELECT id, 'STANDARD',             1000000, '#2ECC71', 6, 25 FROM events WHERE title LIKE 'GAI Home Concert%' LIMIT 1;
 
 -- Bùi Công Nam Hà Nội (event 4)
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'PLATINUM',             3_000_000, '#8E44AD', 3, 20 FROM events WHERE title LIKE 'Bùi Công Nam%Hà Nội%' LIMIT 1;
+SELECT id, 'PLATINUM',             3000000, '#8E44AD', 3, 20 FROM events WHERE title LIKE 'Bùi Công Nam%Hà Nội%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'VIP GOLD',             1_800_000, '#F39C12', 5, 28 FROM events WHERE title LIKE 'Bùi Công Nam%Hà Nội%' LIMIT 1;
+SELECT id, 'VIP GOLD',             1800000, '#F39C12', 5, 28 FROM events WHERE title LIKE 'Bùi Công Nam%Hà Nội%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'STANDARD',               900_000, '#1ABC9C', 8, 35 FROM events WHERE title LIKE 'Bùi Công Nam%Hà Nội%' LIMIT 1;
+SELECT id, 'STANDARD',               900000, '#1ABC9C', 8, 35 FROM events WHERE title LIKE 'Bùi Công Nam%Hà Nội%' LIMIT 1;
 
 -- BADASS CITY (event 6)
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'VIP ZONE',             1_200_000, '#FF4757', 3, 25 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
+SELECT id, 'VIP ZONE',             1200000, '#FF4757', 3, 25 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'STANDING – General',     500_000, '#FFA502', 2, 80 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
+SELECT id, 'STANDING – General',     500000, '#FFA502', 2, 80 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'BLEACHER – Khán đài',    250_000, '#2ED573', 6, 30 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
+SELECT id, 'BLEACHER – Khán đài',    250000, '#2ED573', 6, 30 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
 
 -- IDECAF Tấm Cám (event 9)
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'VIP – Hàng A–C',        600_000, '#6C5CE7', 3, 18 FROM events WHERE title LIKE '%IDECAF%Tấm Cám%' LIMIT 1;
+SELECT id, 'VIP – Hàng A–C',        600000, '#6C5CE7', 3, 18 FROM events WHERE title LIKE '%IDECAF%Tấm Cám%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'Hạng Nhất – Hàng D–H', 400_000, '#00B894', 5, 18 FROM events WHERE title LIKE '%IDECAF%Tấm Cám%' LIMIT 1;
+SELECT id, 'Hạng Nhất – Hàng D–H', 400000, '#00B894', 5, 18 FROM events WHERE title LIKE '%IDECAF%Tấm Cám%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'Phổ thông',             250_000, '#FDCB6E', 7, 18 FROM events WHERE title LIKE '%IDECAF%Tấm Cám%' LIMIT 1;
+SELECT id, 'Phổ thông',             250000, '#FDCB6E', 7, 18 FROM events WHERE title LIKE '%IDECAF%Tấm Cám%' LIMIT 1;
 
 -- Vietnam AI Summit (event 17)
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'CONFERENCE PASS – Full',  5_000_000, '#2D3436', 5, 25 FROM events WHERE title LIKE '%Vietnam AI Summit%' LIMIT 1;
+SELECT id, 'CONFERENCE PASS – Full',  5000000, '#2D3436', 5, 25 FROM events WHERE title LIKE '%Vietnam AI Summit%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'DAY PASS – 1 ngày',      2_500_000, '#636E72', 8, 30 FROM events WHERE title LIKE '%Vietnam AI Summit%' LIMIT 1;
+SELECT id, 'DAY PASS – 1 ngày',      2500000, '#636E72', 8, 30 FROM events WHERE title LIKE '%Vietnam AI Summit%' LIMIT 1;
 
 -- =============================================
 -- SEATS — auto-generate cho EXO DIAMOND zone
@@ -539,17 +539,17 @@ INSERT IGNORE INTO promo_codes
   (code, discount_type, discount_value, max_uses, event_id, min_amount, starts_at, expires_at, is_active)
 VALUES
   -- Chào mừng thành viên mới
-  ('WELCOME10',   'percent', 10,  500, NULL,    500_000, '2026-01-01 00:00:00', '2026-12-31 23:59:59', TRUE),
+  ('WELCOME10',   'percent', 10,  500, NULL,    500000, '2026-01-01 00:00:00', '2026-12-31 23:59:59', TRUE),
   -- Tháng 5 - mùa concert
-  ('MAY2026',     'percent', 15,  200, NULL,  1_000_000, '2026-05-01 00:00:00', '2026-05-31 23:59:59', TRUE),
+  ('MAY2026',     'percent', 15,  200, NULL,  1000000, '2026-05-01 00:00:00', '2026-05-31 23:59:59', TRUE),
   -- EXO exclusive
-  ('EXOVIET',     'fixed',   300_000,  100, NULL, 2_000_000, '2026-04-01 00:00:00', '2026-04-30 23:59:59', TRUE),
+  ('EXOVIET',     'fixed',   300000,  100, NULL, 2000000, '2026-04-01 00:00:00', '2026-04-30 23:59:59', TRUE),
   -- Summer voucher
-  ('SUMMER150K',  'fixed',   150_000,  300, NULL,    800_000, '2026-06-01 00:00:00', '2026-08-31 23:59:59', TRUE),
+  ('SUMMER150K',  'fixed',   150000,  300, NULL,    800000, '2026-06-01 00:00:00', '2026-08-31 23:59:59', TRUE),
   -- Early bird hội thảo AI
-  ('AIEARLY',     'percent', 20,   50, NULL,  2_500_000, '2026-04-01 00:00:00', '2026-05-10 23:59:59', TRUE),
+  ('AIEARLY',     'percent', 20,   50, NULL,  2500000, '2026-04-01 00:00:00', '2026-05-10 23:59:59', TRUE),
   -- Hip-hop fans
-  ('HIPHOP50K',   'fixed',    50_000,  400, NULL,    250_000, '2026-04-15 00:00:00', '2026-05-03 23:59:59', TRUE);
+  ('HIPHOP50K',   'fixed',    50000,  400, NULL,    250000, '2026-04-15 00:00:00', '2026-05-03 23:59:59', TRUE);
 
 -- =============================================
 -- REVIEWS (sample — user 2, 3, 4 on early events)
