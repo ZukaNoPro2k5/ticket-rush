@@ -16,6 +16,17 @@ interface UserRow extends RowDataPacket {
   created_at: string;
 }
 
+export async function getProfile(userId: number) {
+  const [rows] = await pool.execute<UserRow[]>(
+    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE id = ?',
+    [userId],
+  );
+  if (rows.length === 0) {
+    throw AppError.notFound('Người dùng không tồn tại');
+  }
+  return rows[0];
+}
+
 export async function updateProfile(userId: number, input: UpdateProfileInput) {
   const fields: string[] = [];
   const values: (string | number | boolean | null)[] = [];
@@ -62,5 +73,12 @@ export async function changePassword(userId: number, input: ChangePasswordInput)
   await pool.execute<ResultSetHeader>(
     'UPDATE users SET password_hash = ? WHERE id = ?',
     [newHash, userId],
+  );
+}
+
+export async function savePreferences(userId: number, input: { categories: string[]; preferred_city?: string }) {
+  await pool.execute<ResultSetHeader>(
+    'UPDATE users SET category_preferences = ?, preferred_city = ? WHERE id = ?',
+    [JSON.stringify(input.categories), input.preferred_city ?? null, userId],
   );
 }

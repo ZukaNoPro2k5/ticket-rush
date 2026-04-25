@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Be_Vietnam_Pro, Plus_Jakarta_Sans } from 'next/font/google';
-import { Providers } from '@/components/Providers';
+import NextTopLoader from 'nextjs-toploader';
+import { Providers } from '@/components/providers/Providers';
 import './globals.css';
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -38,6 +39,16 @@ export default function RootLayout({
       <body
         className={`${beVietnamPro.variable} ${jakarta.variable} bg-stone-50 font-sans text-stone-900 antialiased`}
       >
+        <NextTopLoader
+          color="#f59e0b"
+          initialPosition={0.12}
+          crawlSpeed={160}
+          height={3}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #f59e0b,0 0 5px #f59e0b"
+        />
         <Providers>{children}</Providers>
       </body>
     </html>

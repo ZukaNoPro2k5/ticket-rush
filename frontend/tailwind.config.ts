@@ -31,6 +31,15 @@ const config: Config = {
         soft: '0 4px 20px -4px rgba(28, 25, 23, 0.08)',
         lift: '0 12px 32px -8px rgba(28, 25, 23, 0.18)',
       },
+      keyframes: {
+        shimmer: {
+          '0%':   { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition:  '200% 0' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.6s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

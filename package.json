@@ -1,0 +1,28 @@
+{
+  "name": "ticket-rush",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZukaNoPro2k5/ticket-rush.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZukaNoPro2k5/ticket-rush/issues"
+  },
+  "homepage": "https://github.com/ZukaNoPro2k5/ticket-rush#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

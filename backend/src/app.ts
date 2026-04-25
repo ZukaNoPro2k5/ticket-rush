@@ -46,10 +46,10 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/tickets',  ticketRoutes);
 app.use('/api/events/:eventId/seats', seatRoutes); // A6
 
-// Dev 2 routes (TODO: uncomment khi Dev 2 hoàn thành)
+// Dev 2 routes
 import eventRoutes from './modules/events/routes';
 import seatZoneRoutes from './modules/seat-zones/routes';
-// app.use('/api/events',   eventRoutes);
+app.use('/api/events',   eventRoutes);
 // app.use('/api/events/:eventId/zones', seatZoneRoutes);
 
 // Dev 3 routes (TODO: uncomment khi Dev 3 hoàn thành)

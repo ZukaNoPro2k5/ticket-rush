@@ -21,5 +21,14 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
 });
 
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
+export const oauthSyncSchema = z.object({
+  provider:          z.enum(['google', 'facebook']),
+  providerAccountId: z.string().min(1),
+  email:             z.string().email(),
+  name:              z.string().min(1).max(100).optional(),
+  avatar:            z.string().url().max(500).optional(),
+});
+
+export type RegisterInput  = z.infer<typeof registerSchema>;
+export type LoginInput     = z.infer<typeof loginSchema>;
+export type OAuthSyncInput = z.infer<typeof oauthSyncSchema>;

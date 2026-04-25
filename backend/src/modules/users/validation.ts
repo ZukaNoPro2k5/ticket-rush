@@ -16,5 +16,11 @@ export const changePasswordSchema = z.object({
     .regex(/[0-9]/, 'Mật khẩu phải có ít nhất 1 chữ số'),
 });
 
-export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export const savePreferencesSchema = z.object({
+  categories:     z.array(z.string()).min(1).max(8),
+  preferred_city: z.string().max(100).optional(),
+});
+
+export type UpdateProfileInput    = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordInput   = z.infer<typeof changePasswordSchema>;
+export type SavePreferencesInput  = z.infer<typeof savePreferencesSchema>;

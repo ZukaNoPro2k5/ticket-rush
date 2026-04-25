@@ -6,7 +6,7 @@ import type { User } from '@/types';
 
 interface AuthState {
   token: string | null;
-  user: Pick<User, 'id' | 'email' | 'full_name' | 'role'> | null;
+  user: Pick<User, 'id' | 'email' | 'full_name' | 'role'> & { avatar_url?: string | null } | null;
   isAuthenticated: boolean;
 
   setAuth: (token: string, user: AuthState['user']) => void;

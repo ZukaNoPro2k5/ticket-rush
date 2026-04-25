@@ -4,7 +4,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../../config/database';
 import { config } from '../../config/env';
 import { AppError } from '../../shared/AppError';
-import type { RegisterInput, LoginInput } from './validation';
+import type { RegisterInput, LoginInput, OAuthSyncInput } from './validation';
 
 interface UserRow extends RowDataPacket {
   id: number;
@@ -98,4 +98,53 @@ export async function getProfile(userId: number) {
   }
 
   return rows[0];
+}
+
+export async function oauthSync(input: OAuthSyncInput) {
+  const { provider, providerAccountId, email, name, avatar } = input;
+
+  // Try to find by oauth provider first, then fall back to email
+  const [byOAuth] = await pool.execute<UserRow[]>(
+    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE oauth_provider = ? AND oauth_provider_id = ? LIMIT 1',
+    [provider, providerAccountId],
+  );
+
+  if (byOAuth.length > 0) {
+    const user = byOAuth[0];
+    const token = signToken({ userId: user.id, role: user.role });
+    return { token, user: sanitizeUser(user), isNewUser: false };
+  }
+
+  // Check if an account with this email already exists (link oauth)
+  const [byEmail] = await pool.execute<UserRow[]>(
+    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE email = ? LIMIT 1',
+    [email],
+  );
+
+  if (byEmail.length > 0) {
+    const user = byEmail[0];
+    // Link oauth provider to existing account
+    await pool.execute(
+      'UPDATE users SET oauth_provider = ?, oauth_provider_id = ? WHERE id = ?',
+      [provider, providerAccountId, user.id],
+    );
+    const token = signToken({ userId: user.id, role: user.role });
+    return { token, user: sanitizeUser(user), isNewUser: false };
+  }
+
+  // Create new user (no password_hash for OAuth accounts)
+  const [result] = await pool.execute<ResultSetHeader>(
+    `INSERT INTO users (email, password_hash, full_name, oauth_provider, oauth_provider_id)
+     VALUES (?, '', ?, ?, ?)`,
+    [email, name ?? email.split('@')[0], provider, providerAccountId],
+  );
+
+  const [rows] = await pool.execute<UserRow[]>(
+    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE id = ?',
+    [result.insertId],
+  );
+
+  const newUser = rows[0];
+  const token = signToken({ userId: newUser.id, role: newUser.role });
+  return { token, user: sanitizeUser(newUser), isNewUser: true };
 }

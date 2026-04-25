@@ -1,0 +1,10 @@
+export { DetailNavbar } from './DetailNavbar';
+export { EventHero } from './EventHero';
+export { EventTabs } from './EventTabs';
+export { AboutTab } from './AboutTab';
+export { LineupTab } from './LineupTab';
+export { VenueTab } from './VenueTab';
+export { FaqTab } from './FaqTab';
+export { ReviewsTab } from './ReviewsTab';
+export { DetailSidebarCTA, MobileStickyCTA } from './DetailCTA';
+export { SimilarEvents } from './SimilarEvents';

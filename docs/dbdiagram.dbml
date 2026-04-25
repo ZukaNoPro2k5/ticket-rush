@@ -11,7 +11,15 @@ Table users {
   gender enum('male','female','other') [note: 'Cho thống kê khán giả']
   birth_date date [note: 'Cho thống kê độ tuổi']
   role enum('customer','admin') [default: 'customer']
+  oauth_provider varchar(20) [note: 'google | facebook — NULL nếu đăng ký email']
+  oauth_provider_id varchar(255) [note: 'ID từ provider OAuth']
+  category_preferences json [note: 'Mảng CategoryKey ưa thích ["music","sports"]']
+  preferred_city varchar(100) [note: 'Thành phố ưa thích cho gợi ý sự kiện']
   created_at timestamp [default: `now()`]
+
+  indexes {
+    (oauth_provider, oauth_provider_id) [name: 'idx_users_oauth']
+  }
 }
 
 Table events {
