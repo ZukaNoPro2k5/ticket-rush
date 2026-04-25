@@ -6,21 +6,46 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Calendar, ChevronDown, ChevronLeft, ChevronRight, Flame, MapPin, ArrowRight,
 } from 'lucide-react';
-import { HERO_SLIDES } from '@/data/uiConfig';
+import { HERO_SLIDES, type HeroSlide } from '@/data/uiConfig';
+import type { DisplayEvent } from '@/types';
 
 const AUTOPLAY_MS = 7000;
 
-export function HeroCarousel() {
+const BADGE_LABELS: Record<string, string> = {
+  'hot': 'ĐANG HOT',
+  'new': 'MỚI MỞ BÁN',
+  'almost-sold': 'SẮP CHÁY VÉ',
+};
+
+function eventsToSlides(events: DisplayEvent[]): HeroSlide[] {
+  return events.slice(0, 6).map((e, i) => ({
+    id: e.id,
+    title: e.title,
+    subtitle: `${e.dateLabel} · ${e.timeLabel}`,
+    tagline: e.venue,
+    badge: e.badge ? (BADGE_LABELS[e.badge] ?? 'NỔI BẬT') : 'NỔI BẬT',
+    image: e.poster,
+    date: `${e.dateLabel} · ${e.timeLabel}`,
+    venue: e.city,
+  }));
+}
+
+export function HeroCarousel({ events }: { events?: DisplayEvent[] }) {
+  const slides: HeroSlide[] = (events && events.length > 0) ? eventsToSlides(events) : HERO_SLIDES;
   const [active, setActive] = useState(0);
-  const slide = HERO_SLIDES[active];
+  const slide = slides[active];
 
   useEffect(() => {
-    const t = setInterval(() => setActive((i) => (i + 1) % HERO_SLIDES.length), AUTOPLAY_MS);
-    return () => clearInterval(t);
-  }, []);
+    setActive(0);
+  }, [slides.length]);
 
-  const prev = () => setActive((i) => (i - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
-  const next = () => setActive((i) => (i + 1) % HERO_SLIDES.length);
+  useEffect(() => {
+    const t = setInterval(() => setActive((i) => (i + 1) % slides.length), AUTOPLAY_MS);
+    return () => clearInterval(t);
+  }, [slides.length]);
+
+  const prev = () => setActive((i) => (i - 1 + slides.length) % slides.length);
+  const next = () => setActive((i) => (i + 1) % slides.length);
 
   const scrollToCategories = () => {
     const el = document.getElementById('home-categories');
@@ -30,7 +55,7 @@ export function HeroCarousel() {
   return (
     <section className="relative h-screen min-h-[600px] w-full overflow-hidden">
       {/* Image stack with crossfade */}
-      {HERO_SLIDES.map((s, i) => (
+      {slides.map((s, i) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={s.id}
@@ -103,10 +128,10 @@ export function HeroCarousel() {
       <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-stone-950/85 via-stone-950/55 to-transparent pb-3 pt-10 sm:pb-4">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           {/* Desktop thumbnails */}
-          <div className="hidden grid-cols-6 gap-2 sm:grid sm:gap-3">
-            {HERO_SLIDES.map((s, i) => (
+          <div className={`hidden gap-2 sm:grid sm:gap-3`} style={{ gridTemplateColumns: `repeat(${slides.length}, minmax(0, 1fr))` }}>
+            {slides.map((s, i) => (
               <button
-                key={s.id}
+                key={`${s.id}-${i}`}
                 onClick={() => setActive(i)}
                 aria-label={`Đến slide ${i + 1}: ${s.title}`}
                 className={`group relative aspect-[16/10] overflow-hidden rounded-xl border-2 text-left transition-all duration-300 ${
@@ -129,7 +154,7 @@ export function HeroCarousel() {
 
           {/* Mobile dots */}
           <div className="flex justify-center gap-1.5 sm:hidden">
-            {HERO_SLIDES.map((_, i) => (
+            {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setActive(i)}

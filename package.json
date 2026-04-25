@@ -10,7 +10,9 @@
     "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
     "dev": "concurrently -n backend,frontend -c blue,magenta \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
     "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev"
+    "dev:frontend": "cd frontend && npm run dev",
+    "db:reseed": "docker compose exec -T mysql mysql -uroot -pticketrush_secret ticketrush < database/seeds/001_seed_data.sql",
+    "db:reset": "docker compose down -v && docker compose up -d"
   },
   "repository": {
     "type": "git",

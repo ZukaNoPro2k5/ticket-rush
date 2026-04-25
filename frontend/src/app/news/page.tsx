@@ -135,7 +135,7 @@ export default function NewsPage() {
                           <Clock className="h-3 w-3" /> {hero.readMin} phút đọc
                         </span>
                       </div>
-                      <h2 className="mt-3 font-display text-2xl font-bold leading-tight text-stone-900 group-hover:text-amber-700 md:text-4xl">
+                      <h2 className="mt-3 line-clamp-3 font-display text-2xl font-bold leading-tight text-stone-900 group-hover:text-amber-700 md:text-4xl">
                         {hero.title}
                       </h2>
                       <p className="mt-3 max-w-2xl text-base leading-relaxed text-stone-600">
@@ -174,7 +174,7 @@ export default function NewsPage() {
                             <span className="h-1 w-1 rounded-full bg-stone-300" />
                             <span className="text-stone-500">{a.publishedAt}</span>
                           </div>
-                          <h3 className="mt-2 font-display text-lg font-bold leading-snug text-stone-900 group-hover:text-amber-700 md:text-xl">
+                          <h3 className="mt-2 line-clamp-2 font-display text-lg font-bold leading-snug text-stone-900 group-hover:text-amber-700 md:text-xl">
                             {a.title}
                           </h3>
                           <p className="mt-1.5 line-clamp-2 text-sm text-stone-600">{a.excerpt}</p>
@@ -206,7 +206,7 @@ export default function NewsPage() {
                               <Clock className="h-3 w-3" /> {a.readMin}&rsquo;
                             </span>
                           </div>
-                          <h3 className="mt-2 font-display text-xl font-bold leading-snug text-stone-900 group-hover:text-amber-700 md:text-2xl">
+                          <h3 className="mt-2 line-clamp-2 font-display text-xl font-bold leading-snug text-stone-900 group-hover:text-amber-700 md:text-2xl">
                             {a.title}
                           </h3>
                           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">{a.excerpt}</p>

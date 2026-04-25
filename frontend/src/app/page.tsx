@@ -31,7 +31,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-stone-50">
       <Navbar />
-      <HeroCarousel />
+      <HeroCarousel events={homeEvents} />
       <CategoriesGrid />
       <ThisWeekSection allEvents={homeEvents} />
       <TrendingLeaderboard events={homeEvents} />
