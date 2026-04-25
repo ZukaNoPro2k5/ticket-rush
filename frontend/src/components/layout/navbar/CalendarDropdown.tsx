@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, ChevronDown } from 'lucide-react';
 import { EventCalendar } from '../EventCalendar';
+import type { DisplayEvent } from '@/types';
+import { listEvents } from '@/lib/api/events';
+import { toDisplayEvent } from '@/lib/utils/eventMappers';
 
 interface Props {
   linkCls: string;
@@ -10,6 +13,14 @@ interface Props {
 
 export function CalendarDropdown({ linkCls }: Props) {
   const [open, setOpen] = useState(false);
+  const [events, setEvents] = useState<DisplayEvent[]>([]);
+
+  // Pre-fetch on mount so data is ready when the user opens the dropdown
+  useEffect(() => {
+    listEvents({ limit: 200, sort: 'event_date', order: 'asc' })
+      .then((r) => setEvents(r.events.map(toDisplayEvent)))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="relative">
@@ -22,7 +33,7 @@ export function CalendarDropdown({ linkCls }: Props) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <EventCalendar onClose={() => setOpen(false)} />
+          <EventCalendar events={events} onClose={() => setOpen(false)} />
         </>
       )}
     </div>

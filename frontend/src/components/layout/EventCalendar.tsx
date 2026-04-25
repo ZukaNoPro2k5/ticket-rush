@@ -1,31 +1,26 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Clock, ArrowRight } from 'lucide-react';
 import type { DisplayEvent } from '@/types';
 import { EASE_OUT_EXPO } from '@/lib/motion';
-import { listEvents } from '@/lib/api/events';
-import { toDisplayEvent } from '@/lib/utils/eventMappers';
 
-export function EventCalendar({ onClose }: { onClose: () => void }) {
+interface Props {
+  events: DisplayEvent[];
+  onClose: () => void;
+}
+
+export function EventCalendar({ events, onClose }: Props) {
   const [viewDate, setViewDate] = useState(() => new Date());
   const [selected, setSelected] = useState<number | null>(null);
-  const [allEvents, setAllEvents] = useState<DisplayEvent[]>([]);
-
-  // Fetch once — get enough events to populate the calendar
-  useEffect(() => {
-    listEvents({ limit: 100, sort: 'event_date', order: 'asc' })
-      .then((r) => setAllEvents(r.events.map(toDisplayEvent)))
-      .catch(() => {});
-  }, []);
 
   const eventsByDay = useMemo(() => {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
     const map: Record<number, { hot: boolean; events: DisplayEvent[] }> = {};
-    allEvents.forEach((e) => {
+    events.forEach((e) => {
       const d = new Date(e.date);
       if (d.getFullYear() === year && d.getMonth() === month) {
         const day = d.getDate();
@@ -35,7 +30,7 @@ export function EventCalendar({ onClose }: { onClose: () => void }) {
       }
     });
     return map;
-  }, [allEvents, viewDate]);
+  }, [events, viewDate]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
