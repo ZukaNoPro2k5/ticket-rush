@@ -13,18 +13,20 @@ interface UserRow extends RowDataPacket {
   gender: string | null;
   birth_date: string | null;
   role: string;
+  avatar_url: string | null;
   created_at: string;
 }
 
 export async function getProfile(userId: number) {
   const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE id = ?',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, password_hash, created_at FROM users WHERE id = ? LIMIT 1',
     [userId],
   );
   if (rows.length === 0) {
     throw AppError.notFound('Người dùng không tồn tại');
   }
-  return rows[0];
+  const { password_hash, ...rest } = rows[0];
+  return { ...rest, has_password: !!password_hash };
 }
 
 export async function updateProfile(userId: number, input: UpdateProfileInput) {
@@ -47,11 +49,12 @@ export async function updateProfile(userId: number, input: UpdateProfileInput) {
   );
 
   const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, created_at FROM users WHERE id = ?',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, password_hash, created_at FROM users WHERE id = ? LIMIT 1',
     [userId],
   );
 
-  return rows[0];
+  const { password_hash, ...rest } = rows[0];
+  return { ...rest, has_password: !!password_hash };
 }
 
 export async function changePassword(userId: number, input: ChangePasswordInput) {
