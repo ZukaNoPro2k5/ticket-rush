@@ -1,12 +1,12 @@
 'use client';
 
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Camera, CheckCircle2, Keyboard, Loader2, ScanLine, TicketCheck, XCircle } from 'lucide-react';
-import { ProtectedRoute } from '@/components/providers';
+import { Camera, CheckCircle2, Keyboard, Loader2, Lock, ScanLine, TicketCheck, XCircle } from 'lucide-react';
 import { checkInTicket } from '@/lib/api/events';
+import { useAuthStore } from '@/stores/authStore';
 
 type BarcodeDetectorResult = { rawValue: string };
 type BarcodeDetectorInstance = {
@@ -57,9 +57,57 @@ function formatDate(value?: string | null): string {
 
 export default function CheckInPage() {
   return (
-    <ProtectedRoute requireAdmin>
+    <CheckInAccessGate>
       <CheckInWorkspace />
-    </ProtectedRoute>
+    </CheckInAccessGate>
+  );
+}
+
+function CheckInAccessGate({ children }: { children: ReactNode }) {
+  const { isAuthenticated, user } = useAuthStore();
+  const allowed = isAuthenticated && user?.role === 'admin';
+
+  if (allowed) return <>{children}</>;
+
+  return (
+    <main className="min-h-screen bg-stone-950 text-white">
+      <section className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-5 lg:px-8">
+        <header className="flex items-center justify-between gap-3">
+          <Link href="/events" className="flex items-center gap-2 font-display text-lg font-bold">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500">
+              <TicketCheck className="h-5 w-5" />
+            </span>
+            TicketRush Check-in
+          </Link>
+        </header>
+
+        <div className="grid flex-1 place-items-center py-12">
+          <div className="w-full rounded-3xl border border-white/10 bg-white p-6 text-center text-stone-900 shadow-2xl sm:p-8">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-100 text-amber-700">
+              <Lock className="h-6 w-6" />
+            </div>
+            <h1 className="mt-5 font-display text-2xl font-bold">Cần đăng nhập admin để soát vé</h1>
+            <p className="mt-2 text-sm text-stone-500">
+              Giao diện check-in thuộc role Dev 2, nhưng API soát vé vẫn cần JWT admin/staff để chống dùng sai quyền.
+            </p>
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <Link
+                href="/login"
+                className="rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-amber-600"
+              >
+                Đăng nhập admin
+              </Link>
+              <Link
+                href="/events"
+                className="rounded-full border border-stone-200 px-5 py-2.5 text-sm font-semibold text-stone-700 hover:border-stone-400"
+              >
+                Về danh sách sự kiện
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
 
