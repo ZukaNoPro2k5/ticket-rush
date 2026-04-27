@@ -1,55 +1,104 @@
-'use client';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { AlertCircle } from 'lucide-react';
+import type { ApiResponse, Event, EventDetail } from '@/types';
+import { DetailNavbar } from '@/components/event-detail';
+import EventDetailClient from './EventDetailClient';
 
-import { useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { THIS_WEEK_EVENTS } from '@/data/uiConfig';
-import type { DisplayEvent } from '@/types';
-import { DETAIL_ZONES, type EventTabKey } from '@/data/eventDetailData';
-import {
-  AboutTab, DetailNavbar, DetailSidebarCTA, EventHero, EventTabs, FaqTab,
-  LineupTab, MobileStickyCTA, ReviewsTab, SimilarEvents, VenueTab,
-} from '@/components/event-detail';
+export const dynamic = 'force-dynamic';
 
-export default function EventDetailPage() {
-  const params = useParams<{ id: string }>();
-  const eventId = Number(params?.id) || 101;
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/$/, '');
+const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200&q=80';
 
-  const event: DisplayEvent = useMemo(
-    () => THIS_WEEK_EVENTS.find((e) => e.id === eventId) ?? THIS_WEEK_EVENTS[0],
-    [eventId],
-  );
+async function fetchApiData<T>(path: string): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const body = (await res.json()) as ApiResponse<T>;
+    return body.data ?? null;
+  } catch {
+    return null;
+  }
+}
 
-  const similar = useMemo(
-    () => THIS_WEEK_EVENTS.filter((e) => e.id !== event.id).slice(0, 4),
-    [event.id],
-  );
+async function fetchEvent(id: number): Promise<EventDetail | null> {
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return fetchApiData<EventDetail>(`/events/${id}`);
+}
 
-  const [tab, setTab] = useState<EventTabKey>('about');
+async function fetchSimilarEvents(event: EventDetail): Promise<Event[]> {
+  const params = new URLSearchParams({
+    category: event.category,
+    limit: '5',
+    sort: 'event_date',
+    order: 'asc',
+  });
+  const data = await fetchApiData<{ events: Event[] }>(`/events?${params.toString()}`);
+  return (data?.events ?? []).filter((item) => item.id !== event.id).slice(0, 4);
+}
 
-  const minPrice = Math.min(...DETAIL_ZONES.map((z) => z.price));
-  const maxPrice = Math.max(...DETAIL_ZONES.map((z) => z.price));
+function buildDescription(event: EventDetail): string {
+  const raw = event.description?.trim();
+  if (raw) return raw.length > 155 ? `${raw.slice(0, 152)}...` : raw;
+  return `${event.title} tại ${event.venue}. Xem thông tin sự kiện, giá vé và sơ đồ ghế trên TicketRush.`;
+}
 
-  return (
-    <main className="min-h-screen bg-stone-50 pb-24 lg:pb-0">
-      <DetailNavbar />
-      <EventHero event={event} />
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const event = await fetchEvent(Number(params.id));
+  if (!event) {
+    return {
+      title: 'Không tìm thấy sự kiện | TicketRush',
+      description: 'Sự kiện không tồn tại hoặc chưa được công bố.',
+    };
+  }
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 lg:grid-cols-[1fr_360px] lg:px-8">
-        <div>
-          <EventTabs active={tab} onChange={setTab} />
+  const description = buildDescription(event);
+  const image = event.poster_url || FALLBACK_POSTER;
 
-          {tab === 'about' && <AboutTab event={event} />}
-          {tab === 'lineup' && <LineupTab />}
-          {tab === 'venue' && <VenueTab event={event} />}
-          {tab === 'faq' && <FaqTab />}
-          {tab === 'reviews' && <ReviewsTab />}
-        </div>
+  return {
+    title: `${event.title} | TicketRush`,
+    description,
+    openGraph: {
+      title: event.title,
+      description,
+      type: 'website',
+      images: [{ url: image, width: 1200, height: 630, alt: event.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: event.title,
+      description,
+      images: [image],
+    },
+  };
+}
 
-        <DetailSidebarCTA event={event} minPrice={minPrice} maxPrice={maxPrice} />
-      </div>
+export default async function EventDetailPage({ params }: { params: { id: string } }) {
+  const event = await fetchEvent(Number(params.id));
 
-      <SimilarEvents events={similar} />
-      <MobileStickyCTA eventId={event.id} minPrice={minPrice} />
-    </main>
-  );
+  if (!event) {
+    return (
+      <main className="min-h-screen bg-stone-50">
+        <DetailNavbar />
+        <section className="mx-auto flex max-w-3xl flex-col items-center px-4 py-24 text-center">
+          <div className="grid h-16 w-16 place-items-center rounded-full bg-red-50">
+            <AlertCircle className="h-7 w-7 text-red-500" />
+          </div>
+          <h1 className="mt-5 font-display text-2xl font-bold text-stone-900">Không tìm thấy sự kiện</h1>
+          <p className="mt-2 text-sm text-stone-500">
+            Sự kiện có thể chưa được publish, đã bị hủy hoặc backend chưa sẵn sàng.
+          </p>
+          <Link
+            href="/events"
+            className="mt-6 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-amber-600"
+          >
+            Quay lại danh sách
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
+  const similarEvents = await fetchSimilarEvents(event);
+  return <EventDetailClient event={event} similarEvents={similarEvents} />;
 }

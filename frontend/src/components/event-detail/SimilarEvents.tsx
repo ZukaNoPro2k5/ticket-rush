@@ -1,20 +1,25 @@
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar } from 'lucide-react';
-import { formatVnd} from '@/data/uiConfig';
+
+function formatVnd(value: number): string {
+  return `${value.toLocaleString('vi-VN')}đ`;
+}
 
 interface Props {
   events: DisplayEvent[];
 }
 
 export function SimilarEvents({ events }: Props) {
+  if (events.length === 0) return null;
+
   return (
     <section className="border-t border-stone-200 bg-stone-100/50 py-12 lg:py-16">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl font-bold">Sự kiện tương tự</h2>
-            <p className="mt-1 text-sm text-stone-500">Có thể bạn cũng sẽ thích</p>
+            <p className="mt-1 text-sm text-stone-500">Các sự kiện cùng mạch quan tâm</p>
           </div>
           <Link href="/events" className="text-sm font-semibold text-amber-700 hover:text-amber-800">
             Xem tất cả →

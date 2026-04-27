@@ -26,7 +26,6 @@ function SeatButton({
   const isClickable = seat.status === 'available' && !booking;
   const isMyBookedSeat = booking?.seat_ids.includes(seat.id) ?? false;
   const isSelected = selectedIds.has(seat.id);
-
   const statusLabel =
     seat.status === 'available'
       ? 'Còn trống'
@@ -40,14 +39,14 @@ function SeatButton({
     <button
       onClick={() => onToggle(seat)}
       disabled={!isClickable}
-      title={`${seat.zone_name} — Hàng ${seat.row_label}, Ghế ${seat.col_number}\n${seat.zone_price.toLocaleString('vi-VN')}đ\n${statusLabel}`}
+      title={`${seat.zone_name} - Hàng ${seat.row_label}, Ghế ${seat.col_number}\n${seat.zone_price.toLocaleString('vi-VN')}đ\n${statusLabel}`}
       style={{
         backgroundColor: bg,
         cursor: isClickable ? 'pointer' : 'default',
         outline: isSelected || isMyBookedSeat ? '2px solid #ff6b35' : '1px solid rgba(0,0,0,0.1)',
         outlineOffset: isSelected || isMyBookedSeat ? '1px' : '0',
       }}
-      className="w-7 h-7 rounded-sm text-[9px] text-white font-bold transition-transform enabled:hover:scale-110 enabled:active:scale-95 shrink-0"
+      className="h-7 w-7 shrink-0 rounded-sm text-[9px] font-bold text-white transition-transform enabled:hover:scale-110 enabled:active:scale-95"
     >
       {seat.col_number}
     </button>
@@ -67,24 +66,19 @@ function ZoneGrid({
 }) {
   return (
     <div className="py-5">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-        <span
-          className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
-          style={{ backgroundColor: zone.color }}
-        />
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: zone.color }} />
         {zone.name}
-        <span className="text-gray-400 font-normal text-xs">
-          — {zone.price.toLocaleString('vi-VN')}đ / ghế
+        <span className="text-xs font-normal text-gray-400">
+          - {zone.price.toLocaleString('vi-VN')}đ / ghế
         </span>
       </h3>
 
       <div className="overflow-x-auto pb-1">
         <div className="inline-block">
           {[...zone.rows.entries()].map(([rowLabel, rowSeats]) => (
-            <div key={rowLabel} className="flex items-center gap-1 mb-1">
-              <span className="w-5 shrink-0 text-center text-[10px] text-gray-400 font-medium">
-                {rowLabel}
-              </span>
+            <div key={rowLabel} className="mb-1 flex items-center gap-1">
+              <span className="w-5 shrink-0 text-center text-[10px] font-medium text-gray-400">{rowLabel}</span>
               {rowSeats.map((seat) => (
                 <SeatButton
                   key={seat.id}
@@ -104,10 +98,9 @@ function ZoneGrid({
 
 export function SeatMap({ zones, selectedIds, booking, onToggleSeat }: Props) {
   return (
-    <div className="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden min-w-0">
-      {/* Stage */}
-      <div className="flex justify-center pt-5 pb-3 px-6 bg-gradient-to-b from-gray-100 to-white">
-        <div className="bg-gray-800 text-white text-[11px] font-bold tracking-[0.25em] px-12 py-2 rounded-b-3xl shadow">
+    <div className="min-w-0 flex-1 overflow-hidden rounded-xl border bg-white shadow-sm">
+      <div className="flex justify-center bg-gradient-to-b from-gray-100 to-white px-6 pb-3 pt-5">
+        <div className="rounded-b-3xl bg-gray-800 px-12 py-2 text-[11px] font-bold tracking-[0.25em] text-white shadow">
           SÂN KHẤU
         </div>
       </div>
@@ -126,7 +119,7 @@ export function SeatMap({ zones, selectedIds, booking, onToggleSeat }: Props) {
         ))}
 
         {zones.length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-12">
+          <p className="py-12 text-center text-sm text-gray-400">
             Sự kiện này chưa có thông tin ghế.
           </p>
         )}

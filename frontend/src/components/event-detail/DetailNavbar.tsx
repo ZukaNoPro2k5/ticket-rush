@@ -12,9 +12,15 @@ export function DetailNavbar() {
           TicketRush
         </Link>
         <nav className="hidden items-center gap-1 lg:flex">
-          <Link href="/" className="rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900">Trang chủ</Link>
-          <Link href="/events" className="rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900">Sự kiện</Link>
-          <Link href="#" className="rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900">Tổ chức sự kiện</Link>
+          <Link href="/" className="rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900">
+            Trang chủ
+          </Link>
+          <Link href="/events" className="rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900">
+            Sự kiện
+          </Link>
+          <Link href="/admin/events" className="rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900">
+            Tổ chức sự kiện
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <button aria-label="Lưu" className="grid h-10 w-10 place-items-center rounded-full border border-stone-200 text-stone-600 transition-colors hover:border-stone-400 hover:text-rose-500">
