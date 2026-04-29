@@ -6,9 +6,12 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import type { DisplayEvent } from '@/types';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import { EventCard, EventCardSkeleton } from '@/components/events';
+import { THIS_WEEK_EVENTS } from '@/data/uiConfig';
 
-export function NewEventsGrid({ events = [] }: { events?: DisplayEvent[] }) {
+export function NewEventsGrid({ events = [], loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
   const { ref, inView } = useSectionInView();
+  const displayEvents = events.length > 0 ? events : THIS_WEEK_EVENTS.slice(0, 8);
+
   return (
     <section className="bg-stone-50 py-12 lg:py-16">
       <div ref={ref} className="mx-auto max-w-7xl px-4 lg:px-8">
@@ -30,7 +33,7 @@ export function NewEventsGrid({ events = [] }: { events?: DisplayEvent[] }) {
           </Link>
         </motion.div>
 
-        {events.length === 0 ? (
+        {loading ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => <EventCardSkeleton key={i} />)}
           </div>
@@ -41,7 +44,7 @@ export function NewEventsGrid({ events = [] }: { events?: DisplayEvent[] }) {
             animate={inView ? 'visible' : 'hidden'}
             className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
           >
-            {events.map((ev) => (
+            {displayEvents.map((ev) => (
               <motion.div key={ev.id} variants={cardVariant}>
                 <EventCard event={ev} />
               </motion.div>

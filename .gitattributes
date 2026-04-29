@@ -1,0 +1,7 @@
+# Tự động phát hiện file text và chuẩn hóa định dạng xuống dòng thành LF khi commit.
+# Điều này giúp tránh lỗi khi file được sửa trên Windows (CRLF) và dùng trên Linux (LF).
+* text=auto eol=lf
+
+# Ép buộc định dạng LF cho các file script để tránh lỗi "bad interpreter" trong Docker.
+*.sh eol=lf
+*.bash eol=lf

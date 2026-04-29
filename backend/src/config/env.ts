@@ -1,27 +1,49 @@
 import dotenv from 'dotenv';
-import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Load environment variables from .env file (for local development)
+dotenv.config();
+
+/**
+ * A helper to get a required environment variable or throw an error if it's missing.
+ * This ensures the application fails fast if a critical configuration is not set.
+ */
+function getEnv(key: string): string {
+  const value = process.env[key];
+  if (value === undefined || value === null) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+
+/**
+ * A helper to get a required environment variable as an integer.
+ * Throws an error if it's missing or not a valid number.
+ */
+function getEnvAsInt(key: string): number {
+  const value = getEnv(key);
+  const parsed = parseInt(value, 10);
+  if (isNaN(parsed)) {
+    throw new Error(`Environment variable ${key} is not a valid integer: "${value}"`);
+  }
+  return parsed;
+}
 
 export const config = {
-  port: parseInt(process.env.BACKEND_PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
-
+  port: parseInt(process.env.BACKEND_PORT || '4000', 10), // Default is fine for non-critical port
   db: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '3306', 10),
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'ticketrush',
+    host: getEnv('DB_HOST'),
+    port: getEnvAsInt('DB_PORT'),
+    user: getEnv('DB_USER'),
+    password: getEnv('DB_PASSWORD'),
+    database: getEnv('DB_NAME'),
   },
-
   redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    host: getEnv('REDIS_HOST'),
+    port: getEnvAsInt('REDIS_PORT'),
   },
-
   jwt: {
-    secret: process.env.JWT_SECRET || 'fallback-secret-change-me',
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    secret: getEnv('JWT_SECRET'),
+    expiresIn: getEnv('JWT_EXPIRES_IN'),
   },
 };
