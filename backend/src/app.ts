@@ -50,7 +50,8 @@ app.use('/api/events/:eventId/seats', seatRoutes); // A6
 import eventRoutes from './modules/events/routes';
 import seatZoneRoutes from './modules/seat-zones/routes';
 app.use('/api/events',   eventRoutes);
-// app.use('/api/events/:eventId/zones', seatZoneRoutes);
+app.use('/api/events/:eventId/zones', seatZoneRoutes);
+app.use('/api/events/:eventId/seat-zones', seatZoneRoutes);
 
 // Dev 3 routes (TODO: uncomment khi Dev 3 hoàn thành)
 import promoRoutes from './modules/promo-codes/routes';

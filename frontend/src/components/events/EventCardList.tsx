@@ -1,7 +1,10 @@
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { ArrowRight, Calendar, MapPin } from 'lucide-react';
-import { formatVnd} from '@/data/uiConfig';
+
+function formatVnd(value: number): string {
+  return `${value.toLocaleString('vi-VN')}đ`;
+}
 
 export function EventCardList({ event }: { event: DisplayEvent }) {
   return (
@@ -19,15 +22,19 @@ export function EventCardList({ event }: { event: DisplayEvent }) {
         />
       </div>
 
-      <div className="flex flex-1 flex-col py-1">
+      <div className="flex min-w-0 flex-1 flex-col py-1">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">{event.category}</span>
         <h3 className="mt-0.5 line-clamp-2 font-display text-lg font-bold text-stone-900 group-hover:text-amber-700">
           {event.title}
         </h3>
 
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-stone-500">
-          <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {event.dateLabel} · {event.timeLabel}</span>
-          <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {event.venue}, {event.city}</span>
+          <span className="inline-flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5" /> {event.dateLabel} · {event.timeLabel}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <MapPin className="h-3.5 w-3.5" /> {event.venue}, {event.city}
+          </span>
         </div>
 
         <div className="mt-2 max-w-xs">
@@ -51,7 +58,7 @@ export function EventCardList({ event }: { event: DisplayEvent }) {
           )}
         </div>
 
-        <div className="mt-auto flex items-end justify-between pt-2">
+        <div className="mt-auto flex items-end justify-between gap-3 pt-2">
           <div>
             <div className="text-[10px] uppercase tracking-wider text-stone-400">Từ</div>
             <div className="font-display text-lg font-bold text-amber-700">{formatVnd(event.priceFrom)}</div>

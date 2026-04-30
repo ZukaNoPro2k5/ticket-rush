@@ -18,7 +18,7 @@ const BADGE_LABELS: Record<string, string> = {
 };
 
 function eventsToSlides(events: DisplayEvent[]): HeroSlide[] {
-  return events.slice(0, 6).map((e, i) => ({
+  return events.slice(0, 6).map((e) => ({
     id: e.id,
     title: e.title,
     subtitle: `${e.dateLabel} · ${e.timeLabel}`,

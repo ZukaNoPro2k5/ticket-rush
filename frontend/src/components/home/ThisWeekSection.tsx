@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Calendar } from 'lucide-react';
-import { TIME_TABS, type TimeTabKey } from '@/data/uiConfig';
+import { TIME_TABS, THIS_WEEK_EVENTS, type TimeTabKey } from '@/data/uiConfig';
 import type { DisplayEvent } from '@/types';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import { EventCard, EventCardSkeleton } from '@/components/events';
@@ -14,10 +14,13 @@ export function ThisWeekSection({ allEvents = [] }: { allEvents?: DisplayEvent[]
   const { ref, inView } = useSectionInView();
 
   const events = useMemo(() => {
-    if (tab === 'today') return allEvents.slice(0, 4);
-    if (tab === 'weekend') return allEvents.filter((_, i) => i % 2 === 0).slice(0, 8);
-    if (tab === 'month') return allEvents.slice(0, 8);
-    return allEvents.slice(0, 8);
+    // Sử dụng dữ liệu dự phòng (mock) nếu API trả về mảng rỗng do khác năm
+    const sourceData = allEvents.length > 0 ? allEvents : THIS_WEEK_EVENTS;
+    
+    if (tab === 'today') return sourceData.slice(0, 4);
+    if (tab === 'weekend') return sourceData.filter((_, i) => i % 2 === 0).slice(0, 8);
+    if (tab === 'month') return sourceData.slice(0, 8);
+    return sourceData.slice(0, 8);
   }, [tab, allEvents]);
 
   return (

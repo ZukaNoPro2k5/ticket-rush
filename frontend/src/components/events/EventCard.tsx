@@ -1,18 +1,18 @@
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
-import { CATEGORIES} from '@/data/uiConfig';
+import { EVENT_CATEGORY_OPTIONS } from './EventsCategoryBar';
 
 const BADGE_MAP: Record<NonNullable<DisplayEvent['badge']>, { label: string; cls: string }> = {
-  'hot':         { label: 'HOT',         cls: 'bg-rose-500 text-white' },
-  'new':         { label: 'MỚI',         cls: 'bg-amber-500 text-white' },
+  hot: { label: 'HOT', cls: 'bg-rose-500 text-white' },
+  new: { label: 'MỚI', cls: 'bg-amber-500 text-white' },
   'almost-sold': { label: 'SẮP CHÁY VÉ', cls: 'bg-orange-600 text-white' },
-  'special':     { label: 'ĐẶC BIỆT',    cls: 'bg-purple-600 text-white' },
+  special: { label: 'ĐẶC BIỆT', cls: 'bg-purple-600 text-white' },
 };
 
 export function EventCard({ event }: { event: DisplayEvent }) {
   const badge = event.badge ? BADGE_MAP[event.badge] : null;
-  const categoryIcon = CATEGORIES.find((c) => c.key === event.categoryKey)?.icon ?? 'fa-solid fa-tag';
+  const categoryIcon = EVENT_CATEGORY_OPTIONS.find((c) => c.key === event.categoryKey)?.icon ?? 'fa-solid fa-tag';
 
   return (
     <div className="flex h-full flex-col transition-transform duration-200 hover:-translate-y-1.5 active:scale-[0.98]">
@@ -42,8 +42,12 @@ export function EventCard({ event }: { event: DisplayEvent }) {
           </span>
 
           <div className="absolute inset-x-3 bottom-3 flex items-center justify-between text-xs text-white">
-            <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> {event.dateLabel}</span>
-            <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {event.timeLabel}</span>
+            <span className="inline-flex items-center gap-1">
+              <Calendar className="h-3 w-3" /> {event.dateLabel}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Clock className="h-3 w-3" /> {event.timeLabel}
+            </span>
           </div>
         </div>
 

@@ -1,7 +1,10 @@
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar, Clock, Flame, MapPin } from 'lucide-react';
-import { formatVnd} from '@/data/uiConfig';
+
+function formatVnd(value: number): string {
+  return `${value.toLocaleString('vi-VN')}đ`;
+}
 
 export function EventCardCompact({ event }: { event: DisplayEvent }) {
   return (
@@ -41,10 +44,16 @@ export function EventCardCompact({ event }: { event: DisplayEvent }) {
         <h3 className="mt-1 line-clamp-2 font-semibold text-stone-900 group-hover:text-amber-700">{event.title}</h3>
 
         <div className="mt-1.5 flex items-center gap-3 text-xs text-stone-500">
-          <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> {event.dateLabel}</span>
-          <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {event.timeLabel}</span>
+          <span className="inline-flex items-center gap-1">
+            <Calendar className="h-3 w-3" /> {event.dateLabel}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3" /> {event.timeLabel}
+          </span>
         </div>
-        <div className="mt-1.5 line-clamp-1 text-xs text-stone-500"><MapPin className="mr-0.5 inline h-3 w-3" /> {event.venue}</div>
+        <div className="mt-1.5 line-clamp-1 text-xs text-stone-500">
+          <MapPin className="mr-0.5 inline h-3 w-3" /> {event.venue}
+        </div>
 
         <div className="mt-auto flex items-end justify-between pt-3">
           <div>

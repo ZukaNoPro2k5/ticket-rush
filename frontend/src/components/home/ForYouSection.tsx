@@ -7,6 +7,7 @@ import type { DisplayEvent } from '@/types';
 import { useAuthStore } from '@/stores/authStore';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import { EventCard, EventCardSkeleton } from '@/components/events';
+import { THIS_WEEK_EVENTS } from '@/data/uiConfig';
 
 function GuestCallout() {
   return (
@@ -30,9 +31,10 @@ function GuestCallout() {
   );
 }
 
-export function ForYouSection({ events = [] }: { events?: DisplayEvent[] }) {
+export function ForYouSection({ events = [], loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
   const { isAuthenticated, user } = useAuthStore();
   const { ref, inView } = useSectionInView();
+  const displayEvents = events.length > 0 ? events : THIS_WEEK_EVENTS.slice(0, 4);
 
   const heading = isAuthenticated && user
     ? `${user.full_name.split(' ').pop()}, có thể bạn sẽ thích`
@@ -68,7 +70,7 @@ export function ForYouSection({ events = [] }: { events?: DisplayEvent[] }) {
           </motion.div>
         )}
 
-        {events.length === 0 ? (
+        {loading ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => <EventCardSkeleton key={i} />)}
           </div>
@@ -79,7 +81,7 @@ export function ForYouSection({ events = [] }: { events?: DisplayEvent[] }) {
             animate={inView ? 'visible' : 'hidden'}
             className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
           >
-            {events.map((ev) => (
+            {displayEvents.map((ev) => (
               <motion.div key={ev.id} variants={cardVariant}>
                 <EventCard event={ev} />
               </motion.div>

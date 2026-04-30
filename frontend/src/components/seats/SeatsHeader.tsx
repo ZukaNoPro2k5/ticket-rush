@@ -12,24 +12,20 @@ interface Props {
 
 export function SeatsHeader({ eventId, hasBooking, countdown }: Props) {
   return (
-    <div className="bg-white border-b sticky top-0 z-20 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-3">
+    <div className="sticky top-0 z-20 border-b bg-white shadow-sm">
+      <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
         <Link
           href={`/events/${eventId}`}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+          className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100"
           aria-label="Quay lại"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="h-5 w-5" />
         </Link>
         <span className="font-semibold text-gray-800">Chọn ghế ngồi</span>
 
         {hasBooking && (
-          <span
-            className={`ml-auto text-sm font-mono font-bold ${
-              countdown < 120 ? 'text-red-500' : 'text-orange-500'
-            }`}
-          >
-            ⏱ {formatMmSs(countdown)}
+          <span className={`ml-auto text-sm font-bold font-mono ${countdown < 120 ? 'text-red-500' : 'text-orange-500'}`}>
+            {formatMmSs(countdown)}
           </span>
         )}
       </div>

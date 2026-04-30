@@ -1,13 +1,21 @@
 'use client';
 
 import { Check, ChevronDown } from 'lucide-react';
-import { formatVnd } from '@/data/uiConfig';
-import {
-  CITIES,
-  TIME_RANGES,
-  DEFAULT_PRICE_MAX,
-  type TimeRangeKey,
-} from '@/lib/utils/eventsFilters';
+import { DEFAULT_PRICE_MAX, type TimeRangeKey } from '@/lib/utils/eventsFilters';
+
+const CITY_OPTIONS = ['Tất cả', 'Hà Nội', 'TP. HCM', 'Đà Nẵng', 'Hải Phòng', 'Huế'] as const;
+
+const TIME_OPTIONS: { key: TimeRangeKey; label: string }[] = [
+  { key: 'all', label: 'Tất cả thời gian' },
+  { key: 'today', label: 'Hôm nay' },
+  { key: 'weekend', label: 'Cuối tuần' },
+  { key: 'week', label: 'Tuần này' },
+  { key: 'month', label: 'Tháng này' },
+];
+
+function formatVnd(value: number): string {
+  return `${value.toLocaleString('vi-VN')}đ`;
+}
 
 interface Props {
   stagedTime: TimeRangeKey;
@@ -24,10 +32,17 @@ interface Props {
 }
 
 export function EventsFilterSidebar({
-  stagedTime, stagedCity, stagedPriceMax,
-  pendingChanges, activeFilterCount,
-  onStagedTimeChange, onStagedCityChange, onStagedPriceMaxChange,
-  onApply, onDiscard, onResetAll,
+  stagedTime,
+  stagedCity,
+  stagedPriceMax,
+  pendingChanges,
+  activeFilterCount,
+  onStagedTimeChange,
+  onStagedCityChange,
+  onStagedPriceMaxChange,
+  onApply,
+  onDiscard,
+  onResetAll,
 }: Props) {
   return (
     <aside className="hidden lg:block">
@@ -41,11 +56,12 @@ export function EventsFilterSidebar({
           )}
         </div>
 
-        {/* Time */}
         <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">Thời gian</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">
+            Thời gian
+          </label>
           <div className="space-y-1.5">
-            {TIME_RANGES.map((t) => (
+            {TIME_OPTIONS.map((t) => (
               <label key={t.key} className="flex items-center gap-2 text-sm">
                 <input
                   type="radio"
@@ -60,39 +76,46 @@ export function EventsFilterSidebar({
           </div>
         </div>
 
-        {/* City */}
         <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">Thành phố</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">
+            Thành phố
+          </label>
           <div className="relative">
             <select
               value={stagedCity}
               onChange={(e) => onStagedCityChange(e.target.value)}
               className="w-full appearance-none rounded-lg border border-stone-200 bg-white px-3 py-2 pr-8 text-sm focus:border-amber-500 focus:outline-none"
             >
-              {CITIES.map((c) => <option key={c}>{c}</option>)}
+              {CITY_OPTIONS.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
           </div>
         </div>
 
-        {/* Price */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-stone-500">Giá tối đa</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-stone-500">
+              Giá tối đa
+            </label>
             <span className="text-xs font-semibold text-amber-700">{formatVnd(stagedPriceMax)}</span>
           </div>
           <input
-            type="range" min={100_000} max={DEFAULT_PRICE_MAX} step={50_000}
+            type="range"
+            min={100_000}
+            max={DEFAULT_PRICE_MAX}
+            step={50_000}
             value={stagedPriceMax}
             onChange={(e) => onStagedPriceMaxChange(Number(e.target.value))}
             className="w-full accent-amber-500"
           />
           <div className="mt-1 flex justify-between text-[10px] text-stone-400">
-            <span>100K</span><span>5tr</span>
+            <span>100K</span>
+            <span>5tr</span>
           </div>
         </div>
 
-        {/* Apply / Discard */}
         <div className="border-t border-stone-100 pt-4">
           {pendingChanges > 0 ? (
             <>
@@ -102,7 +125,7 @@ export function EventsFilterSidebar({
               <div className="flex gap-2">
                 <button
                   onClick={onApply}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-lift"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-lift"
                 >
                   <Check className="h-4 w-4" /> Áp dụng
                 </button>

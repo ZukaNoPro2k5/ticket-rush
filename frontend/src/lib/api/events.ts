@@ -1,13 +1,31 @@
 import api from './client';
-import type { Event, EventDetail, ApiResponse, PaginatedResponse } from '@/types';
+import type {
+  ApiResponse,
+  Event,
+  EventCategory,
+  EventDetail,
+  EventStatus,
+  PaginatedResponse,
+  SeatZone,
+} from '@/types';
 
 export interface ListEventsParams {
-  category?: string;
+  category?: EventCategory;
+  status?: EventStatus;
   search?: string;
   page?: number;
   limit?: number;
   sort?: 'event_date' | 'created_at';
   order?: 'asc' | 'desc';
+}
+
+export interface EventFormPayload {
+  title: string;
+  description?: string;
+  category: EventCategory;
+  venue: string;
+  event_date: string;
+  poster_url?: string;
 }
 
 export async function listEvents(params: ListEventsParams = {}): Promise<{
@@ -24,4 +42,58 @@ export async function listEvents(params: ListEventsParams = {}): Promise<{
 export async function getEventById(id: number): Promise<EventDetail> {
   const res = await api.get<ApiResponse<EventDetail>>(`/events/${id}`);
   return res.data.data!;
+}
+
+export async function createEvent(payload: EventFormPayload): Promise<Event> {
+  const res = await api.post<ApiResponse<Event>>('/events', payload);
+  return res.data.data!;
+}
+
+export async function updateEvent(id: number, payload: Partial<EventFormPayload>): Promise<Event> {
+  const res = await api.put<ApiResponse<Event>>(`/events/${id}`, payload);
+  return res.data.data!;
+}
+
+export async function changeEventStatus(id: number, status: Exclude<EventStatus, 'draft'>): Promise<Event> {
+  const res = await api.patch<ApiResponse<Event>>(`/events/${id}/status`, { status });
+  return res.data.data!;
+}
+
+export async function checkInTicket(ticketId: number): Promise<unknown> {
+  const res = await api.post<ApiResponse<unknown>>(`/tickets/${ticketId}/check-in`);
+  return res.data.data;
+}
+
+function isNotFound(err: unknown): boolean {
+  return (err as { response?: { status?: number } })?.response?.status === 404;
+}
+
+export async function listSeatZonesTolerant(eventId: number): Promise<{
+  available: boolean;
+  zones: SeatZone[];
+  message?: string;
+}> {
+  try {
+    const res = await api.get<ApiResponse<SeatZone[]>>(`/events/${eventId}/zones`);
+    return { available: true, zones: res.data.data ?? [] };
+  } catch (err) {
+    if (!isNotFound(err)) {
+      throw err;
+    }
+  }
+
+  try {
+    const res = await api.get<ApiResponse<SeatZone[]>>(`/events/${eventId}/seat-zones`);
+    return { available: true, zones: res.data.data ?? [] };
+  } catch (err) {
+    if (!isNotFound(err)) {
+      throw err;
+    }
+  }
+
+  return {
+    available: false,
+    zones: [],
+    message: 'API cấu hình khu ghế chưa sẵn sàng ở backend.',
+  };
 }

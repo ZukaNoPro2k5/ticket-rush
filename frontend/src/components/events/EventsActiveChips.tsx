@@ -1,12 +1,25 @@
 'use client';
 
 import { Clock, MapPin, Search, X } from 'lucide-react';
-import { CATEGORIES, formatVnd, type CategoryKey } from '@/data/uiConfig';
-import { DEFAULT_PRICE_MAX, TIME_RANGES, type TimeRangeKey } from '@/lib/utils/eventsFilters';
+import type { EventCategory } from '@/types';
+import { EVENT_CATEGORY_OPTIONS } from './EventsCategoryBar';
+import { DEFAULT_PRICE_MAX, type TimeRangeKey } from '@/lib/utils/eventsFilters';
+
+const TIME_LABELS: Record<TimeRangeKey, string> = {
+  all: 'Tất cả thời gian',
+  today: 'Hôm nay',
+  weekend: 'Cuối tuần',
+  week: 'Tuần này',
+  month: 'Tháng này',
+};
+
+function formatVnd(value: number): string {
+  return `${value.toLocaleString('vi-VN')}đ`;
+}
 
 interface Props {
   query: string;
-  activeCat: CategoryKey | null;
+  activeCat: EventCategory | null;
   timeRange: TimeRangeKey;
   city: string;
   priceMax: number;
@@ -19,11 +32,19 @@ interface Props {
 }
 
 export function EventsActiveChips({
-  query, activeCat, timeRange, city, priceMax,
-  onClearQuery, onClearCategory, onClearTime, onClearCity, onClearPrice, onResetAll,
+  query,
+  activeCat,
+  timeRange,
+  city,
+  priceMax,
+  onClearQuery,
+  onClearCategory,
+  onClearTime,
+  onClearCity,
+  onClearPrice,
+  onResetAll,
 }: Props) {
-  const cat = activeCat ? CATEGORIES.find((c) => c.key === activeCat) : null;
-  const timeLabel = TIME_RANGES.find((t) => t.key === timeRange)?.label;
+  const cat = activeCat ? EVENT_CATEGORY_OPTIONS.find((c) => c.key === activeCat) : null;
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -32,7 +53,7 @@ export function EventsActiveChips({
           onClick={onClearQuery}
           className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200"
         >
-          <Search className="h-3 w-3" /> “{query}” <X className="h-3 w-3" />
+          <Search className="h-3 w-3" /> &quot;{query}&quot; <X className="h-3 w-3" />
         </button>
       )}
       {cat && (
@@ -48,7 +69,7 @@ export function EventsActiveChips({
           onClick={onClearTime}
           className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-200"
         >
-          <Clock className="h-3 w-3" /> {timeLabel} <X className="h-3 w-3" />
+          <Clock className="h-3 w-3" /> {TIME_LABELS[timeRange]} <X className="h-3 w-3" />
         </button>
       )}
       {city !== 'Tất cả' && (
