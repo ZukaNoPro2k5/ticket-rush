@@ -1,7 +1,9 @@
-import { RowDataPacket } from 'mysql2';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from '../../config/database';
 import { AppError } from '../../shared/AppError';
 import type { ListEventsQuery, CreateEventInput, UpdateEventInput, ChangeStatusInput } from './validation';
+
+type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
 
 interface EventRow extends RowDataPacket {
   id: number;
@@ -11,13 +13,15 @@ interface EventRow extends RowDataPacket {
   venue: string;
   event_date: string;
   poster_url: string | null;
-  status: string;
+  status: EventStatus;
   created_by: number;
   created_at: string;
   min_price: number | null;
   max_price: number | null;
-  available_seats: number | null;
-  total_seats: number | null;
+  available_seats: number;
+  total_seats: number;
+  average_rating: number | null;
+  review_count: number;
 }
 
 interface SeatZoneRow extends RowDataPacket {
@@ -28,53 +32,101 @@ interface SeatZoneRow extends RowDataPacket {
   color: string;
   total_rows: number;
   total_cols: number;
+  available_seats: number;
+  total_seats: number;
 }
 
-export async function listEvents(query: ListEventsQuery) {
-  const { category, status = 'published', search, page, limit, sort, order } = query;
+const eventSelect = `
+  SELECT e.id, e.title, e.description, e.category, e.venue, e.event_date,
+         e.poster_url, e.status, e.created_by, e.created_at,
+         stats.min_price,
+         stats.max_price,
+         COALESCE(stats.total_seats, 0) AS total_seats,
+         COALESCE(stats.available_seats, 0) AS available_seats,
+         reviews.average_rating,
+         COALESCE(reviews.review_count, 0) AS review_count
+  FROM events e
+  LEFT JOIN (
+    SELECT sz.event_id,
+           MIN(sz.price) AS min_price,
+           MAX(sz.price) AS max_price,
+           COUNT(s.id) AS total_seats,
+           SUM(CASE WHEN s.status = 'available' THEN 1 ELSE 0 END) AS available_seats
+    FROM seat_zones sz
+    LEFT JOIN seats s ON s.zone_id = sz.id
+    GROUP BY sz.event_id
+  ) stats ON stats.event_id = e.id
+  LEFT JOIN (
+    SELECT event_id, AVG(rating) AS average_rating, COUNT(*) AS review_count
+    FROM reviews
+    GROUP BY event_id
+  ) reviews ON reviews.event_id = e.id
+`;
+
+function normalizeEvent(row: EventRow) {
+  return {
+    ...row,
+    min_price: row.min_price === null ? null : Number(row.min_price),
+    max_price: row.max_price === null ? null : Number(row.max_price),
+    available_seats: Number(row.available_seats ?? 0),
+    total_seats: Number(row.total_seats ?? 0),
+    average_rating: row.average_rating === null ? null : Number(row.average_rating),
+    review_count: Number(row.review_count ?? 0),
+  };
+}
+
+async function getEventRecord(id: number) {
+  const [rows] = await pool.execute<EventRow[]>(`${eventSelect} WHERE e.id = ?`, [id]);
+  return rows[0] ? normalizeEvent(rows[0]) : null;
+}
+
+export async function listEvents(query: ListEventsQuery, includeUnpublished = false) {
+  const { category, status, search, page, limit, sort, order } = query;
   const offset = (page - 1) * limit;
 
-  const conditions: string[] = ['e.status = ?'];
-  const params: (string | number)[] = [status];
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (includeUnpublished) {
+    if (status) {
+      conditions.push('e.status = ?');
+      params.push(status);
+    }
+  } else {
+    conditions.push('e.status = ?');
+    params.push('published');
+  }
 
   if (category) {
     conditions.push('e.category = ?');
     params.push(category);
   }
+
   if (search) {
     conditions.push('(e.title LIKE ? OR e.venue LIKE ?)');
     params.push(`%${search}%`, `%${search}%`);
   }
 
-  const where = conditions.join(' AND ');
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const orderCol = sort === 'created_at' ? 'e.created_at' : 'e.event_date';
   const orderDir = order === 'desc' ? 'DESC' : 'ASC';
 
   const [rows] = await pool.query<EventRow[]>(
-    `SELECT e.id, e.title, e.description, e.category, e.venue, e.event_date,
-            e.poster_url, e.status, e.created_by, e.created_at,
-            MIN(sz.price) AS min_price,
-            MAX(sz.price) AS max_price,
-            COUNT(s.id) AS total_seats,
-            SUM(CASE WHEN s.status = 'available' THEN 1 ELSE 0 END) AS available_seats
-     FROM events e
-     LEFT JOIN seat_zones sz ON sz.event_id = e.id
-     LEFT JOIN seats s ON s.zone_id = sz.id
-     WHERE ${where}
-     GROUP BY e.id
+    `${eventSelect}
+     ${where}
      ORDER BY ${orderCol} ${orderDir}
      LIMIT ? OFFSET ?`,
     [...params, Number(limit), Number(offset)],
   );
 
-  const [[countRow]] = await pool.query<RowDataPacket[]>(
-    `SELECT COUNT(DISTINCT e.id) AS total FROM events e WHERE ${where}`,
+  const [countRows] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) AS total FROM events e ${where}`,
     params,
   );
-  const total = (countRow as RowDataPacket).total as number;
+  const total = Number(countRows[0]?.total ?? 0);
 
   return {
-    events: rows,
+    events: rows.map(normalizeEvent),
     pagination: {
       page,
       limit,
@@ -84,79 +136,111 @@ export async function listEvents(query: ListEventsQuery) {
   };
 }
 
-export async function getEventById(id: number) {
-  const [rows] = await pool.execute<EventRow[]>(
-    `SELECT e.id, e.title, e.description, e.category, e.venue, e.event_date,
-            e.poster_url, e.status, e.created_by, e.created_at,
-            MIN(sz.price) AS min_price
-     FROM events e
-     LEFT JOIN seat_zones sz ON sz.event_id = e.id
-     WHERE e.id = ? AND e.status = 'published'
-     GROUP BY e.id`,
-    [id],
-  );
-
-  if (rows.length === 0) {
-    throw AppError.notFound('Sự kiện không tồn tại hoặc chưa được công bố', 'EVENT_NOT_FOUND');
+export async function getEventById(id: number, includeUnpublished = false) {
+  const event = await getEventRecord(id);
+  if (!event || (!includeUnpublished && event.status !== 'published')) {
+    throw AppError.notFound('Event not found or not published', 'EVENT_NOT_FOUND');
   }
 
   const [zones] = await pool.execute<SeatZoneRow[]>(
-    'SELECT id, event_id, name, price, color, total_rows, total_cols FROM seat_zones WHERE event_id = ? ORDER BY price ASC',
+    `SELECT sz.id, sz.event_id, sz.name, sz.price, sz.color, sz.total_rows, sz.total_cols,
+            COUNT(s.id) AS total_seats,
+            SUM(CASE WHEN s.status = 'available' THEN 1 ELSE 0 END) AS available_seats
+     FROM seat_zones sz
+     LEFT JOIN seats s ON s.zone_id = sz.id
+     WHERE sz.event_id = ?
+     GROUP BY sz.id
+     ORDER BY sz.price ASC, sz.id ASC`,
     [id],
   );
 
-  return { ...rows[0], seat_zones: zones };
+  return {
+    ...event,
+    seat_zones: zones.map((zone) => ({
+      ...zone,
+      price: Number(zone.price),
+      available_seats: Number(zone.available_seats ?? 0),
+      total_seats: Number(zone.total_seats ?? 0),
+    })),
+  };
 }
 
 export async function createEvent(userId: number, input: CreateEventInput) {
   const { title, description, category, venue, event_date, poster_url } = input;
-  const conn = await pool.getConnection();
-  try {
-    const [result] = await conn.execute(
-      `INSERT INTO events (title, description, category, venue, event_date, poster_url, status, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`,
-      [title, description ?? null, category, venue, event_date, poster_url ?? null, userId],
-    );
-    const insertId = (result as { insertId: number }).insertId;
-    const [rows] = await conn.execute<EventRow[]>('SELECT * FROM events WHERE id = ?', [insertId]);
-    return rows[0];
-  } finally {
-    conn.release();
-  }
+  const [result] = await pool.execute<ResultSetHeader>(
+    `INSERT INTO events (title, description, category, venue, event_date, poster_url, status, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`,
+    [title, description ?? null, category, venue, event_date, poster_url ?? null, userId],
+  );
+
+  return getEventById(result.insertId, true);
 }
 
 export async function updateEvent(id: number, input: UpdateEventInput) {
+  const [eventRows] = await pool.execute<(RowDataPacket & { id: number; status: EventStatus })[]>(
+    'SELECT id, status FROM events WHERE id = ?',
+    [id],
+  );
+  if (eventRows.length === 0) {
+    throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
+  }
+  if (eventRows[0].status !== 'draft') {
+    throw AppError.conflict('Only draft events can be edited', 'EVENT_NOT_EDITABLE');
+  }
+
   const fields: string[] = [];
   const values: (string | number | null)[] = [];
 
-  if (input.title !== undefined)       { fields.push('title = ?');       values.push(input.title); }
-  if (input.description !== undefined) { fields.push('description = ?'); values.push(input.description); }
-  if (input.category !== undefined)    { fields.push('category = ?');    values.push(input.category); }
-  if (input.venue !== undefined)       { fields.push('venue = ?');       values.push(input.venue); }
-  if (input.event_date !== undefined)  { fields.push('event_date = ?');  values.push(input.event_date); }
-  if (input.poster_url !== undefined)  { fields.push('poster_url = ?');  values.push(input.poster_url); }
+  if (input.title !== undefined) fields.push('title = ?'), values.push(input.title);
+  if (input.description !== undefined) fields.push('description = ?'), values.push(input.description);
+  if (input.category !== undefined) fields.push('category = ?'), values.push(input.category);
+  if (input.venue !== undefined) fields.push('venue = ?'), values.push(input.venue);
+  if (input.event_date !== undefined) fields.push('event_date = ?'), values.push(input.event_date);
+  if (input.poster_url !== undefined) fields.push('poster_url = ?'), values.push(input.poster_url);
 
-  if (fields.length === 0) throw AppError.badRequest('Không có dữ liệu cập nhật');
+  if (fields.length === 0) {
+    throw AppError.badRequest('No update data provided', 'VALIDATION_ERROR');
+  }
 
   values.push(id);
   await pool.execute(`UPDATE events SET ${fields.join(', ')} WHERE id = ?`, values);
 
-  const [rows] = await pool.execute<EventRow[]>('SELECT * FROM events WHERE id = ?', [id]);
-  if (rows.length === 0) throw AppError.notFound('Sự kiện không tồn tại');
-  return rows[0];
+  return getEventById(id, true);
 }
 
 export async function changeStatus(id: number, input: ChangeStatusInput) {
-  const [check] = await pool.execute<EventRow[]>('SELECT id FROM events WHERE id = ?', [id]);
-  if (check.length === 0) throw AppError.notFound('Sự kiện không tồn tại');
+  const [rows] = await pool.execute<(RowDataPacket & { id: number; status: EventStatus })[]>(
+    'SELECT id, status FROM events WHERE id = ?',
+    [id],
+  );
+  if (rows.length === 0) throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
 
-  await pool.execute('UPDATE events SET status = ? WHERE id = ?', [input.status, id]);
-  const [rows] = await pool.execute<EventRow[]>('SELECT * FROM events WHERE id = ?', [id]);
-  return rows[0];
+  const currentStatus = rows[0].status;
+  const nextStatus = input.status;
+  const allowedTransitions: Record<EventStatus, EventStatus[]> = {
+    draft: ['published'],
+    published: ['completed', 'cancelled'],
+    completed: [],
+    cancelled: [],
+  };
+
+  if (!allowedTransitions[currentStatus].includes(nextStatus)) {
+    throw AppError.conflict('Invalid event status transition', 'INVALID_STATUS_TRANSITION');
+  }
+
+  await pool.execute('UPDATE events SET status = ? WHERE id = ?', [nextStatus, id]);
+  return getEventById(id, true);
 }
 
 export async function deleteEvent(id: number) {
-  const [check] = await pool.execute<EventRow[]>('SELECT id FROM events WHERE id = ?', [id]);
-  if (check.length === 0) throw AppError.notFound('Sự kiện không tồn tại');
+  const [rows] = await pool.execute<(RowDataPacket & { id: number; status: EventStatus })[]>(
+    'SELECT id, status FROM events WHERE id = ?',
+    [id],
+  );
+  if (rows.length === 0) throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
+  if (rows[0].status !== 'draft') {
+    throw AppError.conflict('Only draft events can be deleted', 'EVENT_NOT_EDITABLE');
+  }
+
   await pool.execute('DELETE FROM events WHERE id = ?', [id]);
 }

@@ -25,5 +25,10 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
 
 export const checkIn = asyncHandler(async (req: Request, res: Response) => {
   const ticket = await ticketsService.checkIn(Number(req.params.id));
-  sendSuccess(res, ticket, 'Soát vé thành công');
+  sendSuccess(res, ticket, 'Check-in successful');
+});
+
+export const checkInByQr = asyncHandler(async (req: Request, res: Response) => {
+  const ticket = await ticketsService.checkInByQr(req.body);
+  sendSuccess(res, ticket, 'Check-in successful');
 });

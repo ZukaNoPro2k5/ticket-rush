@@ -5,13 +5,18 @@ import * as eventService from './service';
 import type { ListEventsQuery, CreateEventInput, UpdateEventInput, ChangeStatusInput } from './validation';
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const result = await eventService.listEvents(req.query as unknown as ListEventsQuery);
+  const includeUnpublished = req.user?.role === 'admin';
+  const result = await eventService.listEvents(
+    req.query as unknown as ListEventsQuery,
+    includeUnpublished,
+  );
   sendSuccess(res, result);
 });
 
 export const getOne = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id, 10);
-  const event = await eventService.getEventById(id);
+  const includeUnpublished = req.user?.role === 'admin';
+  const event = await eventService.getEventById(id, includeUnpublished);
   sendSuccess(res, event);
 });
 
