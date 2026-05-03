@@ -1,9 +1,34 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from '../../config/database';
+import redis from '../../config/redis';
 import { AppError } from '../../shared/AppError';
 import type { ListEventsQuery, CreateEventInput, UpdateEventInput, ChangeStatusInput } from './validation';
 
 type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
+
+const EVENTS_LIST_TTL = 60;
+const EVENT_DETAIL_TTL = 30;
+const EVENTS_LIST_PREFIX = 'events:list:';
+const EVENT_DETAIL_PREFIX = 'events:detail:';
+
+async function cacheGet<T>(key: string): Promise<T | null> {
+  try {
+    const raw = await redis.get(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch { return null; }
+}
+
+async function cacheSet(key: string, value: unknown, ttl: number): Promise<void> {
+  try { await redis.setex(key, ttl, JSON.stringify(value)); } catch { /* ignore */ }
+}
+
+async function invalidateEvent(id: number): Promise<void> {
+  try {
+    await redis.del(`${EVENT_DETAIL_PREFIX}${id}`);
+    const keys = await redis.keys(`${EVENTS_LIST_PREFIX}*`);
+    if (keys.length) await redis.del(...keys);
+  } catch { /* ignore */ }
+}
 
 interface EventRow extends RowDataPacket {
   id: number;
@@ -14,6 +39,7 @@ interface EventRow extends RowDataPacket {
   event_date: string;
   poster_url: string | null;
   status: EventStatus;
+  queue_enabled: number;
   created_by: number;
   created_at: string;
   min_price: number | null;
@@ -38,7 +64,7 @@ interface SeatZoneRow extends RowDataPacket {
 
 const eventSelect = `
   SELECT e.id, e.title, e.description, e.category, e.venue, e.event_date,
-         e.poster_url, e.status, e.created_by, e.created_at,
+         e.poster_url, e.status, e.queue_enabled, e.created_by, e.created_at,
          stats.min_price,
          stats.max_price,
          COALESCE(stats.total_seats, 0) AS total_seats,
@@ -72,6 +98,7 @@ function normalizeEvent(row: EventRow) {
     total_seats: Number(row.total_seats ?? 0),
     average_rating: row.average_rating === null ? null : Number(row.average_rating),
     review_count: Number(row.review_count ?? 0),
+    queue_enabled: Boolean(row.queue_enabled),
   };
 }
 
@@ -81,6 +108,18 @@ async function getEventRecord(id: number) {
 }
 
 export async function listEvents(query: ListEventsQuery, includeUnpublished = false) {
+  if (!includeUnpublished) {
+    const cacheKey = `${EVENTS_LIST_PREFIX}${JSON.stringify(query)}`;
+    const cached = await cacheGet<Awaited<ReturnType<typeof buildListEvents>>>(cacheKey);
+    if (cached) return cached;
+    const result = await buildListEvents(query, false);
+    await cacheSet(cacheKey, result, EVENTS_LIST_TTL);
+    return result;
+  }
+  return buildListEvents(query, true);
+}
+
+async function buildListEvents(query: ListEventsQuery, includeUnpublished: boolean) {
   const { category, status, search, page, limit, sort, order } = query;
   const offset = (page - 1) * limit;
 
@@ -137,6 +176,18 @@ export async function listEvents(query: ListEventsQuery, includeUnpublished = fa
 }
 
 export async function getEventById(id: number, includeUnpublished = false) {
+  if (!includeUnpublished) {
+    const cacheKey = `${EVENT_DETAIL_PREFIX}${id}`;
+    const cached = await cacheGet<Awaited<ReturnType<typeof buildEventDetail>>>(cacheKey);
+    if (cached) return cached;
+    const result = await buildEventDetail(id, false);
+    await cacheSet(cacheKey, result, EVENT_DETAIL_TTL);
+    return result;
+  }
+  return buildEventDetail(id, true);
+}
+
+async function buildEventDetail(id: number, includeUnpublished: boolean) {
   const event = await getEventRecord(id);
   if (!event || (!includeUnpublished && event.status !== 'published')) {
     throw AppError.notFound('Event not found or not published', 'EVENT_NOT_FOUND');
@@ -172,7 +223,7 @@ export async function createEvent(userId: number, input: CreateEventInput) {
      VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`,
     [title, description ?? null, category, venue, event_date, poster_url ?? null, userId],
   );
-
+  await invalidateEvent(result.insertId);
   return getEventById(result.insertId, true);
 }
 
@@ -191,12 +242,13 @@ export async function updateEvent(id: number, input: UpdateEventInput) {
   const fields: string[] = [];
   const values: (string | number | null)[] = [];
 
-  if (input.title !== undefined) fields.push('title = ?'), values.push(input.title);
-  if (input.description !== undefined) fields.push('description = ?'), values.push(input.description);
-  if (input.category !== undefined) fields.push('category = ?'), values.push(input.category);
-  if (input.venue !== undefined) fields.push('venue = ?'), values.push(input.venue);
-  if (input.event_date !== undefined) fields.push('event_date = ?'), values.push(input.event_date);
-  if (input.poster_url !== undefined) fields.push('poster_url = ?'), values.push(input.poster_url);
+  if (input.title !== undefined)         { fields.push('title = ?');         values.push(input.title); }
+  if (input.description !== undefined)   { fields.push('description = ?');   values.push(input.description); }
+  if (input.category !== undefined)      { fields.push('category = ?');      values.push(input.category); }
+  if (input.venue !== undefined)         { fields.push('venue = ?');         values.push(input.venue); }
+  if (input.event_date !== undefined)    { fields.push('event_date = ?');    values.push(input.event_date); }
+  if (input.poster_url !== undefined)    { fields.push('poster_url = ?');    values.push(input.poster_url); }
+  if (input.queue_enabled !== undefined) { fields.push('queue_enabled = ?'); values.push(input.queue_enabled ? 1 : 0); }
 
   if (fields.length === 0) {
     throw AppError.badRequest('No update data provided', 'VALIDATION_ERROR');
@@ -204,7 +256,7 @@ export async function updateEvent(id: number, input: UpdateEventInput) {
 
   values.push(id);
   await pool.execute(`UPDATE events SET ${fields.join(', ')} WHERE id = ?`, values);
-
+  await invalidateEvent(id);
   return getEventById(id, true);
 }
 
@@ -229,6 +281,7 @@ export async function changeStatus(id: number, input: ChangeStatusInput) {
   }
 
   await pool.execute('UPDATE events SET status = ? WHERE id = ?', [nextStatus, id]);
+  await invalidateEvent(id);
   return getEventById(id, true);
 }
 
@@ -243,4 +296,5 @@ export async function deleteEvent(id: number) {
   }
 
   await pool.execute('DELETE FROM events WHERE id = ?', [id]);
+  await invalidateEvent(id);
 }

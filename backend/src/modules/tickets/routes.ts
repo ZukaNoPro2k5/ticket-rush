@@ -6,6 +6,7 @@ const router = Router();
 
 router.get('/my',           authenticate,                     ticketsController.listMy);
 router.post('/check-in',    authenticate, authorize('admin'), ticketsController.checkInByQr);
+router.get('/resolve',      authenticate, authorize('admin'), ticketsController.resolveByQr);
 router.get('/:id',          authenticate,                     ticketsController.getById);
 router.post('/:id/check-in', authenticate, authorize('admin'), ticketsController.checkIn);
 

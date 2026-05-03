@@ -32,3 +32,9 @@ export const checkInByQr = asyncHandler(async (req: Request, res: Response) => {
   const ticket = await ticketsService.checkInByQr(req.body);
   sendSuccess(res, ticket, 'Check-in successful');
 });
+
+export const resolveByQr = asyncHandler(async (req: Request, res: Response) => {
+  const { booking_id, seat_id } = req.query;
+  const result = await ticketsService.resolveTicketByQr(Number(booking_id), Number(seat_id));
+  sendSuccess(res, result);
+});

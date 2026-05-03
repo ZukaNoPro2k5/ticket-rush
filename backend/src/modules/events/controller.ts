@@ -10,6 +10,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
     req.query as unknown as ListEventsQuery,
     includeUnpublished,
   );
+  res.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
   sendSuccess(res, result);
 });
 
@@ -17,6 +18,7 @@ export const getOne = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id, 10);
   const includeUnpublished = req.user?.role === 'admin';
   const event = await eventService.getEventById(id, includeUnpublished);
+  res.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
   sendSuccess(res, event);
 });
 

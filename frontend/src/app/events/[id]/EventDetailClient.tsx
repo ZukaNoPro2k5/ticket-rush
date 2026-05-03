@@ -100,7 +100,7 @@ export default function EventDetailClient({ event, similarEvents }: Props) {
           {tab === 'lineup' && <LineupTab />}
           {tab === 'venue' && <VenueTab event={displayEvent} />}
           {tab === 'faq' && <FaqTab />}
-          {tab === 'reviews' && <ReviewsTab />}
+          {tab === 'reviews' && <ReviewsTab eventId={event.id} />}
         </div>
 
         <DetailSidebarCTA event={displayEvent} minPrice={minPrice} maxPrice={maxPrice} />

@@ -140,7 +140,10 @@ export async function listMyTickets(userId: number, status?: string, page = 1, l
   const total = Number(countRows[0]?.total ?? 0);
 
   const offset = (page - 1) * limit;
-  const [rows] = await pool.execute<RowDataPacket[]>(
+  // pool.query() (not execute) — mysql2 prepared statement protocol has a known
+  // issue binding integers to LIMIT/OFFSET on MySQL 8.x newer revisions:
+  // https://github.com/sidorares/node-mysql2/issues/1239
+  const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT t.id, t.status, t.checked_in_at, t.created_at,
             e.id AS event_id, e.title AS event_title, e.venue, e.event_date,
             sz.name AS zone_name, s.row_label, s.col_number
@@ -152,7 +155,7 @@ export async function listMyTickets(userId: number, status?: string, page = 1, l
      ${where}
      ORDER BY t.created_at DESC
      LIMIT ? OFFSET ?`,
-    [...params, limit, offset],
+    [...params, Number(limit), Number(offset)],
   );
 
   const items = rows.map((r) => ({
@@ -289,4 +292,15 @@ export async function checkInByQr(input: unknown) {
   }
 
   return checkIn(ticket.id);
+}
+
+export async function resolveTicketByQr(bookingId: number, seatId: number) {
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    'SELECT id FROM tickets WHERE booking_id = ? AND seat_id = ? LIMIT 1',
+    [bookingId, seatId],
+  );
+  if (rows.length === 0) {
+    throw AppError.notFound('Vé không tồn tại', 'TICKET_NOT_FOUND');
+  }
+  return { ticket_id: rows[0].id as number };
 }

@@ -1,11 +1,17 @@
 import { Router } from 'express';
+import { validateBody } from '../../middleware/validate';
+import { authenticate } from '../../middleware/auth';
+import { createReviewSchema } from './validation';
+import * as reviewController from './controller';
 
 // Nested under /api/events/:eventId/reviews
 const router = Router({ mergeParams: true });
 
-// TODO: Dev 3 — Reviews routes
+router.get('/',  reviewController.list);
+router.post('/', authenticate, validateBody(createReviewSchema), reviewController.create);
 
 export default router;
 
-// Separate router for DELETE /api/reviews/:id (flat route)
+// Flat route: DELETE /api/reviews/:id
 export const reviewDeleteRouter = Router();
+reviewDeleteRouter.delete('/:id', authenticate, reviewController.remove);

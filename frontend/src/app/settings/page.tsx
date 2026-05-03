@@ -71,7 +71,7 @@ function PasswordInput({
 }
 
 export default function SettingsPage() {
-  const { user } = useAuthStore();
+  useAuthStore();
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
 
   const [form, setForm] = useState({ current: '', next: '', confirm: '' });

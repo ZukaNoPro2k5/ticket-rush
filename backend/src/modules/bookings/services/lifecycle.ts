@@ -1,5 +1,6 @@
 import pool from '../../../config/database';
 import { AppError } from '../../../shared/AppError';
+import { bookingsConfirmedTotal } from '../../../config/metrics';
 import type { BookingRow, BookingSeatRow } from './types';
 import { updateSeatsStatus } from './helpers';
 
@@ -44,6 +45,7 @@ export async function confirmBooking(bookingId: number, userId: number) {
     await updateSeatsStatus(conn, seatIds, 'sold');
 
     await conn.commit();
+    bookingsConfirmedTotal.inc();
     return { bookingId, seatIds };
   } catch (err) {
     await conn.rollback();

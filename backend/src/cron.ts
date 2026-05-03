@@ -3,6 +3,7 @@ import pool from './config/database';
 import { RowDataPacket } from 'mysql2';
 import { getIO } from './config/socket';
 import * as seatsService from './modules/seats/service';
+import { processQueueTick } from './modules/queue/service';
 
 /**
  * Release expired bookings: pending bookings past expires_at
@@ -96,5 +97,14 @@ export function startCronJobs() {
     await releaseLockedSeats();
   });
 
-  console.log('⏰ Cron jobs started (every minute)');
+  // Virtual queue: grant tokens every 5 seconds
+  cron.schedule('*/5 * * * * *', async () => {
+    try {
+      await processQueueTick();
+    } catch (err) {
+      console.error('[Cron] Queue tick error:', err);
+    }
+  });
+
+  console.log('⏰ Cron jobs started (every minute + queue every 5s)');
 }

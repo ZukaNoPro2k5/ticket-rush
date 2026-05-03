@@ -58,6 +58,7 @@ export interface Event {
   event_date: string;
   poster_url: string | null;
   status: EventStatus;
+  queue_enabled?: boolean;
   created_by: number;
   created_at: string;
   min_price: number | null;

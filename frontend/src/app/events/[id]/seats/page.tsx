@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { useSWRConfig } from 'swr';
 import api from '@/lib/api/client';
 import { connectSocket } from '@/lib/socket';
 import { useCountdown } from '@/hooks/useCountdown';
@@ -25,6 +26,7 @@ export default function SeatsPage() {
   const params = useParams();
   const router = useRouter();
   const eventId = Number(params.id);
+  const { mutate } = useSWRConfig();
 
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,7 +170,9 @@ export default function SeatsPage() {
     setSubmitting(true);
     try {
       await api.post(`/bookings/${booking.id}/confirm`);
-      toast.success('Thanh toán thành công. Đang chuyển đến vé của bạn...');
+      // Invalidate any cached lists so my-tickets/order-history show new data instantly
+      mutate((key) => typeof key === 'string' && (key.startsWith('/tickets/my') || key.startsWith('/bookings/my')));
+      toast.success('Thanh toán thành công! Đang chuyển đến vé của bạn...');
       router.push('/tickets');
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Lỗi khi xác nhận thanh toán.'));

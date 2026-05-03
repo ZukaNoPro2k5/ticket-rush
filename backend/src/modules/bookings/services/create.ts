@@ -1,9 +1,61 @@
 import { ResultSetHeader } from 'mysql2';
 import pool from '../../../config/database';
+import redis from '../../../config/redis';
+import { AppError } from '../../../shared/AppError';
+import {
+  bookingsCreatedTotal,
+  bookingsFailedTotal,
+  seatLockContentionTotal,
+} from '../../../config/metrics';
 import type { CreateBookingInput } from '../validation';
 import { applyPromoCode, lockAndValidateSeats, updateSeatsStatus } from './helpers';
 
+// Distributed lock TTL (seconds). Short window — just guards the DB transaction
+// against thundering-herd contention. After commit the DB seat row (status='locked')
+// becomes the source of truth for the 10-minute hold.
+const SEAT_LOCK_TTL_SEC = 15;
+
+// Atomic multi-key lock via Lua. Either ALL seat keys are SET (return 1) or
+// NONE are touched and we get the index (1-based) of the first conflicting seat.
+// Runs single-threaded inside Redis → no race regardless of how many concurrent
+// bookings hit the same seats. Replaces N round-trip SET-NX with 1 EVAL.
+const ATOMIC_LOCK_SCRIPT = `
+local ttl = tonumber(ARGV[1])
+for i = 1, #KEYS do
+  if redis.call('EXISTS', KEYS[i]) == 1 then
+    return i
+  end
+end
+for i = 1, #KEYS do
+  redis.call('SET', KEYS[i], '1', 'EX', ttl)
+end
+return 0
+`;
+
+async function acquireSeatLocks(eventId: number, seatIds: number[]): Promise<string[]> {
+  const keys = seatIds.map((id) => `seat-lock:${eventId}:${id}`);
+  const result = await redis.eval(
+    ATOMIC_LOCK_SCRIPT,
+    keys.length,
+    ...keys,
+    String(SEAT_LOCK_TTL_SEC),
+  );
+  if (Number(result) !== 0) {
+    seatLockContentionTotal.inc();
+    throw new AppError(
+      'Một hoặc nhiều ghế đang được người khác đặt, vui lòng thử lại',
+      409,
+    );
+  }
+  return keys;
+}
+
 export async function createBooking(userId: number, input: CreateBookingInput) {
+  // Fast-fail Redis lock BEFORE opening DB transaction (avoids holding row locks
+  // while waiting on contended seats). The DB FOR UPDATE inside still gives us
+  // strong consistency.
+  const lockKeys = await acquireSeatLocks(input.event_id, input.seat_ids);
+
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -42,6 +94,8 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
 
     await conn.commit();
 
+    bookingsCreatedTotal.inc({ event_id: String(input.event_id) });
+
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     return {
       id: bookingId,
@@ -56,8 +110,14 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
     };
   } catch (err) {
     await conn.rollback();
+    const reason = err instanceof AppError ? err.code : 'UNKNOWN';
+    bookingsFailedTotal.inc({ reason });
     throw err;
   } finally {
     conn.release();
+    // Always release Redis locks — DB state is now source of truth
+    if (lockKeys.length > 0) {
+      redis.del(...lockKeys).catch(() => { /* best-effort cleanup */ });
+    }
   }
 }

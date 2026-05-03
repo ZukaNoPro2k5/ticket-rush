@@ -11,6 +11,12 @@
     "dev": "concurrently -n backend,frontend -c blue,magenta \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "concurrently -n backend,frontend -c blue,magenta \"cd backend && npm start\" \"cd frontend && npm start\"",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
     "db:reseed": "docker compose exec -T mysql mysql -uroot -pticketrush_secret ticketrush < database/seeds/001_seed_data.sql",
     "db:reset": "docker compose down -v && docker compose up -d"
   },

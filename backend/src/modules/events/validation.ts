@@ -19,6 +19,7 @@ export const updateEventSchema = z.object({
   venue: z.string().min(3).max(255).optional(),
   event_date: z.string().refine((v) => !isNaN(Date.parse(v)), 'Ngày không hợp lệ').optional(),
   poster_url: z.string().url().max(500).optional(),
+  queue_enabled: z.boolean().optional(),
 });
 
 export const changeStatusSchema = z.object({

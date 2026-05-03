@@ -77,7 +77,8 @@ export async function listMyBookings(userId: number, status?: string, page = 1, 
   const total = countRows[0].total as number;
 
   const offset = (page - 1) * limit;
-  const [rows] = await pool.execute<RowDataPacket[]>(
+  // Use pool.query (not execute) for LIMIT/OFFSET binding compatibility
+  const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT b.id, b.total_amount, b.status, b.confirmed_at,
             e.id AS event_id, e.title AS event_title, e.event_date, e.poster_url,
             (SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.id) AS seat_count
@@ -86,7 +87,7 @@ export async function listMyBookings(userId: number, status?: string, page = 1, 
      ${where}
      ORDER BY b.created_at DESC
      LIMIT ? OFFSET ?`,
-    [...params, limit, offset],
+    [...params, Number(limit), Number(offset)],
   );
 
   const items = rows.map((r) => ({
