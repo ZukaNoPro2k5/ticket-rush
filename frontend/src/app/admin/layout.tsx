@@ -3,14 +3,15 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Ticket, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Ticket, LogOut, Tag } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils/cn';
 
 const NAV = [
-  { href: '/admin/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/admin/events',    label: 'Sự kiện',    icon: Ticket },
-  { href: '/admin/users',     label: 'Người dùng', icon: Users },
+  { href: '/admin/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+  { href: '/admin/events',       label: 'Sự kiện',      icon: Ticket },
+  { href: '/admin/promo-codes',  label: 'Mã giảm giá', icon: Tag },
+  { href: '/admin/users',        label: 'Người dùng',   icon: Users },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

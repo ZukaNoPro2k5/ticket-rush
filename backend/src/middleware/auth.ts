@@ -43,3 +43,23 @@ export function authorize(...roles: string[]) {
     next();
   };
 }
+
+/**
+ * Soft auth — attaches req.user when a valid Bearer token is present,
+ * but lets the request through even when there is no token.
+ * Use on public endpoints that behave differently for logged-in users
+ * (e.g. events list shows unpublished drafts to admins).
+ */
+export function optionalAuthenticate(req: Request, _res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return next();
+  if (!authHeader.startsWith('Bearer ')) return next();
+
+  try {
+    const payload = jwt.verify(authHeader.split(' ')[1], config.jwt.secret) as AuthPayload;
+    req.user = payload;
+  } catch {
+    // Invalid/expired token — treat as unauthenticated, don't block
+  }
+  next();
+}
