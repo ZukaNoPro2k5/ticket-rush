@@ -8,9 +8,11 @@ interface AuthState {
   token: string | null;
   user: Pick<User, 'id' | 'email' | 'full_name' | 'role'> & { avatar_url?: string | null } | null;
   isAuthenticated: boolean;
+  _hasHydrated: boolean;
 
   setAuth: (token: string, user: AuthState['user']) => void;
   clearAuth: () => void;
+  setHasHydrated: (v: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,6 +21,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       isAuthenticated: false,
+      _hasHydrated: false,
 
       setAuth: (token, user) => {
         set({ token, user, isAuthenticated: true });
@@ -27,6 +30,8 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => {
         set({ token: null, user: null, isAuthenticated: false });
       },
+
+      setHasHydrated: (v) => set({ _hasHydrated: v }),
     }),
     {
       name: 'auth-storage',
@@ -36,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.isAuthenticated = !!state.token;
+          state.setHasHydrated(true);
         }
       },
     },

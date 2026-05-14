@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Check, ChevronDown, Loader2, Pencil, Plus, Search, Tag, Trash2, X,
+  Check, ChevronDown, Loader2, Plus, Search, Tag, TicketPercent, TrendingUp, Users2, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ProtectedRoute } from '@/components/providers';
 import api from '@/lib/api/client';
 import { cn } from '@/lib/utils/cn';
 import { fadeUp, staggerContainer } from '@/lib/motion';
+import EmptyState from '@/components/ui/EmptyState';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -183,7 +184,7 @@ function PromoPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-ink-900/30 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-stone-900/30 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -510,192 +511,244 @@ export default function AdminPromoCodesPage() {
     }
   }
 
+  // Derived stats
+  const totalUsed   = codes.reduce((s, c) => s + c.used_count, 0);
+  const totalLeft   = codes.reduce((s, c) => s + (c.max_uses != null ? Math.max(0, c.max_uses - c.used_count) : 0), 0);
+  const activeCount = codes.filter((c) => promoStatus(c).label === 'Đang mở').length;
+
+  type Tab = 'all' | 'active' | 'expired' | 'upcoming';
+  const [tab, setTab] = useState<Tab>('all');
+  const TAB_LABELS: Record<Tab, string> = {
+    all: 'Tất cả', active: 'Đang hoạt động', expired: 'Hết hạn', upcoming: 'Sắp diễn ra',
+  };
+
+  const tabFiltered = useMemo(() => {
+    const base = filtered;
+    if (tab === 'all')      return base;
+    if (tab === 'active')   return base.filter((c) => promoStatus(c).label === 'Đang mở');
+    if (tab === 'expired')  return base.filter((c) => promoStatus(c).label === 'Hết hạn');
+    if (tab === 'upcoming') return base.filter((c) => promoStatus(c).label === 'Sắp tới');
+    return base;
+  }, [filtered, tab]);
+
   return (
     <ProtectedRoute requireAdmin>
-      <div>
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
+
         {/* Header */}
-        <div className="mb-7 flex items-start justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-stone-900">Mã giảm giá</h1>
-            <p className="mt-1 text-sm text-stone-500">
-              {loading ? '…' : `${codes.length} mã · ${codes.filter((c) => promoStatus(c).label === 'Đang mở').length} đang hoạt động`}
-            </p>
-          </div>
+        <div className="flex items-start justify-between gap-3">
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-600"
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-600"
           >
             <Plus className="h-4 w-4" />
             Tạo mã mới
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-5 max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo mã..."
-            className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-9 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:outline-none"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-stone-400 hover:text-stone-600"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+        {/* Stat strip */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: 'Tổng mã',        value: loading ? '…' : String(codes.length),         icon: Tag,           iconBg: 'bg-amber-50',   iconColor: 'text-amber-600' },
+            { label: 'Đang hoạt động', value: loading ? '…' : String(activeCount),           icon: TicketPercent, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+            { label: 'Tổng lượt dùng', value: loading ? '…' : totalUsed.toLocaleString(),   icon: Users2,        iconBg: 'bg-blue-50',    iconColor: 'text-blue-600' },
+            { label: 'Còn lại',        value: loading ? '…' : totalLeft.toLocaleString(),   icon: TrendingUp,    iconBg: 'bg-violet-50',  iconColor: 'text-violet-600' },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-soft">
+              <span className={`inline-flex rounded-xl p-2 ${s.iconBg}`}>
+                <s.icon className={`h-4 w-4 ${s.iconColor}`} />
+              </span>
+              <p className="mt-3 text-2xl font-bold tabular-nums text-stone-900">{s.value}</p>
+              <p className="mt-0.5 text-[11px] font-medium uppercase tracking-widest text-stone-400">{s.label}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Table card */}
-        <div className="rounded-2xl border border-stone-200 bg-white shadow-soft">
-          {loading ? (
-            <div className="space-y-0 divide-y divide-stone-100">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 px-6 py-4">
-                  <div className="h-4 w-24 animate-pulse rounded-full bg-stone-100" />
-                  <div className="h-4 w-16 animate-pulse rounded-full bg-stone-100" />
-                  <div className="ml-auto h-4 w-12 animate-pulse rounded-full bg-stone-100" />
-                </div>
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <Tag className="h-10 w-10 text-stone-300" />
-              <p className="font-medium text-stone-700">
-                {search ? 'Không tìm thấy mã nào' : 'Chưa có mã giảm giá'}
-              </p>
-              <p className="text-sm text-stone-400">
-                {search ? 'Thử tìm với từ khóa khác' : 'Nhấn "Tạo mã mới" để bắt đầu'}
-              </p>
-              {!search && (
-                <button
-                  onClick={openCreate}
-                  className="mt-1 flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600"
-                >
-                  <Plus className="h-4 w-4" />
-                  Tạo mã đầu tiên
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Table head */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_auto] items-center gap-4 border-b border-stone-100 px-6 py-3">
-                {['Mã', 'Giảm', 'Lượt dùng', 'Kết thúc', 'Trạng thái', ''].map((h) => (
-                  <span key={h} className="text-xs font-semibold uppercase tracking-wide text-stone-400">{h}</span>
-                ))}
-              </div>
-
-              {/* Rows */}
-              <motion.ul
-                variants={staggerContainer(0.04)}
-                initial="hidden"
-                animate="visible"
-                className="divide-y divide-stone-50"
+        {/* Search + filter tabs */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[200px] flex-1 max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm theo mã..."
+              className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-9 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:outline-none"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-stone-400 hover:text-stone-600"
               >
-                {filtered.map((p) => {
-                  const status = promoStatus(p);
-                  return (
-                    <motion.li
-                      key={p.id}
-                      variants={fadeUp}
-                      className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1.5fr_auto] items-center gap-4 px-6 py-4 transition-colors hover:bg-stone-50/60"
-                    >
-                      {/* Code */}
-                      <div className="flex items-center gap-2.5">
-                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50">
-                          <Tag className="h-4 w-4 text-amber-600" />
-                        </span>
-                        <div>
-                          <p className="font-mono text-sm font-semibold tracking-wider text-stone-900">
-                            {p.code}
-                          </p>
-                          <p className="text-xs text-stone-400">
-                            {p.event_id
-                              ? (events.find((e) => e.id === p.event_id)?.title ?? `Event #${p.event_id}`)
-                              : 'Tất cả sự kiện'}
-                          </p>
-                        </div>
-                      </div>
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
 
-                      {/* Discount */}
-                      <span className="text-sm font-semibold text-stone-900">{formatDiscount(p)}</span>
-
-                      {/* Uses */}
-                      <div>
-                        <span className="text-sm text-stone-700">
-                          {p.used_count}
-                          {p.max_uses != null ? `/${p.max_uses}` : ''}
-                        </span>
-                        {p.max_uses != null && (
-                          <div className="mt-1 h-1 w-16 overflow-hidden rounded-full bg-stone-100">
-                            <div
-                              className={cn(
-                                'h-full rounded-full transition-all',
-                                p.used_count / p.max_uses >= 0.9 ? 'bg-red-400' : 'bg-amber-400',
-                              )}
-                              style={{ width: `${Math.min(100, (p.used_count / p.max_uses) * 100)}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Expires */}
-                      <span className="text-sm text-stone-500">{formatDate(p.expires_at)}</span>
-
-                      {/* Status + toggle */}
-                      <div className="flex items-center gap-2">
-                        <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', status.style)}>
-                          {status.label}
-                        </span>
-                        <button
-                          onClick={() => handleToggleActive(p)}
-                          title={p.is_active ? 'Tắt mã' : 'Bật mã'}
-                          className={cn(
-                            'relative h-5 w-9 rounded-full transition-colors duration-200',
-                            p.is_active ? 'bg-amber-400' : 'bg-stone-200',
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200',
-                              p.is_active ? 'left-4' : 'left-0.5',
-                            )}
-                          />
-                        </button>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => openEdit(p)}
-                          className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
-                          title="Chỉnh sửa"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(p.id, p.code)}
-                          disabled={deletingId === p.id}
-                          className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-                          title="Xóa"
-                        >
-                          {deletingId === p.id
-                            ? <Loader2 className="h-4 w-4 animate-spin" />
-                            : <Trash2 className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </motion.li>
-                  );
-                })}
-              </motion.ul>
-            </>
-          )}
+          {/* Filter tabs */}
+          <div className="flex items-center gap-1">
+            {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={cn(
+                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                  tab === t
+                    ? 'bg-stone-900 text-white'
+                    : 'border border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900',
+                )}
+              >
+                {TAB_LABELS[t]}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+
+        {/* Card grid */}
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-56 animate-pulse rounded-2xl bg-stone-100" />
+            ))}
+          </div>
+        ) : tabFiltered.length === 0 ? (
+          <EmptyState
+            variant="promos"
+            headline={search ? 'Không tìm thấy mã nào' : 'Chưa có mã giảm giá'}
+            subtext={search ? 'Thử từ khóa khác.' : 'Nhấn "Tạo mã mới" để bắt đầu.'}
+            action={!search ? (
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600"
+              >
+                <Plus className="h-4 w-4" />
+                Tạo mã đầu tiên
+              </button>
+            ) : undefined}
+            className="rounded-2xl border border-stone-200 bg-white shadow-soft"
+          />
+        ) : (
+          <motion.div
+            variants={staggerContainer(0.05)}
+            initial="hidden"
+            animate="visible"
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {tabFiltered.map((p) => {
+              const status = promoStatus(p);
+              const usagePct = p.max_uses ? Math.min(100, (p.used_count / p.max_uses) * 100) : 0;
+              const nearFull = p.max_uses && p.used_count / p.max_uses >= 0.9;
+              return (
+                <motion.div
+                  key={p.id}
+                  variants={fadeUp}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift"
+                >
+                  {/* Ticket-stub left stripe */}
+                  <div className="absolute inset-y-0 left-0 w-1 rounded-l-2xl bg-amber-400" />
+                  {/* Card top */}
+                  <div className="flex items-start justify-between pl-6 pr-5 pt-5">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50">
+                        <Tag className="h-4 w-4 text-amber-600" />
+                      </span>
+                      <div>
+                        <p className="font-mono text-sm font-bold tracking-widest text-stone-900">{p.code}</p>
+                        <p className="text-xs text-stone-400">
+                          {p.event_id
+                            ? (events.find((e) => e.id === p.event_id)?.title ?? `Event #${p.event_id}`)
+                            : 'Tất cả sự kiện'}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={cn('rounded-full px-2.5 py-0.5 text-[11px] font-semibold', status.style)}>
+                      {status.label}
+                    </span>
+                  </div>
+
+                  {/* Discount value — big */}
+                  <div className="pl-6 pr-5 pt-4">
+                    <p className="text-[11px] font-medium uppercase tracking-widest text-stone-400">Giảm giá</p>
+                    <p className="mt-0.5 text-3xl font-bold tabular-nums leading-none text-stone-900">
+                      {formatDiscount(p)}
+                    </p>
+                  </div>
+
+                  {/* Usage progress */}
+                  <div className="pl-6 pr-5 pt-4">
+                    <div className="mb-1.5 flex items-center justify-between text-xs">
+                      <span className="text-stone-500">Đã dùng</span>
+                      <span className="font-semibold tabular-nums text-stone-700">
+                        {p.used_count}{p.max_uses != null ? `/${p.max_uses}` : ''}
+                      </span>
+                    </div>
+                    {p.max_uses != null ? (
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+                        <div
+                          className={cn('h-full rounded-full transition-all duration-500', nearFull ? 'bg-red-400' : 'bg-amber-400')}
+                          style={{ width: `${usagePct}%` }}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-xs text-stone-400">Không giới hạn</p>
+                    )}
+                  </div>
+
+                  {/* Meta info */}
+                  <div className="mt-4 space-y-1 border-t border-stone-100 pl-6 pr-5 py-3 text-xs text-stone-500">
+                    <div className="flex justify-between">
+                      <span>Hiệu lực</span>
+                      <span className="font-medium text-stone-700">
+                        {formatDate(p.starts_at)} → {formatDate(p.expires_at)}
+                      </span>
+                    </div>
+                    {p.min_amount > 0 && (
+                      <div className="flex justify-between">
+                        <span>Đơn tối thiểu</span>
+                        <span className="font-medium text-stone-700">{p.min_amount.toLocaleString('vi-VN')}đ</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer actions */}
+                  <div className="mt-auto flex items-center justify-between border-t border-stone-100 pl-6 pr-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleActive(p)}
+                        title={p.is_active ? 'Tắt mã' : 'Bật mã'}
+                        className={cn(
+                          'relative h-5 w-9 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400',
+                          p.is_active ? 'bg-amber-400' : 'bg-stone-200',
+                        )}
+                      >
+                        <span className={cn(
+                          'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200',
+                          p.is_active ? 'left-4' : 'left-0.5',
+                        )} />
+                      </button>
+                      <span className="text-xs text-stone-400">{p.is_active ? 'Đang bật' : 'Đã tắt'}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEdit(p)}
+                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-100"
+                      >
+                        Chỉnh sửa
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p.id, p.code)}
+                        disabled={deletingId === p.id}
+                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40"
+                      >
+                        {deletingId === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Vô hiệu hóa'}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+      </motion.div>
 
       {/* Slide-over panel */}
       <PromoPanel

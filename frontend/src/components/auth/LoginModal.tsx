@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Ticket, X } from 'lucide-react';
 import { EASE_OUT_EXPO } from '@/lib/motion';
@@ -12,7 +13,16 @@ import { RegisterForm } from './RegisterForm';
 export function LoginModal() {
   const { isAuthenticated } = useAuthStore();
   const { loginModalOpen, loginModalMode, openLoginModal, closeLoginModal } = useUIStore();
+  const router = useRouter();
   const tab = loginModalMode;
+
+  const handleAuthSuccess = () => {
+    closeLoginModal();
+    const freshUser = useAuthStore.getState().user;
+    if (freshUser?.role === 'admin') {
+      router.push('/admin/dashboard');
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated && loginModalOpen) setTimeout(closeLoginModal, 400);
@@ -98,10 +108,10 @@ export function LoginModal() {
                 }}
               >
                 <div className="w-1/2 px-8 pb-8 pt-6">
-                  <LoginForm onSuccess={closeLoginModal} />
+                  <LoginForm onSuccess={handleAuthSuccess} />
                 </div>
                 <div className="w-1/2 px-8 pb-8 pt-6">
-                  <RegisterForm onSuccess={closeLoginModal} />
+                  <RegisterForm onSuccess={handleAuthSuccess} />
                 </div>
               </div>
             </div>

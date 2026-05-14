@@ -19,16 +19,18 @@ const NAV = [
 ];
 
 export function AccountLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!isAuthenticated) {
       router.replace('/');
     }
-  }, [isAuthenticated, router]);
+  }, [_hasHydrated, isAuthenticated, router]);
 
+  if (!_hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   return (
@@ -59,7 +61,7 @@ export function AccountLayout({ children }: { children: React.ReactNode }) {
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-base font-bold text-white">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-amber-500 text-base font-bold text-white">
                   {user.full_name.charAt(0).toUpperCase()}
                 </span>
               )}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AlertCircle } from 'lucide-react';
 import type { ApiResponse, Event, EventDetail } from '@/types';
-import { DetailNavbar } from '@/components/event-detail';
+import { Navbar } from '@/components/layout/Navbar';
 import EventDetailClient from './EventDetailClient';
 
 export const dynamic = 'force-dynamic';
@@ -79,7 +79,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   if (!event) {
     return (
       <main className="min-h-screen bg-stone-50">
-        <DetailNavbar />
+        <Navbar variant="solid" />
         <section className="mx-auto flex max-w-3xl flex-col items-center px-4 py-24 text-center">
           <div className="grid h-16 w-16 place-items-center rounded-full bg-red-50">
             <AlertCircle className="h-7 w-7 text-red-500" />

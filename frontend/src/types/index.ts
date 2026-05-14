@@ -45,8 +45,9 @@ export interface AuthData {
 }
 
 // --- Event ---
-export type EventCategory = 'music' | 'stage' | 'sports' | 'workshop' | 'other';
+export type EventCategory = 'music' | 'stage' | 'sports' | 'workshop' | 'other' | 'arts' | 'tech' | 'food' | 'entertainment';
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
+export type SeatingMode = 'seated' | 'zoned' | 'admission';
 
 /** Matches backend GET /api/events list item */
 export interface Event {
@@ -54,6 +55,7 @@ export interface Event {
   title: string;
   description: string | null;
   category: EventCategory;
+  seating_mode: SeatingMode;
   venue: string;
   event_date: string;
   poster_url: string | null;
@@ -65,6 +67,27 @@ export interface Event {
   max_price: number | null;
   available_seats: number | null;
   total_seats: number | null;
+  average_rating?: number | null;
+  review_count?: number;
+}
+
+export interface AdminEvent {
+  id: number;
+  title: string;
+  category: EventCategory;
+  venue: string;
+  event_date: string;
+  poster_url: string | null;
+  status: EventStatus;
+  created_at: string;
+  min_price: number | null;
+  max_price: number | null;
+  total_seats: number;
+  available_seats: number;
+  sold_seats: number;
+  revenue: number;
+  average_rating: number | null;
+  review_count: number;
 }
 
 /** Matches backend GET /api/events/:id (includes seat_zones) */
@@ -81,6 +104,8 @@ export interface SeatZone {
   color: string;
   total_rows: number;
   total_cols: number;
+  available_seats?: number;
+  total_seats?: number;
 }
 
 // --- Display model (derived from Event for UI rendering) ---
@@ -114,16 +139,7 @@ export interface SeatZoneSummary extends SeatZone {
   total_seats: number;
 }
 
-// --- Seat Zone ---
-export interface SeatZone {
-  id: number;
-  event_id: number;
-  name: string;
-  price: number;
-  color: string;
-  total_rows: number;
-  total_cols: number;
-}
+// --- Seat Zone (second definition removed — see SeatZone above) ---
 
 // --- Seat ---
 export type SeatStatus = 'available' | 'locked' | 'sold';

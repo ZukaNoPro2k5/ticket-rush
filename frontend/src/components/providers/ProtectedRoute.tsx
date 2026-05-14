@@ -10,10 +10,11 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!isAuthenticated) {
       router.replace('/login');
       return;
@@ -22,8 +23,9 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     if (requireAdmin && user?.role !== 'admin') {
       router.replace('/');
     }
-  }, [isAuthenticated, user, requireAdmin, router]);
+  }, [_hasHydrated, isAuthenticated, user, requireAdmin, router]);
 
+  if (!_hasHydrated) return null;
   if (!isAuthenticated) return null;
   if (requireAdmin && user?.role !== 'admin') return null;
 

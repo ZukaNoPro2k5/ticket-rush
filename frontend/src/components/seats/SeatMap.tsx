@@ -119,9 +119,15 @@ export function SeatMap({ zones, selectedIds, booking, onToggleSeat }: Props) {
         ))}
 
         {zones.length === 0 && (
-          <p className="py-12 text-center text-sm text-gray-400">
-            Sự kiện này chưa có thông tin ghế.
-          </p>
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-stone-100">
+              <svg className="h-7 w-7 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-stone-600">Chưa có sơ đồ ghế</p>
+            <p className="text-xs text-stone-400">Ban tổ chức chưa cấu hình ghế cho sự kiện này.</p>
+          </div>
         )}
       </div>
     </div>

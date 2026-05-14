@@ -1,12 +1,14 @@
 import { z } from 'zod';
 
-const categoryEnum = z.enum(['music', 'stage', 'sports', 'workshop', 'other']);
+const categoryEnum = z.enum(['music', 'stage', 'sports', 'workshop', 'other', 'arts', 'tech', 'food', 'entertainment']);
 const statusEnum = z.enum(['draft', 'published', 'cancelled', 'completed']);
+const seatingModeEnum = z.enum(['seated', 'zoned', 'admission']);
 
 export const createEventSchema = z.object({
   title: z.string().min(3, 'Tiêu đề tối thiểu 3 ký tự').max(255),
   description: z.string().max(5000).optional(),
   category: categoryEnum.default('other'),
+  seating_mode: seatingModeEnum.default('seated'),
   venue: z.string().min(3, 'Địa điểm tối thiểu 3 ký tự').max(255),
   event_date: z.string().refine((v) => !isNaN(Date.parse(v)), 'Ngày không hợp lệ'),
   poster_url: z.string().url('URL poster không hợp lệ').max(500).optional(),
@@ -16,6 +18,7 @@ export const updateEventSchema = z.object({
   title: z.string().min(3).max(255).optional(),
   description: z.string().max(5000).optional(),
   category: categoryEnum.optional(),
+  seating_mode: seatingModeEnum.optional(),
   venue: z.string().min(3).max(255).optional(),
   event_date: z.string().refine((v) => !isNaN(Date.parse(v)), 'Ngày không hợp lệ').optional(),
   poster_url: z.string().url().max(500).optional(),

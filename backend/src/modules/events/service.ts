@@ -217,11 +217,11 @@ async function buildEventDetail(id: number, includeUnpublished: boolean) {
 }
 
 export async function createEvent(userId: number, input: CreateEventInput) {
-  const { title, description, category, venue, event_date, poster_url } = input;
+  const { title, description, category, seating_mode, venue, event_date, poster_url } = input;
   const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO events (title, description, category, venue, event_date, poster_url, status, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`,
-    [title, description ?? null, category, venue, event_date, poster_url ?? null, userId],
+    `INSERT INTO events (title, description, category, seating_mode, venue, event_date, poster_url, status, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?)`,
+    [title, description ?? null, category, seating_mode ?? 'seated', venue, event_date, poster_url ?? null, userId],
   );
   await invalidateEvent(result.insertId);
   return getEventById(result.insertId, true);
@@ -245,6 +245,7 @@ export async function updateEvent(id: number, input: UpdateEventInput) {
   if (input.title !== undefined)         { fields.push('title = ?');         values.push(input.title); }
   if (input.description !== undefined)   { fields.push('description = ?');   values.push(input.description); }
   if (input.category !== undefined)      { fields.push('category = ?');      values.push(input.category); }
+  if (input.seating_mode !== undefined)  { fields.push('seating_mode = ?');  values.push(input.seating_mode); }
   if (input.venue !== undefined)         { fields.push('venue = ?');         values.push(input.venue); }
   if (input.event_date !== undefined)    { fields.push('event_date = ?');    values.push(input.event_date); }
   if (input.poster_url !== undefined)    { fields.push('poster_url = ?');    values.push(input.poster_url); }

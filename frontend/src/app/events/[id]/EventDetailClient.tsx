@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import type { DisplayEvent, Event, EventCategory, EventDetail } from '@/types';
+import { Navbar } from '@/components/layout/Navbar';
 import type { EventTabKey } from '@/data/eventDetailData';
 import {
   AboutTab,
-  DetailNavbar,
   DetailSidebarCTA,
   EventHero,
   EventTabs,
@@ -89,7 +89,7 @@ export default function EventDetailClient({ event, similarEvents }: Props) {
 
   return (
     <main className="min-h-screen bg-stone-50 pb-24 lg:pb-0">
-      <DetailNavbar />
+      <Navbar variant="solid" />
       <EventHero event={displayEvent} />
 
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 lg:grid-cols-[1fr_360px] lg:px-8">

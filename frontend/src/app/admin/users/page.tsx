@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Users as UsersIcon, ShieldCheck, User } from 'lucide-react';
+import { Search, Users as UsersIcon } from 'lucide-react';
 import { fadeUp } from '@/lib/motion';
+import EmptyState from '@/components/ui/EmptyState';
 import api from '@/lib/api/client';
 
 interface UserRow {
@@ -23,6 +24,25 @@ interface Pagination {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+const AVATAR_COLORS = [
+  'bg-amber-500',
+  'bg-sky-500',
+  'bg-emerald-500',
+  'bg-violet-500',
+  'bg-rose-500',
+  'bg-cyan-500',
+];
+
+function avatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffff;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+function initials(name: string) {
+  return name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
 export default function AdminUsersPage() {
@@ -66,13 +86,6 @@ export default function AdminUsersPage() {
     <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-stone-900">Người dùng</h1>
-          <p className="mt-1 text-sm text-stone-400">
-            {pagination ? `${pagination.total} tài khoản` : '…'}
-          </p>
-        </div>
-
         {/* Search */}
         <div className="relative w-64">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
@@ -101,10 +114,11 @@ export default function AdminUsersPage() {
             ))}
           </div>
         ) : users.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <UsersIcon className="h-10 w-10 text-stone-200" />
-            <p className="text-sm text-stone-400">Không tìm thấy người dùng nào</p>
-          </div>
+          <EmptyState
+            variant="users"
+            headline="Không tìm thấy người dùng"
+            subtext="Thử từ khóa khác."
+          />
         ) : (
           <div className="divide-y divide-stone-100">
             {/* Table head */}
@@ -120,23 +134,20 @@ export default function AdminUsersPage() {
                 className="grid grid-cols-[2fr_2fr_1fr_1fr] items-center gap-2 px-5 py-3.5 hover:bg-stone-50 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-500">
-                    {u.role === 'admin'
-                      ? <ShieldCheck className="h-4 w-4 text-amber-500" />
-                      : <User className="h-4 w-4" />
-                    }
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${avatarColor(u.full_name)} text-[10px] font-bold text-white`}>
+                    {initials(u.full_name)}
                   </div>
                   <span className="truncate text-sm font-medium text-stone-900">{u.full_name}</span>
                 </div>
                 <span className="truncate text-sm text-stone-500">{u.email}</span>
                 <span>
                   {u.role === 'admin' ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-                      <ShieldCheck className="h-3 w-3" /> Admin
+                    <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200/60">
+                      Admin
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-500">
-                      <User className="h-3 w-3" /> User
+                    <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-500">
+                      User
                     </span>
                   )}
                 </span>

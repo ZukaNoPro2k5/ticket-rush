@@ -1,5 +1,6 @@
 import api from './client';
 import type {
+  AdminEvent,
   ApiResponse,
   Event,
   EventCategory,
@@ -23,6 +24,7 @@ export interface EventFormPayload {
   title: string;
   description?: string;
   category: EventCategory;
+  seating_mode?: import('@/types').SeatingMode;
   venue: string;
   event_date: string;
   poster_url?: string;
@@ -62,6 +64,25 @@ export async function changeEventStatus(id: number, status: Exclude<EventStatus,
 export async function checkInTicket(ticketId: number): Promise<unknown> {
   const res = await api.post<ApiResponse<unknown>>(`/tickets/${ticketId}/check-in`);
   return res.data.data;
+}
+
+export interface AdminEventsParams {
+  status?: string;
+  category?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function listAdminEvents(params: AdminEventsParams = {}): Promise<{
+  events: AdminEvent[];
+  pagination: { page: number; limit: number; total: number; total_pages: number };
+}> {
+  const res = await api.get<ApiResponse<{
+    events: AdminEvent[];
+    pagination: { page: number; limit: number; total: number; total_pages: number };
+  }>>('/admin/events', { params });
+  return res.data.data!;
 }
 
 function isNotFound(err: unknown): boolean {

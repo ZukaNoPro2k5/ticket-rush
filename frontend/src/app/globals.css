@@ -49,3 +49,254 @@ body {
     radial-gradient(at 80% 20%, rgba(245, 158, 11, 0.10) 0, transparent 50%),
     radial-gradient(at 30% 90%, rgba(180, 83, 9, 0.14) 0, transparent 50%);
 }
+
+/* ─── Typography scale — inside @layer components so Tailwind utilities can override ─── */
+@layer components {
+  .page-title {
+    font-family: var(--font-jakarta), var(--font-be-vietnam-pro), sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+    color: #1c1917;
+  }
+
+  .section-title {
+    font-family: var(--font-jakarta), var(--font-be-vietnam-pro), sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: #44403c;
+  }
+
+  .kpi-number {
+    font-family: var(--font-jakarta), var(--font-be-vietnam-pro), sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: #1c1917;
+  }
+
+  .meta-text {
+    font-size: 0.6875rem;
+    color: #78716c;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIQUID GLASS — refractive frosted surfaces inspired by Apple's design system
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Aurora background — animated colored blobs that glass refracts ── */
+.aurora-bg {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(180deg, #fbf8f3 0%, #f5f1ea 100%);
+}
+.aurora-bg::before,
+.aurora-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.aurora-bg::before {
+  background:
+    radial-gradient(40rem 30rem at 12% 8%,  rgba(251, 191, 36, 0.45), transparent 60%),
+    radial-gradient(36rem 28rem at 88% 16%, rgba(244, 114, 182, 0.30), transparent 60%),
+    radial-gradient(44rem 32rem at 78% 92%, rgba(56, 189, 248, 0.32),  transparent 60%),
+    radial-gradient(38rem 30rem at 18% 84%, rgba(167, 139, 250, 0.30), transparent 60%),
+    radial-gradient(30rem 22rem at 50% 50%, rgba(52, 211, 153, 0.18),  transparent 60%);
+  filter: blur(6px) saturate(1.1);
+  animation: aurora-drift 28s ease-in-out infinite alternate;
+}
+.aurora-bg::after {
+  /* subtle film-grain / noise for tactile feel */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+}
+
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0,  0,  0) scale(1);   }
+  50%  { transform: translate3d(2%, -2%, 0) scale(1.06);}
+  100% { transform: translate3d(-2%, 1%, 0) scale(1.02);}
+}
+
+/* Aurora variant for dark sidebar */
+.aurora-bg-dark {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(180deg, #1c1917 0%, #0c0a09 100%);
+}
+.aurora-bg-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(24rem 32rem at 50% -10%, rgba(245, 158, 11, 0.28), transparent 60%),
+    radial-gradient(26rem 28rem at 50% 110%, rgba(244, 63, 94,  0.22), transparent 60%);
+  filter: blur(4px);
+}
+
+/* ── Core glass surfaces ─────────────────────────────────────────── */
+
+@layer components {
+  /* Standard frosted pane — for cards, panels, modals on light bg */
+  .glass-pane {
+    position: relative;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72) 0%,
+      rgba(255, 255, 255, 0.48) 100%
+    );
+    backdrop-filter: blur(22px) saturate(1.6);
+    -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.85) inset,        /* top inner highlight */
+      0 -1px 0 0 rgba(255, 255, 255, 0.18) inset,       /* bottom inner */
+      0 12px 32px -8px rgba(28, 25, 23, 0.12),          /* soft outer drop */
+      0 2px 6px -1px rgba(28, 25, 23, 0.06);
+    border-radius: 1rem;
+  }
+
+  /* Specular highlight overlay — adds a subtle gloss arc on top */
+  .glass-pane::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0)   42%
+    );
+    mix-blend-mode: overlay;
+    opacity: 0.7;
+  }
+
+  /* Stronger, more reflective variant — for hero/spotlight cards */
+  .glass-hero {
+    position: relative;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.55) 100%);
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.95) inset,
+      0 -1px 0 0 rgba(255, 255, 255, 0.22) inset,
+      0 20px 48px -12px rgba(28, 25, 23, 0.18),
+      0 4px 12px -2px rgba(28, 25, 23, 0.08);
+    border-radius: 1.25rem;
+  }
+  .glass-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.6) 0%,
+      rgba(255, 255, 255, 0)  38%
+    );
+    mix-blend-mode: overlay;
+    opacity: 0.85;
+  }
+
+  /* Quiet variant — subtle, for nested elements inside other glass */
+  .glass-soft {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(14px) saturate(1.3);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.7) inset,
+      0 4px 14px -4px rgba(28, 25, 23, 0.08);
+    border-radius: 0.875rem;
+  }
+
+  /* Dark glass — for sidebar/topbar on dark surfaces */
+  .glass-dark {
+    position: relative;
+    background: linear-gradient(
+      180deg,
+      rgba(28, 25, 23, 0.78) 0%,
+      rgba(12, 10, 9,  0.88) 100%
+    );
+    backdrop-filter: blur(26px) saturate(1.4);
+    -webkit-backdrop-filter: blur(26px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.10) inset,
+      0 -1px 0 0 rgba(0, 0, 0, 0.6) inset,
+      0 24px 48px -12px rgba(0, 0, 0, 0.4);
+  }
+  .glass-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0) 30%
+    );
+  }
+
+  /* Glass pill — for chips, badges, pill buttons */
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.8) inset,
+      0 2px 8px -2px rgba(28, 25, 23, 0.08);
+  }
+
+  /* Frosted icon tile — small colored glass square (for KPI icons) */
+  .glass-icon {
+    backdrop-filter: blur(10px) saturate(1.5);
+    -webkit-backdrop-filter: blur(10px) saturate(1.5);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.7) inset,
+      0 4px 12px -3px rgba(28, 25, 23, 0.12);
+  }
+}
+
+/* ── Hover lift for glass cards ── */
+.glass-lift {
+  transition: transform 200ms cubic-bezier(.2,.8,.2,1), box-shadow 200ms ease;
+}
+.glass-lift:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.95) inset,
+    0 -1px 0 0 rgba(255, 255, 255, 0.22) inset,
+    0 24px 56px -10px rgba(28, 25, 23, 0.20),
+    0 6px 16px -3px rgba(28, 25, 23, 0.10);
+}
+
+/* ── Safari fallback: opaque backgrounds when no backdrop-filter support ── */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-pane,
+  .glass-hero,
+  .glass-soft,
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.92);
+  }
+  .glass-dark {
+    background: rgba(28, 25, 23, 0.96);
+  }
+}

@@ -12,6 +12,8 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.googleusercontent.com' },
       { protocol: 'https', hostname: '*.fbcdn.net' },
       { protocol: 'https', hostname: 'platform-lookaside.fbsbx.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: '*.unsplash.com' },
     ],
     // Modern formats: AVIF (nhỏ nhất) → WebP → fallback nguyên bản.
     formats: ['image/avif', 'image/webp'],
