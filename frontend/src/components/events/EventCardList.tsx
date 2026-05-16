@@ -1,6 +1,7 @@
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { ArrowRight, Calendar, MapPin } from 'lucide-react';
+import { EventPosterImage } from '@/components/common/EventPosterImage';
 
 function formatVnd(value: number): string {
   return `${value.toLocaleString('vi-VN')}đ`;
@@ -13,9 +14,9 @@ export function EventCardList({ event }: { event: DisplayEvent }) {
       className="group flex gap-4 overflow-hidden rounded-2xl border border-stone-200 bg-white p-3 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift"
     >
       <div className="relative aspect-[4/3] w-40 flex-shrink-0 overflow-hidden rounded-xl bg-stone-100 sm:w-56">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <EventPosterImage
           src={event.poster}
+          category={event.categoryKey}
           alt={event.title}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"

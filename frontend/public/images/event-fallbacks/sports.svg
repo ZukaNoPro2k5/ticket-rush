@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Sports event poster">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1917"/>
+      <stop offset=".48" stop-color="#166534"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <rect x="120" y="150" width="960" height="500" rx="42" fill="none" stroke="#fafaf9" stroke-width="16" opacity=".34"/>
+  <line x1="600" y1="150" x2="600" y2="650" stroke="#fafaf9" stroke-width="12" opacity=".28"/>
+  <circle cx="600" cy="400" r="110" fill="none" stroke="#fafaf9" stroke-width="14" opacity=".32"/>
+  <circle cx="600" cy="400" r="62" fill="#f59e0b" opacity=".88"/>
+  <path d="M555 400h90M600 355v90" stroke="#fafaf9" stroke-width="16" stroke-linecap="round" opacity=".9"/>
+  <text x="72" y="714" fill="#fafaf9" font-family="Arial, sans-serif" font-size="54" font-weight="700">TicketRush</text>
+</svg>

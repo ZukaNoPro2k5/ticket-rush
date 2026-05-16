@@ -1,7 +1,5 @@
 import { ResultSetHeader } from 'mysql2';
 import pool from '../../../config/database';
-<<<<<<< Updated upstream
-=======
 import redis from '../../../config/redis';
 import { AppError } from '../../../shared/AppError';
 import {
@@ -10,7 +8,6 @@ import {
   seatLockContentionTotal,
 } from '../../../config/metrics';
 import { consumeGrant } from '../../queue/service';
->>>>>>> Stashed changes
 import type { CreateBookingInput } from '../validation';
 import {
   applyPromoCode,
@@ -20,9 +17,6 @@ import {
   updateSeatsStatus,
 } from './helpers';
 
-<<<<<<< Updated upstream
-export async function createBooking(userId: number, input: CreateBookingInput) {
-=======
 const SEAT_LOCK_TTL_SEC = 15;
 
 const ATOMIC_LOCK_SCRIPT = `
@@ -46,6 +40,7 @@ async function acquireSeatLocks(eventId: number, seatIds: number[]): Promise<str
     ...keys,
     String(SEAT_LOCK_TTL_SEC),
   );
+
   if (Number(result) !== 0) {
     seatLockContentionTotal.inc();
     throw new AppError(
@@ -54,6 +49,7 @@ async function acquireSeatLocks(eventId: number, seatIds: number[]): Promise<str
       'SEATS_UNAVAILABLE',
     );
   }
+
   return keys;
 }
 
@@ -62,9 +58,8 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
 
   const lockKeys = await acquireSeatLocks(input.event_id, input.seat_ids);
   let queueEnabled = false;
-
->>>>>>> Stashed changes
   const conn = await pool.getConnection();
+
   try {
     await conn.beginTransaction();
 
@@ -104,15 +99,11 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
 
     await conn.commit();
 
-<<<<<<< Updated upstream
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-=======
     if (queueEnabled) {
       consumeGrant(input.event_id, userId).catch(() => { /* best-effort cleanup */ });
     }
     bookingsCreatedTotal.inc({ event_id: String(input.event_id) });
 
->>>>>>> Stashed changes
     return {
       id: bookingId,
       event_id: input.event_id,
@@ -126,14 +117,12 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
     };
   } catch (err) {
     await conn.rollback();
+    bookingsFailedTotal.inc({ event_id: String(input.event_id) });
     throw err;
   } finally {
     conn.release();
-<<<<<<< Updated upstream
-=======
     if (lockKeys.length > 0) {
       redis.del(...lockKeys).catch(() => { /* best-effort cleanup */ });
     }
->>>>>>> Stashed changes
   }
 }

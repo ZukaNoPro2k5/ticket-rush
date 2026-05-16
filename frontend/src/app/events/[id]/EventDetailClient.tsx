@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { DisplayEvent, Event, EventCategory, EventDetail } from '@/types';
 import type { EventTabKey } from '@/data/eventDetailData';
+import { resolveEventPoster } from '@/lib/utils/eventImages';
 import {
   AboutTab,
   DetailNavbar,
@@ -61,7 +62,7 @@ function toDisplayEvent(e: Event): DisplayEvent {
     date: e.event_date,
     dateLabel: `${weekdays[date.getDay()]}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`,
     timeLabel: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
-    poster: e.poster_url || 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200&q=80',
+    poster: resolveEventPoster(e.poster_url, e.category),
     priceFrom: e.min_price ?? 0,
     priceTo: e.max_price ?? e.min_price ?? 0,
     soldPercent,

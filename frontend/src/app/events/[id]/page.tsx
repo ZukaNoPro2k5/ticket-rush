@@ -14,19 +14,27 @@ const API_BASE = (
 ).replace(/\/$/, '');
 const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200&q=80';
 
-async function fetchApiData<T>(path: string): Promise<T | null> {
+type ApiFetchResult<T> = {
+  data: T | null;
+  status: number | null;
+  failed: boolean;
+};
+
+async function fetchApiData<T>(path: string): Promise<ApiFetchResult<T>> {
   try {
     const res = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
-    if (!res.ok) return null;
+    if (!res.ok) return { data: null, status: res.status, failed: false };
     const body = (await res.json()) as ApiResponse<T>;
-    return body.data ?? null;
+    return { data: body.data ?? null, status: res.status, failed: false };
   } catch {
-    return null;
+    return { data: null, status: null, failed: true };
   }
 }
 
-async function fetchEvent(id: number): Promise<EventDetail | null> {
-  if (!Number.isInteger(id) || id <= 0) return null;
+async function fetchEvent(id: number): Promise<ApiFetchResult<EventDetail>> {
+  if (!Number.isInteger(id) || id <= 0) {
+    return { data: null, status: 400, failed: false };
+  }
   return fetchApiData<EventDetail>(`/events/${id}`);
 }
 
@@ -37,8 +45,8 @@ async function fetchSimilarEvents(event: EventDetail): Promise<Event[]> {
     sort: 'event_date',
     order: 'asc',
   });
-  const data = await fetchApiData<{ events: Event[] }>(`/events?${params.toString()}`);
-  return (data?.events ?? []).filter((item) => item.id !== event.id).slice(0, 4);
+  const result = await fetchApiData<{ events: Event[] }>(`/events?${params.toString()}`);
+  return (result.data?.events ?? []).filter((item) => item.id !== event.id).slice(0, 4);
 }
 
 function buildDescription(event: EventDetail): string {
@@ -48,7 +56,7 @@ function buildDescription(event: EventDetail): string {
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const event = await fetchEvent(Number(params.id));
+  const { data: event } = await fetchEvent(Number(params.id));
   if (!event) {
     return {
       title: 'Không tìm thấy sự kiện | TicketRush',
@@ -78,9 +86,16 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
-  const event = await fetchEvent(Number(params.id));
+  const eventResult = await fetchEvent(Number(params.id));
+  const event = eventResult.data;
 
   if (!event) {
+    const apiUnavailable = eventResult.failed || (eventResult.status !== null && eventResult.status >= 500);
+    const title = apiUnavailable ? 'Backend chưa sẵn sàng' : 'Không tìm thấy sự kiện';
+    const description = apiUnavailable
+      ? 'Không thể tải dữ liệu sự kiện từ API. Hãy kiểm tra backend rồi thử lại.'
+      : 'Sự kiện có thể chưa được publish, đã bị hủy hoặc không tồn tại.';
+
     return (
       <main className="min-h-screen bg-stone-50">
         <DetailNavbar />
@@ -88,10 +103,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <div className="grid h-16 w-16 place-items-center rounded-full bg-red-50">
             <AlertCircle className="h-7 w-7 text-red-500" />
           </div>
-          <h1 className="mt-5 font-display text-2xl font-bold text-stone-900">Không tìm thấy sự kiện</h1>
-          <p className="mt-2 text-sm text-stone-500">
-            Sự kiện có thể chưa được publish, đã bị hủy hoặc backend chưa sẵn sàng.
-          </p>
+          <h1 className="mt-5 font-display text-2xl font-bold text-stone-900">{title}</h1>
+          <p className="mt-2 text-sm text-stone-500">{description}</p>
           <Link
             href="/events"
             className="mt-6 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-amber-600"

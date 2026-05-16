@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Stage event poster">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c1917"/>
+      <stop offset=".55" stop-color="#44403c"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <path d="M0 0h1200v140H0z" fill="#fafaf9" opacity=".07"/>
+  <path d="M140 610h920v90H140z" fill="#1c1917" opacity=".55"/>
+  <path d="M250 220h700v390H250z" fill="#fafaf9" opacity=".1"/>
+  <path d="M320 280h560v260H320z" fill="#f59e0b" opacity=".2"/>
+  <circle cx="380" cy="190" r="56" fill="#fbbf24" opacity=".72"/>
+  <circle cx="600" cy="190" r="56" fill="#fbbf24" opacity=".72"/>
+  <circle cx="820" cy="190" r="56" fill="#fbbf24" opacity=".72"/>
+  <path d="M380 246 260 610h240zM600 246 480 610h240zM820 246 700 610h240z" fill="#f59e0b" opacity=".22"/>
+  <text x="72" y="714" fill="#fafaf9" font-family="Arial, sans-serif" font-size="54" font-weight="700">TicketRush</text>
+</svg>

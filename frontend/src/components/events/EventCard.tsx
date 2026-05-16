@@ -1,6 +1,7 @@
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
+import { EventPosterImage } from '@/components/common/EventPosterImage';
 import { EVENT_CATEGORY_OPTIONS } from './EventsCategoryBar';
 
 const BADGE_MAP: Record<NonNullable<DisplayEvent['badge']>, { label: string; cls: string }> = {
@@ -21,9 +22,9 @@ export function EventCard({ event }: { event: DisplayEvent }) {
         className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft transition-shadow duration-200 hover:shadow-lift"
       >
         <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <EventPosterImage
             src={event.poster}
+            category={event.categoryKey}
             alt={event.title}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"

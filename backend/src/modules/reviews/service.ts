@@ -1,6 +1,4 @@
-<<<<<<< Updated upstream
 // TODO: Dev 3 — Reviews service
-=======
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../../config/database';
 import { AppError } from '../../shared/AppError';
@@ -131,4 +129,3 @@ export async function deleteReview(userId: number, reviewId: number, isAdmin: bo
   }
   await pool.execute('DELETE FROM reviews WHERE id = ?', [reviewId]);
 }
->>>>>>> Stashed changes

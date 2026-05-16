@@ -4,16 +4,24 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Calendar, ChevronDown, ChevronLeft, ChevronRight, Flame, MapPin, ArrowRight,
+  Calendar,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  MapPin,
+  ArrowRight,
 } from 'lucide-react';
 import { HERO_SLIDES, type HeroSlide } from '@/data/uiConfig';
 import type { DisplayEvent } from '@/types';
+import { EventPosterImage } from '@/components/common/EventPosterImage';
+import { resolveEventPoster } from '@/lib/utils/eventImages';
 
 const AUTOPLAY_MS = 7000;
 
 const BADGE_LABELS: Record<string, string> = {
-  'hot': 'ĐANG HOT',
-  'new': 'MỚI MỞ BÁN',
+  hot: 'ĐANG HOT',
+  new: 'MỚI MỞ BÁN',
   'almost-sold': 'SẮP CHÁY VÉ',
 };
 
@@ -24,16 +32,15 @@ function eventsToSlides(events: DisplayEvent[]): HeroSlide[] {
     subtitle: `${e.dateLabel} · ${e.timeLabel}`,
     tagline: e.venue,
     badge: e.badge ? (BADGE_LABELS[e.badge] ?? 'NỔI BẬT') : 'NỔI BẬT',
-    image: e.poster,
+    image: resolveEventPoster(e.poster, e.categoryKey),
     date: `${e.dateLabel} · ${e.timeLabel}`,
     venue: e.city,
   }));
 }
 
 export function HeroCarousel({ events, loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
-  // Only fall back to HERO_SLIDES after loading is done (no empty array = loaded but 0 results)
   const slides: HeroSlide[] = loading
-    ? HERO_SLIDES  // hidden behind skeleton, just needs to exist
+    ? HERO_SLIDES
     : (events && events.length > 0) ? eventsToSlides(events) : HERO_SLIDES;
   const [active, setActive] = useState(0);
   const slide = slides[active];
@@ -44,8 +51,8 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
 
   useEffect(() => {
     if (loading) return;
-    const t = setInterval(() => setActive((i) => (i + 1) % slides.length), AUTOPLAY_MS);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setActive((i) => (i + 1) % slides.length), AUTOPLAY_MS);
+    return () => clearInterval(timer);
   }, [slides.length, loading]);
 
   const prev = () => setActive((i) => (i - 1 + slides.length) % slides.length);
@@ -56,7 +63,6 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Loading skeleton — shown while API hasn't responded yet
   if (loading) {
     return (
       <section className="relative h-screen min-h-[600px] w-full overflow-hidden bg-stone-900">
@@ -84,12 +90,11 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
 
   return (
     <section className="relative h-screen min-h-[600px] w-full overflow-hidden">
-      {/* Image stack with crossfade */}
       {slides.map((s, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <EventPosterImage
           key={`${s.id}-${i}`}
           src={s.image}
+          category="other"
           alt={s.title}
           loading={i === 0 ? 'eager' : 'lazy'}
           fetchPriority={i === 0 ? 'high' : 'low'}
@@ -97,11 +102,9 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
         />
       ))}
 
-      {/* Overlays */}
       <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/55 to-stone-900/15" />
       <div className="absolute inset-0 bg-gradient-to-r from-stone-900/65 to-transparent md:via-transparent" />
 
-      {/* Content */}
       <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-44 pt-24 sm:pb-52 lg:px-8">
         <AnimatePresence mode="wait">
           <motion.div
@@ -122,8 +125,12 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
             <p className="mt-2 line-clamp-2 max-w-xl text-sm text-white/80 sm:mt-3 md:text-base">{slide.tagline}</p>
 
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-white/90">
-              <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4 text-amber-300" /> {slide.date}</span>
-              <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-amber-300" /> {slide.venue}</span>
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-amber-300" /> {slide.date}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-amber-300" /> {slide.venue}
+              </span>
             </div>
 
             <div className="mt-5">
@@ -138,7 +145,6 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
         </AnimatePresence>
       </div>
 
-      {/* Side arrows */}
       <button
         onClick={prev}
         aria-label="Slide trước"
@@ -154,10 +160,8 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
         <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
       </button>
 
-      {/* Bottom overlay: thumbnails + scroll cue */}
       <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-stone-950/85 via-stone-950/55 to-transparent pb-3 pt-10 sm:pb-4">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          {/* Desktop thumbnails — flex with fixed width so they never stretch */}
           <div className="hidden gap-2 sm:flex sm:gap-3">
             {slides.map((s, i) => (
               <button
@@ -171,8 +175,12 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
                     : 'border-white/15 opacity-70 hover:border-white/50 hover:opacity-100'
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.image} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                <EventPosterImage
+                  src={s.image}
+                  category="other"
+                  alt=""
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-900/85 via-stone-900/20 to-transparent" />
                 <div className="absolute inset-x-2 bottom-1.5">
                   <div className="line-clamp-1 text-[11px] font-semibold text-white">{s.title}</div>
@@ -183,7 +191,6 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
             ))}
           </div>
 
-          {/* Mobile dots */}
           <div className="flex justify-center gap-1.5 sm:hidden">
             {slides.map((_, i) => (
               <button
@@ -195,7 +202,6 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
             ))}
           </div>
 
-          {/* Scroll cue */}
           <div className="mt-3 flex justify-center sm:mt-4">
             <button
               onClick={scrollToCategories}

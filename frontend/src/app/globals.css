@@ -5,6 +5,8 @@
 :root {
   --background: #fafaf9;
   --foreground: #1c1917;
+  --font-be-vietnam-pro: "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
+  --font-jakarta: "Plus Jakarta Sans", "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
 }
 
 html { scroll-behavior: smooth; }
@@ -18,8 +20,8 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-jakarta), var(--font-be-vietnam-pro), sans-serif;
-  letter-spacing: -0.025em;
+  font-family: var(--font-be-vietnam-pro), var(--font-jakarta), sans-serif;
+  letter-spacing: 0;
 }
 
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

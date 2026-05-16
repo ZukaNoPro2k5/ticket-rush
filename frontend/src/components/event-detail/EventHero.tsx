@@ -2,6 +2,7 @@ import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar, ChevronRight, Clock, Flame, MapPin } from 'lucide-react';
 import { EVENT_CATEGORY_OPTIONS } from '@/components/events/EventsCategoryBar';
+import { EventPosterImage } from '@/components/common/EventPosterImage';
 
 interface Props {
   event: DisplayEvent;
@@ -12,8 +13,12 @@ export function EventHero({ event }: Props) {
 
   return (
     <section className="relative h-[360px] w-full overflow-hidden md:h-[480px]">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={event.poster} alt={event.title} className="h-full w-full object-cover" />
+      <EventPosterImage
+        src={event.poster}
+        category={event.categoryKey}
+        alt={event.title}
+        className="h-full w-full object-cover"
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/60 to-stone-900/20" />
 
       <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-8 lg:px-8">

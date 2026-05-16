@@ -1,6 +1,4 @@
-<<<<<<< Updated upstream
 // TODO: Dev 3 — Promo codes service
-=======
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../../config/database';
 import { AppError } from '../../shared/AppError';
@@ -159,4 +157,3 @@ export async function validatePromo(input: ValidatePromoInput) {
     final_amount: input.amount - discount,
   };
 }
->>>>>>> Stashed changes

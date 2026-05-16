@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AlertCircle, Search } from 'lucide-react';
 import type { DisplayEvent, Event, EventCategory } from '@/types';
 import { listEvents } from '@/lib/api/events';
+import { resolveEventPoster } from '@/lib/utils/eventImages';
 import {
   DEFAULT_PRICE_MAX,
   PAGE_SIZE,
@@ -85,7 +86,7 @@ function toDisplayEvent(e: Event): DisplayEvent {
     date: e.event_date,
     dateLabel: `${weekdays[date.getDay()]}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`,
     timeLabel: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
-    poster: e.poster_url || 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80',
+    poster: resolveEventPoster(e.poster_url, e.category),
     priceFrom: e.min_price ?? 0,
     priceTo: e.max_price ?? e.min_price ?? 0,
     soldPercent,

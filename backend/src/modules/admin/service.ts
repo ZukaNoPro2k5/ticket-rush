@@ -1,6 +1,4 @@
-<<<<<<< Updated upstream
 // TODO: Dev 3 — Admin service
-=======
 import { RowDataPacket } from 'mysql2';
 import pool from '../../config/database';
 
@@ -1055,4 +1053,3 @@ export async function listAdminReviews(
     },
   };
 }
->>>>>>> Stashed changes

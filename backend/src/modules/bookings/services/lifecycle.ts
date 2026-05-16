@@ -1,10 +1,7 @@
 import pool from '../../../config/database';
 import { AppError } from '../../../shared/AppError';
-<<<<<<< Updated upstream
-=======
 import { bookingsConfirmedTotal } from '../../../config/metrics';
 import { generateTicketsForBooking } from '../../tickets/service';
->>>>>>> Stashed changes
 import type { BookingRow, BookingSeatRow } from './types';
 import { updateSeatsStatus } from './helpers';
 
@@ -64,12 +61,8 @@ export async function confirmBooking(bookingId: number, userId: number) {
     const tickets = await generateTicketsForBooking(conn, bookingId);
 
     await conn.commit();
-<<<<<<< Updated upstream
-    return { bookingId, seatIds };
-=======
     bookingsConfirmedTotal.inc();
     return { bookingId, seatIds, tickets };
->>>>>>> Stashed changes
   } catch (err) {
     await conn.rollback();
     throw err;

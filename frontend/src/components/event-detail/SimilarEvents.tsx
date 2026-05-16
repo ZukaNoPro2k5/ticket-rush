@@ -1,6 +1,7 @@
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar } from 'lucide-react';
+import { EventPosterImage } from '@/components/common/EventPosterImage';
 
 function formatVnd(value: number): string {
   return `${value.toLocaleString('vi-VN')}đ`;
@@ -33,9 +34,9 @@ export function SimilarEvents({ events }: Props) {
               className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <EventPosterImage
                   src={ev.poster}
+                  category={ev.categoryKey}
                   alt={ev.title}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
