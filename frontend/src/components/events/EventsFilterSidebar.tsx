@@ -1,17 +1,12 @@
 'use client';
 
 import { Check, ChevronDown } from 'lucide-react';
-import { DEFAULT_PRICE_MAX, type TimeRangeKey } from '@/lib/utils/eventsFilters';
-
-const CITY_OPTIONS = ['Tất cả', 'Hà Nội', 'TP. HCM', 'Đà Nẵng', 'Hải Phòng', 'Huế'] as const;
-
-const TIME_OPTIONS: { key: TimeRangeKey; label: string }[] = [
-  { key: 'all', label: 'Tất cả thời gian' },
-  { key: 'today', label: 'Hôm nay' },
-  { key: 'weekend', label: 'Cuối tuần' },
-  { key: 'week', label: 'Tuần này' },
-  { key: 'month', label: 'Tháng này' },
-];
+import {
+  CITIES,
+  DEFAULT_PRICE_MAX,
+  TIME_RANGES,
+  type TimeRangeKey,
+} from '@/lib/utils/eventsFilters';
 
 function formatVnd(value: number): string {
   return `${value.toLocaleString('vi-VN')}đ`;
@@ -61,7 +56,7 @@ export function EventsFilterSidebar({
             Thời gian
           </label>
           <div className="space-y-1.5">
-            {TIME_OPTIONS.map((t) => (
+            {TIME_RANGES.map((t) => (
               <label key={t.key} className="flex items-center gap-2 text-sm">
                 <input
                   type="radio"
@@ -86,7 +81,7 @@ export function EventsFilterSidebar({
               onChange={(e) => onStagedCityChange(e.target.value)}
               className="w-full appearance-none rounded-lg border border-stone-200 bg-white px-3 py-2 pr-8 text-sm focus:border-amber-500 focus:outline-none"
             >
-              {CITY_OPTIONS.map((c) => (
+              {CITIES.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>

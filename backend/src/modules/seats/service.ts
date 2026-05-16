@@ -7,7 +7,7 @@ interface SeatRow extends RowDataPacket {
   zone_id: number;
   zone_name: string;
   zone_color: string;
-  zone_price: number;
+  zone_price: number | string;
   row_label: string;
   col_number: number;
   status: string;
@@ -44,7 +44,10 @@ export async function listByEvent(eventId: number) {
      ORDER BY sz.id, s.row_label, s.col_number`,
     [eventId],
   );
-  return rows;
+  return rows.map((row) => ({
+    ...row,
+    zone_price: Number(row.zone_price),
+  }));
 }
 
 // TODO: Dev 2 — listByZone

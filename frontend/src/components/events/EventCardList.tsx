@@ -65,7 +65,7 @@ export function EventCardList({ event }: { event: DisplayEvent }) {
             <div className="font-display text-lg font-bold text-amber-700">{formatVnd(event.priceFrom)}</div>
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold text-white shadow-soft transition-all group-hover:-translate-y-0.5 group-hover:bg-amber-600">
-            Chọn vé <ArrowRight className="h-3.5 w-3.5" />
+            Chi tiết <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </div>
       </div>

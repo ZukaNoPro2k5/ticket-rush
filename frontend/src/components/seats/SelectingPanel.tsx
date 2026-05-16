@@ -2,6 +2,7 @@
 
 import { Clock, Tag } from 'lucide-react';
 import type { Seat } from '@/types';
+import { formatVnd } from '@/lib/utils/seatUtils';
 
 interface Props {
   selectedSeats: Seat[];
@@ -33,14 +34,16 @@ export function SelectingPanel({
       ) : (
         <div className="max-h-52 space-y-1.5 overflow-y-auto">
           {selectedSeats.map((seat) => (
-            <div key={seat.id} className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-1.5 text-gray-600">
+            <div key={seat.id} className="flex items-center justify-between gap-3 text-sm">
+              <span className="min-w-0 flex items-center gap-1.5 text-gray-600">
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: seat.zone_color }} />
-                {seat.zone_name} - {seat.row_label}
-                {seat.col_number}
+                <span className="truncate">
+                  {seat.zone_name} - {seat.row_label}
+                  {seat.col_number}
+                </span>
               </span>
-              <span className="shrink-0 font-medium text-gray-800">
-                {seat.zone_price.toLocaleString('vi-VN')}đ
+              <span className="min-w-[96px] shrink-0 whitespace-nowrap text-right font-medium tabular-nums text-gray-800">
+                {formatVnd(seat.zone_price)}
               </span>
             </div>
           ))}
@@ -48,9 +51,11 @@ export function SelectingPanel({
       )}
 
       {count > 0 && (
-        <div className="flex justify-between border-t pt-3 font-bold">
+        <div className="flex items-center justify-between gap-4 border-t pt-3 font-bold">
           <span className="text-gray-700">Tạm tính ({count} ghế)</span>
-          <span className="text-orange-600">{subtotal.toLocaleString('vi-VN')}đ</span>
+          <span className="min-w-[120px] whitespace-nowrap text-right tabular-nums text-orange-600">
+            {formatVnd(subtotal)}
+          </span>
         </div>
       )}
 

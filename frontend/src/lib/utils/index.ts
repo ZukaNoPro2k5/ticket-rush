@@ -1,5 +1,5 @@
 export { cn } from './cn';
-export { formatMmSs, getSeatBg, groupSeatsByZone, extractErrorMessage } from './seatUtils';
+export { formatMmSs, formatVnd, getSeatBg, groupSeatsByZone, extractErrorMessage, toMoneyNumber } from './seatUtils';
 export type { ZoneData, PendingBooking } from './seatUtils';
 export { toDisplayEvent } from './eventMappers';
 export {

@@ -1,15 +1,7 @@
 'use client';
 
 import { ArrowUpDown, ChevronDown, Grid3x3, List } from 'lucide-react';
-import type { SortKey, ViewMode } from '@/lib/utils/eventsFilters';
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'trending', label: 'Phổ biến nhất' },
-  { key: 'newest', label: 'Mới nhất' },
-  { key: 'upcoming', label: 'Sắp diễn ra' },
-  { key: 'priceAsc', label: 'Giá: Thấp đến cao' },
-  { key: 'priceDesc', label: 'Giá: Cao đến thấp' },
-];
+import { SORT_OPTIONS, type SortKey, type ViewMode } from '@/lib/utils/eventsFilters';
 
 interface Props {
   loading: boolean;

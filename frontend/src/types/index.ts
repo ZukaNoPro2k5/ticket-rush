@@ -45,7 +45,16 @@ export interface AuthData {
 }
 
 // --- Event ---
-export type EventCategory = 'music' | 'stage' | 'sports' | 'workshop' | 'other';
+export type EventCategory =
+  | 'music'
+  | 'stage'
+  | 'sports'
+  | 'workshop'
+  | 'other'
+  | 'arts'
+  | 'tech'
+  | 'food'
+  | 'entertainment';
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
 
 /** Matches backend GET /api/events list item */
@@ -80,6 +89,8 @@ export interface SeatZone {
   color: string;
   total_rows: number;
   total_cols: number;
+  available_seats?: number;
+  total_seats?: number;
 }
 
 // --- Display model (derived from Event for UI rendering) ---
@@ -122,6 +133,8 @@ export interface SeatZone {
   color: string;
   total_rows: number;
   total_cols: number;
+  available_seats?: number;
+  total_seats?: number;
 }
 
 // --- Seat ---

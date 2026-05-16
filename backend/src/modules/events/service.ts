@@ -48,14 +48,23 @@ const eventSelect = `
          COALESCE(reviews.review_count, 0) AS review_count
   FROM events e
   LEFT JOIN (
-    SELECT sz.event_id,
-           MIN(sz.price) AS min_price,
-           MAX(sz.price) AS max_price,
-           COUNT(s.id) AS total_seats,
-           SUM(CASE WHEN s.status = 'available' THEN 1 ELSE 0 END) AS available_seats
-    FROM seat_zones sz
-    LEFT JOIN seats s ON s.zone_id = sz.id
-    GROUP BY sz.event_id
+    SELECT seat_stats.event_id,
+           COALESCE(
+             MIN(CASE WHEN seat_stats.status = 'available' THEN seat_stats.price END),
+             MIN(seat_stats.price)
+           ) AS min_price,
+           COALESCE(
+             MAX(CASE WHEN seat_stats.status = 'available' THEN seat_stats.price END),
+             MAX(seat_stats.price)
+           ) AS max_price,
+           COUNT(*) AS total_seats,
+           SUM(CASE WHEN seat_stats.status = 'available' THEN 1 ELSE 0 END) AS available_seats
+    FROM (
+      SELECT sz.event_id, sz.price, s.status
+      FROM seat_zones sz
+      JOIN seats s ON s.zone_id = sz.id
+    ) seat_stats
+    GROUP BY seat_stats.event_id
   ) stats ON stats.event_id = e.id
   LEFT JOIN (
     SELECT event_id, AVG(rating) AS average_rating, COUNT(*) AS review_count

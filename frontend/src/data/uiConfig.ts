@@ -1,17 +1,10 @@
 // Static UI configuration — does NOT contain dynamic/API content.
 // Event content, news, promotions come from the backend API.
 
-import type { DisplayEvent } from '@/types';
+import type { DisplayEvent, EventCategory } from '@/types';
+import { EVENT_CATEGORY_OPTIONS } from '@/lib/utils/eventCategories';
 
-export type CategoryKey =
-  | 'music'
-  | 'arts'
-  | 'tech'
-  | 'sports'
-  | 'food'
-  | 'entertainment'
-  | 'workshop'
-  | 'stage';
+export type CategoryKey = EventCategory;
 
 export interface CategoryDef {
   key: CategoryKey;
@@ -22,7 +15,8 @@ export interface CategoryDef {
   ring: string;
 }
 
-export const CATEGORIES: CategoryDef[] = [
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const LEGACY_CATEGORIES: CategoryDef[] = [
   { key: 'music',         label: 'Âm nhạc',    icon: 'fa-solid fa-music',           count: 248, accent: 'bg-rose-100 text-rose-600',      ring: 'ring-rose-200' },
   { key: 'arts',          label: 'Nghệ thuật', icon: 'fa-solid fa-palette',         count: 132, accent: 'bg-sky-100 text-sky-600',        ring: 'ring-sky-200' },
   { key: 'tech',          label: 'Công nghệ',  icon: 'fa-solid fa-microchip',       count: 87,  accent: 'bg-pink-100 text-pink-600',      ring: 'ring-pink-200' },
@@ -32,6 +26,23 @@ export const CATEGORIES: CategoryDef[] = [
   { key: 'workshop',      label: 'Hội thảo',   icon: 'fa-solid fa-chalkboard-user', count: 71,  accent: 'bg-amber-100 text-amber-600',    ring: 'ring-amber-200' },
   { key: 'stage',         label: 'Sân khấu',   icon: 'fa-solid fa-theater-masks',   count: 58,  accent: 'bg-orange-100 text-orange-600',  ring: 'ring-orange-200' },
 ];
+
+const CATEGORY_META: Record<CategoryKey, Pick<CategoryDef, 'count' | 'accent' | 'ring'>> = {
+  music: { count: 248, accent: 'bg-rose-100 text-rose-600', ring: 'ring-rose-200' },
+  stage: { count: 58, accent: 'bg-orange-100 text-orange-600', ring: 'ring-orange-200' },
+  sports: { count: 96, accent: 'bg-emerald-100 text-emerald-600', ring: 'ring-emerald-200' },
+  workshop: { count: 71, accent: 'bg-amber-100 text-amber-600', ring: 'ring-amber-200' },
+  other: { count: 42, accent: 'bg-stone-100 text-stone-600', ring: 'ring-stone-200' },
+  arts: { count: 132, accent: 'bg-sky-100 text-sky-600', ring: 'ring-sky-200' },
+  tech: { count: 87, accent: 'bg-pink-100 text-pink-600', ring: 'ring-pink-200' },
+  food: { count: 64, accent: 'bg-teal-100 text-teal-600', ring: 'ring-teal-200' },
+  entertainment: { count: 154, accent: 'bg-purple-100 text-purple-600', ring: 'ring-purple-200' },
+};
+
+export const CATEGORIES: CategoryDef[] = EVENT_CATEGORY_OPTIONS.map((category) => ({
+  ...category,
+  ...CATEGORY_META[category.key],
+}));
 
 export const FOOTER_LINKS = {
   company: [
@@ -44,7 +55,7 @@ export const FOOTER_LINKS = {
     { label: 'Tất cả sự kiện', href: '/events' },
     { label: 'Sự kiện hot',    href: '/events?sort=trending' },
     { label: 'Sắp diễn ra',    href: '/events?sort=upcoming' },
-    { label: 'Vé giá rẻ',      href: '/events?sort=price' },
+    { label: 'Vé giá rẻ',      href: '/events?sort=priceAsc' },
   ],
   support: [
     { label: 'Trung tâm trợ giúp', href: '#' },

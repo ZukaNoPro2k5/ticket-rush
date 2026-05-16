@@ -18,16 +18,30 @@ export interface ZoneData {
   rows: Map<string, Seat[]>;
 }
 
+export function toMoneyNumber(value: unknown): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+export function formatVnd(value: unknown): string {
+  return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(toMoneyNumber(value))}đ`;
+}
+
 export function groupSeatsByZone(seats: Seat[]): ZoneData[] {
   const map = new Map<number, ZoneData>();
 
   for (const seat of seats) {
+    const zonePrice = toMoneyNumber(seat.zone_price);
     if (!map.has(seat.zone_id)) {
       map.set(seat.zone_id, {
         id: seat.zone_id,
         name: seat.zone_name,
         color: seat.zone_color,
-        price: seat.zone_price,
+        price: zonePrice,
         rows: new Map(),
       });
     }
@@ -68,6 +82,6 @@ export function formatMmSs(totalSeconds: number): string {
 }
 
 export function extractErrorMessage(err: unknown, fallback: string): string {
-  const r = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data;
-  return r?.error?.message ?? fallback;
+  const response = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data;
+  return response?.error?.message ?? fallback;
 }

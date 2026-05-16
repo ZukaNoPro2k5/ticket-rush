@@ -10,6 +10,7 @@ import type { Seat, SeatStatusChangedPayload } from '@/types';
 import {
   extractErrorMessage,
   groupSeatsByZone,
+  toMoneyNumber,
   type PendingBooking,
 } from '@/lib/utils/seatUtils';
 import {
@@ -20,6 +21,22 @@ import {
   SeatsLoading,
   SelectingPanel,
 } from '@/components/seats';
+
+function normalizeSeat(seat: Seat): Seat {
+  return {
+    ...seat,
+    zone_price: toMoneyNumber(seat.zone_price),
+  };
+}
+
+function normalizeBooking(booking: PendingBooking): PendingBooking {
+  return {
+    ...booking,
+    subtotal: toMoneyNumber(booking.subtotal),
+    discount_amount: toMoneyNumber(booking.discount_amount),
+    total_amount: toMoneyNumber(booking.total_amount),
+  };
+}
 
 export default function SeatsPage() {
   const params = useParams();
@@ -46,7 +63,7 @@ export default function SeatsPage() {
     setLoading(true);
     api
       .get<{ success: boolean; data: Seat[] }>(`/events/${eventId}/seats`)
-      .then((res) => setSeats(res.data.data ?? []))
+      .then((res) => setSeats((res.data.data ?? []).map(normalizeSeat)))
       .catch(() => toast.error('Không thể tải sơ đồ ghế'))
       .finally(() => setLoading(false));
   }, [eventId]);
@@ -139,7 +156,7 @@ export default function SeatsPage() {
 
   const selectedSeats = seats.filter((s) => selectedIds.has(s.id));
   const bookingSeats = booking ? seats.filter((s) => booking.seat_ids.includes(s.id)) : [];
-  const subtotal = selectedSeats.reduce((sum, s) => sum + s.zone_price, 0);
+  const subtotal = selectedSeats.reduce((sum, s) => sum + toMoneyNumber(s.zone_price), 0);
 
   const handleBook = async () => {
     if (selectedIds.size === 0) {
@@ -153,7 +170,7 @@ export default function SeatsPage() {
         seat_ids: [...selectedIds],
         ...(promoCode.trim() ? { promo_code: promoCode.trim() } : {}),
       });
-      setBooking(res.data.data);
+      setBooking(normalizeBooking(res.data.data));
       setSelectedIds(new Set());
       toast.success('Đã giữ ghế. Vui lòng xác nhận thanh toán trong 10 phút.');
     } catch (err) {
@@ -169,7 +186,7 @@ export default function SeatsPage() {
     try {
       await api.post(`/bookings/${booking.id}/confirm`);
       toast.success('Thanh toán thành công. Đang chuyển đến vé của bạn...');
-      router.push('/tickets');
+      router.push('/my-tickets');
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Lỗi khi xác nhận thanh toán.'));
     } finally {

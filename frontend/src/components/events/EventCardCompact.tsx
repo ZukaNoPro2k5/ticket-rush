@@ -62,7 +62,7 @@ export function EventCardCompact({ event }: { event: DisplayEvent }) {
             <div className="font-display text-base font-bold text-amber-700">{formatVnd(event.priceFrom)}</div>
           </div>
           <span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-700 transition-colors group-hover:bg-amber-500 group-hover:text-white">
-            Xem vé
+            Chi tiết
           </span>
         </div>
       </div>

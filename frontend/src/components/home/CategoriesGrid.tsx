@@ -33,7 +33,7 @@ export function CategoriesGrid() {
           variants={staggerContainer(0.07)}
           initial="hidden"
           animate={inView ? 'visible' : 'hidden'}
-          className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4"
+          className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
         >
           {CATEGORIES.map((c) => (
             <motion.div key={c.key} variants={cardVariant}>

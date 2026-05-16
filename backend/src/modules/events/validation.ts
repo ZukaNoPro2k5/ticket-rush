@@ -1,6 +1,16 @@
 import { z } from 'zod';
 
-const categoryEnum = z.enum(['music', 'stage', 'sports', 'workshop', 'other']);
+const categoryEnum = z.enum([
+  'music',
+  'stage',
+  'sports',
+  'workshop',
+  'other',
+  'arts',
+  'tech',
+  'food',
+  'entertainment',
+]);
 const statusEnum = z.enum(['draft', 'published', 'cancelled', 'completed']);
 
 export const createEventSchema = z.object({

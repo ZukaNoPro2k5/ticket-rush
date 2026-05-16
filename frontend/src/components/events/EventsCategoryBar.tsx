@@ -2,18 +2,9 @@
 
 import { SlidersHorizontal } from 'lucide-react';
 import type { EventCategory } from '@/types';
+import { EVENT_CATEGORY_OPTIONS } from '@/lib/utils/eventCategories';
 
-export const EVENT_CATEGORY_OPTIONS: {
-  key: EventCategory;
-  label: string;
-  icon: string;
-}[] = [
-  { key: 'music', label: 'Âm nhạc', icon: 'fa-solid fa-music' },
-  { key: 'stage', label: 'Sân khấu', icon: 'fa-solid fa-theater-masks' },
-  { key: 'sports', label: 'Thể thao', icon: 'fa-solid fa-futbol' },
-  { key: 'workshop', label: 'Workshop', icon: 'fa-solid fa-chalkboard-user' },
-  { key: 'other', label: 'Khác', icon: 'fa-solid fa-tag' },
-];
+export { EVENT_CATEGORY_OPTIONS };
 
 interface Props {
   activeCat: EventCategory | null;

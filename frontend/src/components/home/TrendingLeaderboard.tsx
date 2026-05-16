@@ -141,7 +141,7 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
             <div className="font-display text-base font-bold text-amber-700">{formatVnd(ev.priceFrom)}</div>
           </div>
           <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-stone-600 transition-colors group-hover:bg-amber-500 group-hover:text-white">
-            Xem vé
+            Chi tiết
           </span>
         </div>
       </Link>

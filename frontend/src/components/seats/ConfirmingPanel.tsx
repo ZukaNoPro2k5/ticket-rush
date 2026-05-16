@@ -2,7 +2,8 @@
 
 import { CheckCircle, XCircle } from 'lucide-react';
 import type { Seat } from '@/types';
-import { formatMmSs, type PendingBooking } from '@/lib/utils/seatUtils';
+import { formatMmSs, formatVnd, type PendingBooking } from '@/lib/utils/seatUtils';
+import { PaymentQrMock } from './PaymentQrMock';
 
 interface Props {
   booking: PendingBooking;
@@ -35,34 +36,42 @@ export function ConfirmingPanel({
         <p className="mb-2 text-sm font-semibold text-gray-700">Ghế đã giữ</p>
         <div className="max-h-48 space-y-1.5 overflow-y-auto">
           {bookingSeats.map((seat) => (
-            <div key={seat.id} className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-1.5 text-gray-600">
+            <div key={seat.id} className="flex items-center justify-between gap-3 text-sm">
+              <span className="min-w-0 flex items-center gap-1.5 text-gray-600">
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: seat.zone_color }} />
-                {seat.zone_name} - {seat.row_label}
-                {seat.col_number}
+                <span className="truncate">
+                  {seat.zone_name} - {seat.row_label}
+                  {seat.col_number}
+                </span>
               </span>
-              <span className="shrink-0 font-medium text-gray-800">{seat.zone_price.toLocaleString('vi-VN')}đ</span>
+              <span className="min-w-[96px] shrink-0 whitespace-nowrap text-right font-medium tabular-nums text-gray-800">
+                {formatVnd(seat.zone_price)}
+              </span>
             </div>
           ))}
         </div>
       </div>
 
       <div className="space-y-1.5 border-t pt-3">
-        <div className="flex justify-between text-sm text-gray-500">
+        <div className="flex justify-between gap-4 text-sm text-gray-500">
           <span>Tạm tính ({bookingSeats.length} ghế)</span>
-          <span>{booking.subtotal.toLocaleString('vi-VN')}đ</span>
+          <span className="min-w-[120px] whitespace-nowrap text-right tabular-nums">{formatVnd(booking.subtotal)}</span>
         </div>
         {booking.discount_amount > 0 && (
-          <div className="flex justify-between text-sm text-green-600">
+          <div className="flex justify-between gap-4 text-sm text-green-600">
             <span>Giảm giá{booking.promo_code ? ` (${booking.promo_code})` : ''}</span>
-            <span>-{booking.discount_amount.toLocaleString('vi-VN')}đ</span>
+            <span className="min-w-[120px] whitespace-nowrap text-right tabular-nums">-{formatVnd(booking.discount_amount)}</span>
           </div>
         )}
-        <div className="flex justify-between pt-1 text-base font-bold">
+        <div className="flex justify-between gap-4 pt-1 text-base font-bold">
           <span className="text-gray-800">Tổng cộng</span>
-          <span className="text-orange-600">{booking.total_amount.toLocaleString('vi-VN')}đ</span>
+          <span className="min-w-[120px] whitespace-nowrap text-right tabular-nums text-orange-600">
+            {formatVnd(booking.total_amount)}
+          </span>
         </div>
       </div>
+
+      <PaymentQrMock booking={booking} />
 
       <button
         onClick={onConfirm}

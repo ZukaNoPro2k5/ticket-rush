@@ -1,6 +1,6 @@
 'use client';
 
-import type { ZoneData } from '@/lib/utils/seatUtils';
+import { formatVnd, type ZoneData } from '@/lib/utils/seatUtils';
 
 interface Props {
   zones: ZoneData[];
@@ -16,7 +16,7 @@ export function SeatLegend({ zones }: Props) {
             style={{ backgroundColor: zone.color }}
           />
           <span className="font-medium">{zone.name}</span>
-          <span className="text-gray-400">{zone.price.toLocaleString('vi-VN')}đ</span>
+          <span className="whitespace-nowrap text-gray-400 tabular-nums">{formatVnd(zone.price)}</span>
         </div>
       ))}
       <div className="flex items-center gap-1.5 text-xs text-gray-600">

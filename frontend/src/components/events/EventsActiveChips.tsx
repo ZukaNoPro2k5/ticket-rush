@@ -3,15 +3,12 @@
 import { Clock, MapPin, Search, X } from 'lucide-react';
 import type { EventCategory } from '@/types';
 import { EVENT_CATEGORY_OPTIONS } from './EventsCategoryBar';
-import { DEFAULT_PRICE_MAX, type TimeRangeKey } from '@/lib/utils/eventsFilters';
+import { CITIES, DEFAULT_PRICE_MAX, TIME_RANGES, type TimeRangeKey } from '@/lib/utils/eventsFilters';
 
-const TIME_LABELS: Record<TimeRangeKey, string> = {
-  all: 'Tất cả thời gian',
-  today: 'Hôm nay',
-  weekend: 'Cuối tuần',
-  week: 'Tuần này',
-  month: 'Tháng này',
-};
+const ALL_CITY = CITIES[0];
+const TIME_LABELS: Record<TimeRangeKey, string> = Object.fromEntries(
+  TIME_RANGES.map((range) => [range.key, range.label]),
+) as Record<TimeRangeKey, string>;
 
 function formatVnd(value: number): string {
   return `${value.toLocaleString('vi-VN')}đ`;
@@ -72,7 +69,7 @@ export function EventsActiveChips({
           <Clock className="h-3 w-3" /> {TIME_LABELS[timeRange]} <X className="h-3 w-3" />
         </button>
       )}
-      {city !== 'Tất cả' && (
+      {city !== ALL_CITY && (
         <button
           onClick={onClearCity}
           className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-200"
@@ -85,7 +82,7 @@ export function EventsActiveChips({
           onClick={onClearPrice}
           className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-200"
         >
-          ≤ {formatVnd(priceMax)} <X className="h-3 w-3" />
+          {'<= '} {formatVnd(priceMax)} <X className="h-3 w-3" />
         </button>
       )}
       <button onClick={onResetAll} className="text-xs font-medium text-amber-700 hover:text-amber-800">

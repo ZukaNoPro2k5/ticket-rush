@@ -28,7 +28,7 @@ export function NewEventsGrid({ events = [], loading = false }: { events?: Displ
             <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Vé mới lên sàn</h2>
             <p className="mt-1 text-sm text-stone-500 md:text-base">Đặt sớm để săn ưu đãi early-bird</p>
           </div>
-          <Link href="/events?sort=new" className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800">
+          <Link href="/events?sort=newest" className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800">
             Xem tất cả <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>

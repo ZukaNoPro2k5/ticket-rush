@@ -24,7 +24,7 @@ export function SeatsHeader({ eventId, hasBooking, countdown }: Props) {
         <span className="font-semibold text-gray-800">Chọn ghế ngồi</span>
 
         {hasBooking && (
-          <span className={`ml-auto text-sm font-bold font-mono ${countdown < 120 ? 'text-red-500' : 'text-orange-500'}`}>
+          <span className={`ml-auto font-mono text-sm font-bold ${countdown < 120 ? 'text-red-500' : 'text-orange-500'}`}>
             {formatMmSs(countdown)}
           </span>
         )}

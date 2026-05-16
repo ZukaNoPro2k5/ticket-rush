@@ -16,13 +16,22 @@ interface Props {
 export function ExploreDropdown({ isActive, scrolled, linkCls }: Props) {
   const [open, setOpen] = useState(false);
 
+  const close = () => setOpen(false);
+  const openMenu = () => setOpen(true);
+
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onMouseEnter={openMenu}
+      onMouseLeave={close}
+      onFocus={openMenu}
+    >
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        aria-expanded={open}
         className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors
-          ${isActive ? (scrolled ? 'text-amber-700 bg-amber-50' : 'text-white bg-white/10') : linkCls}`}
+          ${isActive ? (scrolled ? 'bg-amber-50 text-amber-700' : 'bg-white/10 text-white') : linkCls}`}
       >
         <Compass className="h-4 w-4" /> Khám phá <ChevronDown className="h-4 w-4" />
       </button>
@@ -32,7 +41,7 @@ export function ExploreDropdown({ isActive, scrolled, linkCls }: Props) {
             initial={{ opacity: 0, y: -8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+            transition={{ duration: 0.18, ease: EASE_OUT_EXPO }}
             className="absolute left-0 top-full mt-2 w-72 rounded-2xl border border-stone-200 bg-white p-2 shadow-lift"
           >
             <div className="grid grid-cols-2 gap-1">
@@ -40,15 +49,17 @@ export function ExploreDropdown({ isActive, scrolled, linkCls }: Props) {
                 <Link
                   key={c.key}
                   href={`/events?category=${c.key}`}
+                  onClick={close}
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-700 hover:bg-stone-100"
                 >
-                  <i className={`${c.icon} text-stone-500 w-4`} aria-hidden /> {c.label}
+                  <i className={`${c.icon} w-4 text-stone-500`} aria-hidden /> {c.label}
                 </Link>
               ))}
             </div>
             <div className="mt-1 border-t border-stone-200 pt-1">
               <Link
                 href="/events"
+                onClick={close}
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50"
               >
                 Tất cả sự kiện <ArrowRight className="h-4 w-4" />

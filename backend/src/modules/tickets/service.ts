@@ -178,7 +178,7 @@ export async function listMyTickets(userId: number, status?: string, page = 1, l
   const total = Number(countRows[0]?.total ?? 0);
 
   const offset = (page - 1) * limit;
-  const [rows] = await pool.execute<RowDataPacket[]>(
+  const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT t.id, t.status, t.checked_in_at, t.created_at,
             e.id AS event_id, e.title AS event_title, e.venue, e.event_date,
             sz.name AS zone_name, s.row_label, s.col_number
@@ -190,7 +190,7 @@ export async function listMyTickets(userId: number, status?: string, page = 1, l
      ${where}
      ORDER BY t.created_at DESC
      LIMIT ? OFFSET ?`,
-    [...params, limit, offset],
+    [...params, Number(limit), Number(offset)],
   );
 
   const items = rows.map((r) => ({

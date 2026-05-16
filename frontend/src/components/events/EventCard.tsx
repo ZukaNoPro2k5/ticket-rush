@@ -11,6 +11,10 @@ const BADGE_MAP: Record<NonNullable<DisplayEvent['badge']>, { label: string; cls
   special: { label: 'ĐẶC BIỆT', cls: 'bg-purple-600 text-white' },
 };
 
+function formatVnd(value: number): string {
+  return `${value.toLocaleString('vi-VN')}đ`;
+}
+
 export function EventCard({ event }: { event: DisplayEvent }) {
   const badge = event.badge ? BADGE_MAP[event.badge] : null;
   const categoryIcon = EVENT_CATEGORY_OPTIONS.find((c) => c.key === event.categoryKey)?.icon ?? 'fa-solid fa-tag';
@@ -71,6 +75,16 @@ export function EventCard({ event }: { event: DisplayEvent }) {
                 style={{ width: `${event.soldPercent}%` }}
               />
             </div>
+          </div>
+
+          <div className="mt-4 flex items-end justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-stone-400">Từ</div>
+              <div className="font-display text-base font-bold text-amber-700">{formatVnd(event.priceFrom)}</div>
+            </div>
+            <span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-700 transition-colors group-hover:bg-amber-500 group-hover:text-white">
+              Chi tiết
+            </span>
           </div>
         </div>
       </Link>

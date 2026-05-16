@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, Search } from 'lucide-react';
 import type { DisplayEvent, Event, EventCategory } from '@/types';
 import { listEvents } from '@/lib/api/events';
+import { EVENT_CATEGORY_KEYS, EVENT_CATEGORY_LABELS } from '@/lib/utils/eventCategories';
 import { resolveEventPoster } from '@/lib/utils/eventImages';
 import {
+  CITIES,
   DEFAULT_PRICE_MAX,
   PAGE_SIZE,
   type SortKey,
@@ -28,17 +30,12 @@ import {
 } from '@/components/events';
 
 const DAY_MS = 86_400_000;
-const VALID_CATEGORIES: EventCategory[] = ['music', 'stage', 'sports', 'workshop', 'other'];
-const CATEGORY_LABELS: Record<EventCategory, string> = {
-  music: 'Âm nhạc',
-  stage: 'Sân khấu',
-  sports: 'Thể thao',
-  workshop: 'Workshop',
-  other: 'Sự kiện',
-};
+const ALL_CITY = CITIES[0];
+
+type QueryPatch = Partial<Record<'search' | 'category' | 'sort' | 'page', string | null>>;
 
 function isEventCategory(value: string | null): value is EventCategory {
-  return !!value && VALID_CATEGORIES.includes(value as EventCategory);
+  return !!value && (EVENT_CATEGORY_KEYS as readonly string[]).includes(value);
 }
 
 function parseSort(value: string | null): SortKey {
@@ -54,7 +51,9 @@ function parsePage(value: string | null): number {
 function deriveCityFromVenue(venue: string): string {
   const normalized = venue.toLowerCase();
   if (normalized.includes('hà nội') || normalized.includes('ha noi')) return 'Hà Nội';
-  if (normalized.includes('hồ chí minh') || normalized.includes('ho chi minh') || normalized.includes('hcm')) return 'TP. HCM';
+  if (normalized.includes('hồ chí minh') || normalized.includes('ho chi minh') || normalized.includes('hcm')) {
+    return 'TP. HCM';
+  }
   if (normalized.includes('đà nẵng') || normalized.includes('da nang')) return 'Đà Nẵng';
   if (normalized.includes('hải phòng') || normalized.includes('hai phong')) return 'Hải Phòng';
   if (normalized.includes('huế') || normalized.includes('hue')) return 'Huế';
@@ -66,10 +65,12 @@ function toDisplayEvent(e: Event): DisplayEvent {
   const date = new Date(e.event_date);
   const pad = (n: number) => String(n).padStart(2, '0');
   const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-  const total = e.total_seats ?? 0;
-  const available = e.available_seats ?? total;
+  const total = Number(e.total_seats ?? 0);
+  const available = Number(e.available_seats ?? total);
   const soldPercent = total > 0 ? Math.round(((total - available) / total) * 100) : 0;
   const createdAge = Date.now() - new Date(e.created_at).getTime();
+  const minPrice = Number(e.min_price ?? 0);
+  const maxPrice = Number(e.max_price ?? e.min_price ?? 0);
 
   let badge: DisplayEvent['badge'];
   if (soldPercent >= 90) badge = 'almost-sold';
@@ -79,7 +80,7 @@ function toDisplayEvent(e: Event): DisplayEvent {
   return {
     id: e.id,
     title: e.title,
-    category: CATEGORY_LABELS[e.category],
+    category: EVENT_CATEGORY_LABELS[e.category],
     categoryKey: e.category,
     venue: e.venue,
     city: deriveCityFromVenue(e.venue),
@@ -87,8 +88,8 @@ function toDisplayEvent(e: Event): DisplayEvent {
     dateLabel: `${weekdays[date.getDay()]}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`,
     timeLabel: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
     poster: resolveEventPoster(e.poster_url, e.category),
-    priceFrom: e.min_price ?? 0,
-    priceTo: e.max_price ?? e.min_price ?? 0,
+    priceFrom: minPrice,
+    priceTo: maxPrice || minPrice,
     soldPercent,
     badge,
   };
@@ -117,55 +118,60 @@ function sortEvents(events: DisplayEvent[], sort: SortKey): DisplayEvent[] {
 }
 
 export default function EventsListingPage() {
+  return (
+    <Suspense fallback={<EventsPageShell />}>
+      <EventsListingContent />
+    </Suspense>
+  );
+}
+
+function EventsListingContent() {
   const router = useRouter();
   const pathname = usePathname();
-  const [urlReady, setUrlReady] = useState(false);
+  const searchParams = useSearchParams();
+
+  const categoryParam = searchParams.get('category');
+  const query = searchParams.get('search')?.trim() ?? '';
+  const activeCat = isEventCategory(categoryParam) ? categoryParam : null;
+  const sort = parseSort(searchParams.get('sort'));
+  const currentPage = parsePage(searchParams.get('page'));
 
   const [apiEvents, setApiEvents] = useState<DisplayEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [query, setQuery] = useState('');
-  const [activeCat, setActiveCat] = useState<EventCategory | null>(null);
-
+  const [searchInput, setSearchInput] = useState(query);
   const [stagedTime, setStagedTime] = useState<TimeRangeKey>('all');
-  const [stagedCity, setStagedCity] = useState('Tất cả');
+  const [stagedCity, setStagedCity] = useState<string>(ALL_CITY);
   const [stagedPriceMax, setStagedPriceMax] = useState(DEFAULT_PRICE_MAX);
   const [timeRange, setTimeRange] = useState<TimeRangeKey>('all');
-  const [city, setCity] = useState('Tất cả');
+  const [city, setCity] = useState<string>(ALL_CITY);
   const [priceMax, setPriceMax] = useState(DEFAULT_PRICE_MAX);
-
-  const [sort, setSort] = useState<SortKey>('trending');
   const [view, setView] = useState<ViewMode>('grid');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const initialQuery = params.get('search')?.trim() ?? '';
-    const initialCategory = params.get('category');
+    setSearchInput(query);
+  }, [query]);
 
-    setSearchInput(initialQuery);
-    setQuery(initialQuery);
-    setActiveCat(isEventCategory(initialCategory) ? initialCategory : null);
-    setSort(parseSort(params.get('sort')));
-    setCurrentPage(parsePage(params.get('page')));
-    setUrlReady(true);
-  }, []);
+  const updateUrl = useCallback(
+    (patch: QueryPatch) => {
+      const params = new URLSearchParams(searchParams.toString());
 
-  useEffect(() => {
-    if (!urlReady) return;
-    const params = new URLSearchParams();
-    if (query) params.set('search', query);
-    if (activeCat) params.set('category', activeCat);
-    if (sort !== 'trending') params.set('sort', sort);
-    if (currentPage > 1) params.set('page', String(currentPage));
+      for (const [key, value] of Object.entries(patch) as [keyof QueryPatch, string | null | undefined][]) {
+        if (!value || (key === 'sort' && value === 'trending') || (key === 'page' && value === '1')) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      }
 
-    const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
-    router.replace(nextUrl, { scroll: false });
-  }, [activeCat, currentPage, pathname, query, router, sort, urlReady]);
+      const queryString = params.toString();
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   const pendingChanges =
     (stagedTime !== timeRange ? 1 : 0) +
@@ -175,7 +181,7 @@ export default function EventsListingPage() {
   const activeFilterCount =
     (activeCat ? 1 : 0) +
     (timeRange !== 'all' ? 1 : 0) +
-    (city !== 'Tất cả' ? 1 : 0) +
+    (city !== ALL_CITY ? 1 : 0) +
     (priceMax < DEFAULT_PRICE_MAX ? 1 : 0) +
     (query ? 1 : 0);
 
@@ -204,24 +210,25 @@ export default function EventsListingPage() {
     } finally {
       setLoading(false);
     }
-  }, [query, activeCat, sort, currentPage]);
+  }, [activeCat, currentPage, query, sort]);
 
   useEffect(() => {
-    if (!urlReady) return;
     void fetchEvents();
-  }, [fetchEvents, urlReady]);
+  }, [fetchEvents]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [query, activeCat, sort]);
+  const submitSearch = () => updateUrl({ search: searchInput.trim() || null, page: null });
 
-  const submitSearch = () => setQuery(searchInput.trim());
   const clearSearch = () => {
     setSearchInput('');
-    setQuery('');
+    updateUrl({ search: null, page: null });
   };
 
-  const selectCategory = (k: EventCategory) => setActiveCat((prev) => (prev === k ? null : k));
+  const selectCategory = (key: EventCategory) => {
+    updateUrl({ category: activeCat === key ? null : key, page: null });
+  };
+
+  const changeSort = (value: SortKey) => updateUrl({ sort: value, page: null });
+  const changePage = (page: number) => updateUrl({ page: String(page) });
 
   const applyFilters = () => {
     setTimeRange(stagedTime);
@@ -239,28 +246,28 @@ export default function EventsListingPage() {
     setStagedTime('all');
     setTimeRange('all');
   };
+
   const clearCity = () => {
-    setStagedCity('Tất cả');
-    setCity('Tất cả');
+    setStagedCity(ALL_CITY);
+    setCity(ALL_CITY);
   };
+
   const clearPrice = () => {
     setStagedPriceMax(DEFAULT_PRICE_MAX);
     setPriceMax(DEFAULT_PRICE_MAX);
   };
 
   const resetFilters = () => {
-    setActiveCat(null);
     clearTime();
     clearCity();
     clearPrice();
     setSearchInput('');
-    setQuery('');
-    setCurrentPage(1);
+    updateUrl({ search: null, category: null, page: null });
   };
 
   const filtered = useMemo(() => {
     let arr = apiEvents;
-    if (city !== 'Tất cả') arr = arr.filter((e) => e.city === city);
+    if (city !== ALL_CITY) arr = arr.filter((e) => e.city === city);
     if (priceMax < DEFAULT_PRICE_MAX) arr = arr.filter((e) => !e.priceFrom || e.priceFrom <= priceMax);
     arr = filterByTimeRange(arr, timeRange);
     return sortEvents(arr, sort);
@@ -302,7 +309,7 @@ export default function EventsListingPage() {
               totalCount={totalCount}
               sort={sort}
               view={view}
-              onSortChange={setSort}
+              onSortChange={changeSort}
               onViewChange={setView}
             />
 
@@ -314,7 +321,7 @@ export default function EventsListingPage() {
                 city={city}
                 priceMax={priceMax}
                 onClearQuery={clearSearch}
-                onClearCategory={() => setActiveCat(null)}
+                onClearCategory={() => updateUrl({ category: null, page: null })}
                 onClearTime={clearTime}
                 onClearCity={clearCity}
                 onClearPrice={clearPrice}
@@ -343,13 +350,24 @@ export default function EventsListingPage() {
             )}
 
             {!loading && !error && (
-              <EventsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+              <EventsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={changePage} />
             )}
           </div>
         </div>
       </section>
 
       <Footer />
+    </main>
+  );
+}
+
+function EventsPageShell() {
+  return (
+    <main className="min-h-screen bg-stone-50">
+      <Navbar variant="solid" />
+      <section className="mx-auto max-w-7xl px-4 py-24 lg:px-8">
+        <EventsListSkeleton view="grid" />
+      </section>
     </main>
   );
 }

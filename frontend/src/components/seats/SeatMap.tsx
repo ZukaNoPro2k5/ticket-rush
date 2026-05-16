@@ -1,7 +1,7 @@
 'use client';
 
 import type { Seat } from '@/types';
-import { getSeatBg, type PendingBooking, type ZoneData } from '@/lib/utils/seatUtils';
+import { formatVnd, getSeatBg, type PendingBooking, type ZoneData } from '@/lib/utils/seatUtils';
 import { SeatLegend } from './SeatLegend';
 
 interface Props {
@@ -39,7 +39,7 @@ function SeatButton({
     <button
       onClick={() => onToggle(seat)}
       disabled={!isClickable}
-      title={`${seat.zone_name} - Hàng ${seat.row_label}, Ghế ${seat.col_number}\n${seat.zone_price.toLocaleString('vi-VN')}đ\n${statusLabel}`}
+      title={`${seat.zone_name} - Hàng ${seat.row_label}, Ghế ${seat.col_number}\n${formatVnd(seat.zone_price)}\n${statusLabel}`}
       style={{
         backgroundColor: bg,
         cursor: isClickable ? 'pointer' : 'default',
@@ -69,8 +69,8 @@ function ZoneGrid({
       <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
         <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: zone.color }} />
         {zone.name}
-        <span className="text-xs font-normal text-gray-400">
-          - {zone.price.toLocaleString('vi-VN')}đ / ghế
+        <span className="whitespace-nowrap text-xs font-normal text-gray-400 tabular-nums">
+          - {formatVnd(zone.price)} / ghế
         </span>
       </h3>
 

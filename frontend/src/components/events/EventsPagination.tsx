@@ -20,7 +20,7 @@ export function EventsPagination({ currentPage, totalPages, onPageChange }: Prop
         aria-label="Trang trước"
         className="grid h-10 w-10 place-items-center rounded-full border border-stone-200 bg-white text-stone-500 hover:border-stone-400 hover:text-stone-900 disabled:opacity-40"
       >
-        ‹
+        {'<'}
       </button>
 
       {visiblePages.map((n) => (
@@ -37,7 +37,7 @@ export function EventsPagination({ currentPage, totalPages, onPageChange }: Prop
         </button>
       ))}
 
-      {showEllipsis && <span className="px-1 text-stone-400">…</span>}
+      {showEllipsis && <span className="px-1 text-stone-400">...</span>}
       {showEllipsis && (
         <button
           onClick={() => onPageChange(totalPages)}
@@ -57,7 +57,7 @@ export function EventsPagination({ currentPage, totalPages, onPageChange }: Prop
         aria-label="Trang sau"
         className="grid h-10 w-10 place-items-center rounded-full border border-stone-200 bg-white text-stone-500 hover:border-stone-400 hover:text-stone-900 disabled:opacity-40"
       >
-        ›
+        {'>'}
       </button>
     </div>
   );
