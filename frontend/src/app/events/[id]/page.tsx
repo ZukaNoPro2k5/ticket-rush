@@ -7,7 +7,11 @@ import EventDetailClient from './EventDetailClient';
 
 export const dynamic = 'force-dynamic';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/$/, '');
+const API_BASE = (
+  process.env.BACKEND_INTERNAL_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:4000/api'
+).replace(/\/$/, '');
 const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200&q=80';
 
 async function fetchApiData<T>(path: string): Promise<T | null> {

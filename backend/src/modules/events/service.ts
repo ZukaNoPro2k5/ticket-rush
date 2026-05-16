@@ -10,6 +10,7 @@ interface EventRow extends RowDataPacket {
   title: string;
   description: string | null;
   category: string;
+  seating_mode: 'seated' | 'zoned' | 'admission';
   venue: string;
   event_date: string;
   poster_url: string | null;
@@ -37,8 +38,13 @@ interface SeatZoneRow extends RowDataPacket {
 }
 
 const eventSelect = `
+<<<<<<< Updated upstream
   SELECT e.id, e.title, e.description, e.category, e.venue, e.event_date,
          e.poster_url, e.status, e.created_by, e.created_at,
+=======
+  SELECT e.id, e.title, e.description, e.category, e.seating_mode, e.venue, e.event_date,
+         e.poster_url, e.status, e.queue_enabled, e.created_by, e.created_at,
+>>>>>>> Stashed changes
          stats.min_price,
          stats.max_price,
          COALESCE(stats.total_seats, 0) AS total_seats,

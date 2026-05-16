@@ -17,6 +17,7 @@ export interface SeatPriceRow extends RowDataPacket {
   id: number;
   zone_id: number;
   price: number;
+  status: string;
 }
 
 export interface PromoRow extends RowDataPacket {
@@ -35,4 +36,10 @@ export interface PromoRow extends RowDataPacket {
 
 export interface BookingSeatRow extends RowDataPacket {
   seat_id: number;
+}
+
+export interface BookableEventRow extends RowDataPacket {
+  id: number;
+  status: 'draft' | 'published' | 'cancelled' | 'completed';
+  queue_enabled: number;
 }

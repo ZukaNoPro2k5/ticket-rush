@@ -4,6 +4,8 @@ import { AppError } from '../../shared/AppError';
 import type { CreateSeatZoneInput, UpdateSeatZoneInput } from './validation';
 
 type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
+type SeatingMode = 'seated' | 'zoned' | 'admission';
+const SEAT_INSERT_CHUNK_SIZE = 1000;
 
 interface SeatZoneRow extends RowDataPacket {
   id: number;
@@ -105,8 +107,10 @@ export async function createSeatZone(eventId: number, input: CreateSeatZoneInput
   try {
     await conn.beginTransaction();
 
-    const [eventRows] = await conn.execute<(RowDataPacket & { id: number; status: EventStatus })[]>(
-      'SELECT id, status FROM events WHERE id = ? FOR UPDATE',
+    const [eventRows] = await conn.execute<
+      (RowDataPacket & { id: number; status: EventStatus; seating_mode: SeatingMode })[]
+    >(
+      'SELECT id, status, seating_mode FROM events WHERE id = ? FOR UPDATE',
       [eventId],
     );
     if (eventRows.length === 0) {
@@ -116,20 +120,36 @@ export async function createSeatZone(eventId: number, input: CreateSeatZoneInput
       throw AppError.conflict('Seat zones can only be changed while event is draft', 'EVENT_NOT_EDITABLE');
     }
 
+    if (eventRows[0].seating_mode === 'seated' && input.total_cols > 100) {
+      throw AppError.badRequest('Seated zones support at most 100 columns', 'VALIDATION_ERROR');
+    }
+
+    const totalRows = eventRows[0].seating_mode === 'seated' ? input.total_rows : 1;
+    const totalCols = input.total_cols;
+
     const [result] = await conn.execute<ResultSetHeader>(
       `INSERT INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [eventId, input.name, input.price, input.color, input.total_rows, input.total_cols],
+      [eventId, input.name, input.price, input.color, totalRows, totalCols],
     );
     const zoneId = result.insertId;
 
-    const seatValues: (number | string)[] = [];
-    const placeholders: string[] = [];
-    for (let row = 0; row < input.total_rows; row += 1) {
+    let seatValues: (number | string)[] = [];
+    let placeholders: string[] = [];
+    for (let row = 0; row < totalRows; row += 1) {
       const rowLabel = String.fromCharCode(65 + row);
-      for (let col = 1; col <= input.total_cols; col += 1) {
+      for (let col = 1; col <= totalCols; col += 1) {
         placeholders.push('(?, ?, ?)');
         seatValues.push(zoneId, rowLabel, col);
+
+        if (placeholders.length === SEAT_INSERT_CHUNK_SIZE) {
+          await conn.execute(
+            `INSERT INTO seats (zone_id, row_label, col_number) VALUES ${placeholders.join(', ')}`,
+            seatValues,
+          );
+          seatValues = [];
+          placeholders = [];
+        }
       }
     }
 

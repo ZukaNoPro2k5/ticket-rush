@@ -13,10 +13,26 @@ interface SeatRow extends RowDataPacket {
   status: string;
 }
 
+async function assertPublishedEvent(eventId: number) {
+  const [rows] = await pool.execute<(RowDataPacket & { status: string })[]>(
+    'SELECT status FROM events WHERE id = ?',
+    [eventId],
+  );
+
+  if (rows.length === 0) {
+    throw AppError.notFound('Sự kiện không tồn tại', 'EVENT_NOT_FOUND');
+  }
+  if (rows[0].status !== 'published') {
+    throw AppError.notFound('Sự kiện không tồn tại hoặc chưa mở bán', 'EVENT_NOT_FOUND');
+  }
+}
+
 /**
  * A6 — List all seats for an event with zone info
  */
 export async function listByEvent(eventId: number) {
+  await assertPublishedEvent(eventId);
+
   const [rows] = await pool.execute<SeatRow[]>(
     `SELECT
        s.id, s.zone_id,

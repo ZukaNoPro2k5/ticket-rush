@@ -15,7 +15,7 @@ async function releaseExpiredBookings() {
 
     // Find expired pending bookings
     const [expiredRows] = await conn.execute<RowDataPacket[]>(
-      `SELECT b.id, b.event_id, b.promo_code_id
+      `SELECT b.id, b.user_id, b.event_id, b.promo_code_id
        FROM bookings b
        WHERE b.status = 'pending' AND b.expires_at < NOW()`,
     );
@@ -38,16 +38,26 @@ async function releaseExpiredBookings() {
       // Release seats
       if (seatIds.length > 0) {
         const placeholders = seatIds.map(() => '?').join(', ');
-        await conn.execute(
-          `UPDATE seats SET status = 'available', locked_by = NULL, locked_at = NULL
-           WHERE id IN (${placeholders})`,
-          seatIds,
+        const [lockedRows] = await conn.execute<RowDataPacket[]>(
+          `SELECT id FROM seats
+           WHERE id IN (${placeholders}) AND status = 'locked' AND locked_by = ?`,
+          [...seatIds, booking.user_id],
         );
+        const releasableSeatIds = lockedRows.map((r: RowDataPacket) => r.id as number);
 
-        // Broadcast seat release
-        io.to(`event:${booking.event_id}`).emit('seat:status_changed',
-          seatIds.map((id: number) => ({ seat_id: id, status: 'available' })),
-        );
+        if (releasableSeatIds.length > 0) {
+          const releasablePlaceholders = releasableSeatIds.map(() => '?').join(', ');
+          await conn.execute(
+            `UPDATE seats SET status = 'available', locked_by = NULL, locked_at = NULL
+             WHERE id IN (${releasablePlaceholders}) AND locked_by = ?`,
+            [...releasableSeatIds, booking.user_id],
+          );
+
+          // Broadcast seat release
+          io.to(`event:${booking.event_id}`).emit('seat:status_changed',
+            releasableSeatIds.map((id: number) => ({ seat_id: id, status: 'available' })),
+          );
+        }
       }
 
       // Restore promo used_count

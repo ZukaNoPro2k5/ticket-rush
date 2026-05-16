@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import type { PoolConnection } from 'mysql2/promise';
 import QRCode from 'qrcode';
 import pool from '../../config/database';
 import { AppError } from '../../shared/AppError';
@@ -119,13 +120,50 @@ export async function generateTickets(bookingId: number) {
   return tickets;
 }
 
+export async function generateTicketsForBooking(conn: PoolConnection, bookingId: number) {
+  const [seatRows] = await conn.execute<RowDataPacket[]>(
+    `SELECT bs.seat_id, sz.name AS zone_name, s.row_label, s.col_number
+     FROM booking_seats bs
+     JOIN seats s ON s.id = bs.seat_id
+     JOIN seat_zones sz ON sz.id = s.zone_id
+     WHERE bs.booking_id = ?
+     ORDER BY bs.id ASC`,
+    [bookingId],
+  );
+
+  const tickets: { id: number; seat: string; qr_code: string }[] = [];
+
+  for (const seat of seatRows) {
+    const token = randomUUID();
+    const [result] = await conn.execute<ResultSetHeader>(
+      'INSERT INTO tickets (booking_id, seat_id, qr_code) VALUES (?, ?, ?)',
+      [bookingId, seat.seat_id, token],
+    );
+
+    const ticketId = result.insertId;
+    const qr_code = await QRCode.toDataURL(
+      buildQrPayload(ticketId, bookingId, Number(seat.seat_id), token),
+      { width: 300, margin: 2 },
+    );
+
+    tickets.push({
+      id: ticketId,
+      seat: `${seat.zone_name} - ${seat.row_label}${seat.col_number}`,
+      qr_code,
+    });
+  }
+
+  return tickets;
+}
+
 export async function listMyTickets(userId: number, status?: string, page = 1, limit = 10) {
+  const normalizedStatus = status === 'valid' ? 'active' : status;
   const conditions = ['b.user_id = ?', 'b.status = ?'];
   const params: (string | number | boolean | null)[] = [userId, 'confirmed'];
 
-  if (status) {
+  if (normalizedStatus) {
     conditions.push('t.status = ?');
-    params.push(status);
+    params.push(normalizedStatus);
   }
 
   const where = `WHERE ${conditions.join(' AND ')}`;
@@ -206,6 +244,7 @@ export async function getTicket(ticketId: number, userId?: number) {
       price: Number(r.price),
     },
     holder: { full_name: r.holder_name, email: r.holder_email },
+    price: Number(r.price),
     qr_code: await qrDataUrlForTicket({
       id: r.id,
       booking_id: r.booking_id,

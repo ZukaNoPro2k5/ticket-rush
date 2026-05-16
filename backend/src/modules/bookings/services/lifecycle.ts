@@ -1,5 +1,10 @@
 import pool from '../../../config/database';
 import { AppError } from '../../../shared/AppError';
+<<<<<<< Updated upstream
+=======
+import { bookingsConfirmedTotal } from '../../../config/metrics';
+import { generateTicketsForBooking } from '../../tickets/service';
+>>>>>>> Stashed changes
 import type { BookingRow, BookingSeatRow } from './types';
 import { updateSeatsStatus } from './helpers';
 
@@ -40,11 +45,31 @@ export async function confirmBooking(bookingId: number, userId: number) {
       [bookingId],
     );
     const seatIds = seatRows.map((r) => r.seat_id);
+    if (seatIds.length === 0) {
+      throw AppError.badRequest('Don hang khong co ghe', 'BOOKING_EMPTY');
+    }
+
+    const placeholders = seatIds.map(() => '?').join(', ');
+    const [lockedRows] = await conn.execute<BookingSeatRow[]>(
+      `SELECT id AS seat_id FROM seats
+       WHERE id IN (${placeholders}) AND status = 'locked' AND locked_by = ?
+       FOR UPDATE`,
+      [...seatIds, userId],
+    );
+    if (lockedRows.length !== seatIds.length) {
+      throw AppError.conflict('Ghe trong don khong con duoc giu', 'SEATS_UNAVAILABLE');
+    }
 
     await updateSeatsStatus(conn, seatIds, 'sold');
+    const tickets = await generateTicketsForBooking(conn, bookingId);
 
     await conn.commit();
+<<<<<<< Updated upstream
     return { bookingId, seatIds };
+=======
+    bookingsConfirmedTotal.inc();
+    return { bookingId, seatIds, tickets };
+>>>>>>> Stashed changes
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -81,7 +106,25 @@ export async function cancelBooking(bookingId: number, userId: number, isAdmin =
       [bookingId],
     );
     const seatIds = seatRows.map((r) => r.seat_id);
-    await updateSeatsStatus(conn, seatIds, 'available');
+    let releasedSeatIds: number[] = [];
+    if (seatIds.length > 0) {
+      const placeholders = seatIds.map(() => '?').join(', ');
+      const [lockedRows] = await conn.execute<BookingSeatRow[]>(
+        `SELECT id AS seat_id FROM seats
+         WHERE id IN (${placeholders}) AND status = 'locked' AND locked_by = ?`,
+        [...seatIds, booking.user_id],
+      );
+      releasedSeatIds = lockedRows.map((r) => r.seat_id);
+
+      if (releasedSeatIds.length > 0) {
+        const releasePlaceholders = releasedSeatIds.map(() => '?').join(', ');
+        await conn.execute(
+          `UPDATE seats SET status = 'available', locked_by = NULL, locked_at = NULL
+           WHERE id IN (${releasePlaceholders}) AND locked_by = ?`,
+          [...releasedSeatIds, booking.user_id],
+        );
+      }
+    }
 
     if (booking.promo_code_id) {
       await conn.execute(
@@ -91,7 +134,7 @@ export async function cancelBooking(bookingId: number, userId: number, isAdmin =
     }
 
     await conn.commit();
-    return { bookingId, seatIds };
+    return { bookingId, seatIds: releasedSeatIds };
   } catch (err) {
     await conn.rollback();
     throw err;

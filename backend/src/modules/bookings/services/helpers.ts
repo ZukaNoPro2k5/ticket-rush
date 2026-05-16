@@ -1,11 +1,37 @@
+import type { ResultSetHeader } from 'mysql2';
 import type { PoolConnection } from 'mysql2/promise';
 import { AppError } from '../../../shared/AppError';
-import type { PromoRow, SeatPriceRow } from './types';
+import type { BookableEventRow, PromoRow, SeatPriceRow } from './types';
+
+export async function assertEventCanAcceptBooking(
+  conn: PoolConnection,
+  eventId: number,
+): Promise<{ queueEnabled: boolean }> {
+  const [rows] = await conn.execute<BookableEventRow[]>(
+    'SELECT id, status, queue_enabled FROM events WHERE id = ? FOR UPDATE',
+    [eventId],
+  );
+
+  if (rows.length === 0) {
+    throw AppError.notFound('Su kien khong ton tai', 'EVENT_NOT_FOUND');
+  }
+  if (rows[0].status !== 'published') {
+    throw AppError.conflict('Su kien chua mo ban hoac da ket thuc', 'EVENT_NOT_BOOKABLE');
+  }
+
+  return { queueEnabled: Boolean(rows[0].queue_enabled) };
+}
+
+export function assertUniqueSeatIds(seatIds: number[]) {
+  if (new Set(seatIds).size !== seatIds.length) {
+    throw AppError.badRequest('Danh sach ghe bi trung', 'VALIDATION_ERROR');
+  }
+}
 
 /**
  * Validate a promo code against the current event + subtotal and return
- * `{ promoCodeId, discountAmount }`. Also increments the promo's `used_count`.
- * Returns `null`-like defaults when `code` is falsy.
+ * `{ promoCodeId, discountAmount }`. This runs inside the booking transaction
+ * and locks the promo row to keep max_uses accurate under concurrency.
  */
 export async function applyPromoCode(
   conn: PoolConnection,
@@ -13,34 +39,42 @@ export async function applyPromoCode(
   eventId: number,
   subtotal: number,
 ): Promise<{ promoCodeId: number | null; discountAmount: number }> {
-  if (!code) return { promoCodeId: null, discountAmount: 0 };
+  const normalizedCode = code?.trim().toUpperCase();
+  if (!normalizedCode) return { promoCodeId: null, discountAmount: 0 };
 
   const [promos] = await conn.execute<PromoRow[]>(
     `SELECT id, code, discount_type, discount_value, max_uses, used_count,
             event_id, min_amount, starts_at, expires_at, is_active
      FROM promo_codes
-     WHERE code = ? AND is_active = TRUE
-     AND starts_at <= NOW() AND expires_at >= NOW()`,
-    [code],
+     WHERE code = ?
+     FOR UPDATE`,
+    [normalizedCode],
   );
 
   if (promos.length === 0) {
-    throw AppError.badRequest('Mã giảm giá không hợp lệ hoặc đã hết hạn', 'INVALID_PROMO');
+    throw AppError.badRequest('Ma giam gia khong hop le', 'INVALID_PROMO');
   }
 
   const promo = promos[0];
+  const now = Date.now();
 
-  if (promo.event_id && promo.event_id !== eventId) {
-    throw AppError.badRequest('Mã giảm giá không áp dụng cho sự kiện này', 'INVALID_PROMO');
+  if (!Boolean(promo.is_active)) {
+    throw AppError.badRequest('Ma giam gia khong con hoat dong', 'INVALID_PROMO');
   }
-  if (promo.max_uses && promo.used_count >= promo.max_uses) {
-    throw AppError.badRequest('Mã giảm giá đã hết lượt sử dụng', 'MAX_USES_REACHED');
+  if (new Date(promo.starts_at).getTime() > now) {
+    throw AppError.badRequest('Ma giam gia chua co hieu luc', 'INVALID_PROMO');
+  }
+  if (new Date(promo.expires_at).getTime() < now) {
+    throw AppError.badRequest('Ma giam gia da het han', 'PROMO_EXPIRED');
+  }
+  if (promo.event_id !== null && promo.event_id !== eventId) {
+    throw AppError.badRequest('Ma giam gia khong ap dung cho su kien nay', 'INVALID_PROMO');
+  }
+  if (promo.max_uses !== null && promo.used_count >= promo.max_uses) {
+    throw AppError.badRequest('Ma giam gia da het luot su dung', 'MAX_USES_REACHED');
   }
   if (subtotal < Number(promo.min_amount)) {
-    throw AppError.badRequest(
-      `Đơn tối thiểu ${Number(promo.min_amount).toLocaleString('vi-VN')}đ để áp mã này`,
-      'MIN_AMOUNT_NOT_MET',
-    );
+    throw AppError.badRequest('Don hang chua dat gia tri toi thieu de ap ma nay', 'MIN_AMOUNT_NOT_MET');
   }
 
   const raw = promo.discount_type === 'percent'
@@ -48,14 +82,22 @@ export async function applyPromoCode(
     : Number(promo.discount_value);
   const discountAmount = Math.min(raw, subtotal);
 
-  await conn.execute('UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?', [promo.id]);
+  const [update] = await conn.execute<ResultSetHeader>(
+    `UPDATE promo_codes
+     SET used_count = used_count + 1
+     WHERE id = ? AND (max_uses IS NULL OR used_count < max_uses)`,
+    [promo.id],
+  );
+  if (update.affectedRows !== 1) {
+    throw AppError.badRequest('Ma giam gia da het luot su dung', 'MAX_USES_REACHED');
+  }
 
   return { promoCodeId: promo.id, discountAmount };
 }
 
 /**
  * Lock the given seats and assert they belong to the event and are available.
- * Returns the seat rows (with zone + price) in input order.
+ * Returns the seat rows (with zone + price).
  */
 export async function lockAndValidateSeats(
   conn: PoolConnection,
@@ -65,7 +107,7 @@ export async function lockAndValidateSeats(
   const placeholders = seatIds.map(() => '?').join(', ');
 
   const [seatRows] = await conn.execute<SeatPriceRow[]>(
-    `SELECT s.id, s.zone_id, sz.price
+    `SELECT s.id, s.zone_id, sz.price, s.status
      FROM seats s
      JOIN seat_zones sz ON sz.id = s.zone_id
      WHERE s.id IN (${placeholders}) AND sz.event_id = ?
@@ -74,19 +116,13 @@ export async function lockAndValidateSeats(
   );
 
   if (seatRows.length !== seatIds.length) {
-    throw AppError.badRequest('Một số ghế không thuộc sự kiện này');
+    throw AppError.badRequest('Mot so ghe khong thuoc su kien nay', 'INVALID_SEATS');
   }
 
-  const [statusRows] = await conn.execute<
-    (import('mysql2').RowDataPacket & { status: string })[]
-  >(
-    `SELECT id, status FROM seats WHERE id IN (${placeholders})`,
-    seatIds,
-  );
-  const unavailable = statusRows.filter((r) => r.status !== 'available');
+  const unavailable = seatRows.filter((r) => r.status !== 'available');
   if (unavailable.length > 0) {
     throw AppError.conflict(
-      `${unavailable.length} ghế đã bị người khác giữ hoặc đã bán`,
+      `${unavailable.length} ghe da bi nguoi khac giu hoac da ban`,
       'SEATS_UNAVAILABLE',
     );
   }

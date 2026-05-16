@@ -16,16 +16,16 @@ INSERT IGNORE INTO users (email, password_hash, full_name, phone, gender, birth_
    '$2a$10$leuVj9n1WUTWkP.Pt07Q5.TlsToA1HQXG9Bqn2dPi4WGDIzhRoev2',
    'TicketRush Admin', '0901000001', 'other', '1990-01-01', 'admin'),
   ('nguyen.van.an@example.com',
-   '$2a$10$N5kjJijLqfhGJH/OXLGDgeKjTjjZHLHiVfYqWE3XriRjxH.2YMnWS',
+   '$2a$10$EDfxY5kWNioN/RMw3gr3I.L.cSvWoUrEqVVHkKZOmJY5ukzh3cvES',
    'Nguyễn Văn An', '0901234567', 'male', '1999-05-20', 'customer'),
   ('tran.thi.bao@example.com',
-   '$2a$10$N5kjJijLqfhGJH/OXLGDgeKjTjjZHLHiVfYqWE3XriRjxH.2YMnWS',
+   '$2a$10$EDfxY5kWNioN/RMw3gr3I.L.cSvWoUrEqVVHkKZOmJY5ukzh3cvES',
    'Trần Thị Bảo', '0907654321', 'female', '2001-08-15', 'customer'),
   ('le.hoang.minh@example.com',
-   '$2a$10$N5kjJijLqfhGJH/OXLGDgeKjTjjZHLHiVfYqWE3XriRjxH.2YMnWS',
+   '$2a$10$EDfxY5kWNioN/RMw3gr3I.L.cSvWoUrEqVVHkKZOmJY5ukzh3cvES',
    'Lê Hoàng Minh', '0912345678', 'male', '1998-03-10', 'customer'),
   ('pham.thu.hang@example.com',
-   '$2a$10$N5kjJijLqfhGJH/OXLGDgeKjTjjZHLHiVfYqWE3XriRjxH.2YMnWS',
+   '$2a$10$EDfxY5kWNioN/RMw3gr3I.L.cSvWoUrEqVVHkKZOmJY5ukzh3cvES',
    'Phạm Thu Hằng', '0934567890', 'female', '2000-11-25', 'customer');
 
 -- =============================================
