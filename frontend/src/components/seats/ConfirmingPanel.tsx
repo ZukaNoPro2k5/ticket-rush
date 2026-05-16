@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, QrCode, XCircle } from 'lucide-react';
 import type { Seat } from '@/types';
 import { formatMmSs, formatVnd, type PendingBooking } from '@/lib/utils/seatUtils';
 import { PaymentQrMock } from './PaymentQrMock';
@@ -10,6 +10,7 @@ interface Props {
   bookingSeats: Seat[];
   countdown: number;
   submitting: boolean;
+  onOpenPayment?: () => void;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -19,6 +20,7 @@ export function ConfirmingPanel({
   bookingSeats,
   countdown,
   submitting,
+  onOpenPayment,
   onConfirm,
   onCancel,
 }: Props) {
@@ -72,6 +74,18 @@ export function ConfirmingPanel({
       </div>
 
       <PaymentQrMock booking={booking} />
+
+      {onOpenPayment && (
+        <button
+          type="button"
+          onClick={onOpenPayment}
+          disabled={submitting}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-orange-200 bg-orange-50 py-2.5 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-100 disabled:opacity-50"
+        >
+          <QrCode className="h-4 w-4 shrink-0" />
+          Mở QR thanh toán
+        </button>
+      )}
 
       <button
         onClick={onConfirm}

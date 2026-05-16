@@ -15,6 +15,7 @@ import {
 } from '@/lib/utils/seatUtils';
 import {
   ConfirmingPanel,
+  PaymentQrModal,
   SeatMap,
   SeatsHeader,
   SeatsInfoBox,
@@ -38,6 +39,11 @@ function normalizeBooking(booking: PendingBooking): PendingBooking {
   };
 }
 
+function hasBookingExpired(booking: PendingBooking): boolean {
+  const expiresAt = new Date(booking.expires_at).getTime();
+  return Number.isFinite(expiresAt) && expiresAt <= Date.now();
+}
+
 export default function SeatsPage() {
   const params = useParams();
   const router = useRouter();
@@ -49,6 +55,7 @@ export default function SeatsPage() {
   const [promoCode, setPromoCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [booking, setBooking] = useState<PendingBooking | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const bookingRef = useRef<PendingBooking | null>(null);
 
@@ -107,6 +114,7 @@ export default function SeatsPage() {
         activeBooking &&
         changes.some((change) => activeBooking.seat_ids.includes(change.seat_id) && change.status === 'available')
       ) {
+        setPaymentModalOpen(false);
         setBooking(null);
         setSelectedIds(new Set());
         toast.error('Ghế đang giữ đã được trả lại. Vui lòng chọn lại nếu muốn đặt tiếp.');
@@ -134,11 +142,12 @@ export default function SeatsPage() {
   }, [eventId]);
 
   useEffect(() => {
-    if (countdown === 0 && booking) {
-      setBooking(null);
-      setSelectedIds(new Set());
-      toast.error('Thời gian giữ ghế đã hết. Vui lòng chọn lại.');
-    }
+    if (!booking || countdown > 0 || !hasBookingExpired(booking)) return;
+
+    setPaymentModalOpen(false);
+    setBooking(null);
+    setSelectedIds(new Set());
+    toast.error('Thời gian giữ ghế đã hết. Vui lòng chọn lại.');
   }, [countdown, booking]);
 
   const toggleSeat = useCallback(
@@ -170,7 +179,9 @@ export default function SeatsPage() {
         seat_ids: [...selectedIds],
         ...(promoCode.trim() ? { promo_code: promoCode.trim() } : {}),
       });
-      setBooking(normalizeBooking(res.data.data));
+      const nextBooking = normalizeBooking(res.data.data);
+      setBooking(nextBooking);
+      setPaymentModalOpen(true);
       setSelectedIds(new Set());
       toast.success('Đã giữ ghế. Vui lòng xác nhận thanh toán trong 10 phút.');
     } catch (err) {
@@ -185,6 +196,7 @@ export default function SeatsPage() {
     setSubmitting(true);
     try {
       await api.post(`/bookings/${booking.id}/confirm`);
+      setPaymentModalOpen(false);
       toast.success('Thanh toán thành công. Đang chuyển đến vé của bạn...');
       router.push('/my-tickets');
     } catch (err) {
@@ -199,6 +211,7 @@ export default function SeatsPage() {
     setSubmitting(true);
     try {
       await api.post(`/bookings/${booking.id}/cancel`);
+      setPaymentModalOpen(false);
       setBooking(null);
       setSelectedIds(new Set());
       toast('Đã hủy đặt vé.');
@@ -233,6 +246,7 @@ export default function SeatsPage() {
               bookingSeats={bookingSeats}
               countdown={countdown}
               submitting={submitting}
+              onOpenPayment={() => setPaymentModalOpen(true)}
               onConfirm={handleConfirm}
               onCancel={handleCancel}
             />
@@ -250,6 +264,17 @@ export default function SeatsPage() {
           <SeatsInfoBox />
         </div>
       </div>
+
+      <PaymentQrModal
+        open={paymentModalOpen}
+        booking={booking}
+        bookingSeats={bookingSeats}
+        countdown={countdown}
+        submitting={submitting}
+        onClose={() => setPaymentModalOpen(false)}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }
