@@ -1,8 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { createHash, randomBytes } from 'crypto';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import pool from '../../config/database';
+import prisma from '../../config/prisma';
 import { config } from '../../config/env';
 import { AppError } from '../../shared/AppError';
 import { sendTemplatedEmail } from '../email/service';
@@ -14,78 +13,55 @@ import type {
   ResetPasswordInput,
 } from './validation';
 
-interface UserRow extends RowDataPacket {
-  id: number;
-  email: string;
-  password_hash: string;
-  full_name: string;
-  phone: string | null;
-  gender: 'male' | 'female' | 'other' | null;
-  birth_date: string | null;
-  role: 'customer' | 'admin';
-  avatar_url: string | null;
-  created_at: string;
-}
-
 function signToken(payload: { userId: number; role: string }): string {
   return jwt.sign(payload, config.jwt.secret, {
     expiresIn: config.jwt.expiresIn as jwt.SignOptions['expiresIn'],
   });
 }
 
-function sanitizeUser(user: UserRow) {
-  const { password_hash: _, ...safe } = user;
+function sanitizeUser(user: any) {
+  const { password_hash, ...safe } = user;
   return safe;
 }
 
 export async function register(input: RegisterInput) {
-  const [existing] = await pool.execute<UserRow[]>(
-    'SELECT id FROM users WHERE email = ? LIMIT 1',
-    [input.email],
-  );
+  const existing = await prisma.users.findFirst({
+    where: { email: input.email },
+    select: { id: true }
+  });
 
-  if (existing.length > 0) {
+  if (existing) {
     throw AppError.conflict('Email đã được đăng ký', 'EMAIL_TAKEN');
   }
 
   const password_hash = await bcrypt.hash(input.password, 10);
 
-  const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO users (email, password_hash, full_name, phone, gender, birth_date)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      input.email,
+  const newUser = await prisma.users.create({
+    data: {
+      email: input.email,
       password_hash,
-      input.full_name,
-      input.phone ?? null,
-      input.gender ?? null,
-      input.birth_date ?? null,
-    ],
-  );
+      full_name: input.full_name,
+      phone: input.phone ?? null,
+      gender: input.gender ?? null,
+      birth_date: input.birth_date ? new Date(input.birth_date) : null,
+    }
+  });
 
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE id = ?',
-    [result.insertId],
-  );
+  const token = signToken({ userId: newUser.id, role: newUser.role });
+  await sendTemplatedEmail('account_welcome', newUser.email, { user_name: newUser.full_name });
 
-  const user = rows[0];
-  const token = signToken({ userId: user.id, role: user.role });
-  await sendTemplatedEmail('account_welcome', user.email, { user_name: user.full_name });
-
-  return { token, user };
+  return { token, user: sanitizeUser(newUser) };
 }
 
 export async function login(input: LoginInput) {
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, password_hash, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE email = ? LIMIT 1',
-    [input.email],
-  );
+  const user = await prisma.users.findFirst({
+    where: { email: input.email }
+  });
 
-  if (rows.length === 0) {
+  if (!user) {
     throw AppError.unauthorized('Email hoặc mật khẩu không đúng', 'INVALID_CREDENTIALS');
   }
 
-  const user = rows[0];
   const valid = await bcrypt.compare(input.password, user.password_hash);
 
   if (!valid) {
@@ -98,63 +74,58 @@ export async function login(input: LoginInput) {
 }
 
 export async function getProfile(userId: number) {
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE id = ? LIMIT 1',
-    [userId],
-  );
+  const user = await prisma.users.findFirst({
+    where: { id: userId }
+  });
 
-  if (rows.length === 0) {
+  if (!user) {
     throw AppError.notFound('Người dùng không tồn tại');
   }
 
-  return rows[0];
+  return sanitizeUser(user);
 }
 
 export async function oauthSync(input: OAuthSyncInput) {
   const { provider, providerAccountId, email, name, avatar } = input;
 
-  // Try to find by oauth provider first, then fall back to email
-  const [byOAuth] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE oauth_provider = ? AND oauth_provider_id = ? LIMIT 1',
-    [provider, providerAccountId],
-  );
+  const byOAuth = await prisma.users.findFirst({
+    where: { oauth_provider: provider, oauth_provider_id: providerAccountId }
+  });
 
-  if (byOAuth.length > 0) {
-    const user = byOAuth[0];
-    const token = signToken({ userId: user.id, role: user.role });
-    return { token, user: sanitizeUser(user), isNewUser: false };
+  if (byOAuth) {
+    const token = signToken({ userId: byOAuth.id, role: byOAuth.role });
+    return { token, user: sanitizeUser(byOAuth), isNewUser: false };
   }
 
-  // Check if an account with this email already exists (link oauth)
-  const [byEmail] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE email = ? LIMIT 1',
-    [email],
-  );
+  const byEmail = await prisma.users.findFirst({
+    where: { email }
+  });
 
-  if (byEmail.length > 0) {
-    const user = byEmail[0];
-    // Link oauth provider to existing account; update avatar if not set yet
-    await pool.execute(
-      'UPDATE users SET oauth_provider = ?, oauth_provider_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?',
-      [provider, providerAccountId, avatar ?? null, user.id],
-    );
-    const token = signToken({ userId: user.id, role: user.role });
-    return { token, user: sanitizeUser(user), isNewUser: false };
+  if (byEmail) {
+    const updatedUser = await prisma.users.update({
+      where: { id: byEmail.id },
+      data: {
+        oauth_provider: provider,
+        oauth_provider_id: providerAccountId,
+        avatar_url: avatar ?? byEmail.avatar_url,
+      }
+    });
+    
+    const token = signToken({ userId: updatedUser.id, role: updatedUser.role });
+    return { token, user: sanitizeUser(updatedUser), isNewUser: false };
   }
 
-  // Create new user (no password_hash for OAuth accounts)
-  const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO users (email, password_hash, full_name, avatar_url, oauth_provider, oauth_provider_id)
-     VALUES (?, '', ?, ?, ?, ?)`,
-    [email, name ?? email.split('@')[0], avatar ?? null, provider, providerAccountId],
-  );
+  const newUser = await prisma.users.create({
+    data: {
+      email,
+      password_hash: '',
+      full_name: name ?? email.split('@')[0],
+      avatar_url: avatar ?? null,
+      oauth_provider: provider,
+      oauth_provider_id: providerAccountId
+    }
+  });
 
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, created_at FROM users WHERE id = ?',
-    [result.insertId],
-  );
-
-  const newUser = rows[0];
   const token = signToken({ userId: newUser.id, role: newUser.role });
   return { token, user: sanitizeUser(newUser), isNewUser: true };
 }
@@ -164,22 +135,23 @@ function hashToken(token: string) {
 }
 
 export async function requestPasswordReset(input: ForgotPasswordInput) {
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name FROM users WHERE email = ? LIMIT 1',
-    [input.email],
-  );
-  const user = rows[0];
+  const user = await prisma.users.findFirst({
+    where: { email: input.email },
+    select: { id: true, email: true, full_name: true }
+  });
   if (!user) return;
 
   const token = randomBytes(32).toString('hex');
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
-  await pool.execute<ResultSetHeader>(
-    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
-     VALUES (?, ?, ?)`,
-    [user.id, tokenHash, expiresAt],
-  );
+  await prisma.password_reset_tokens.create({
+    data: {
+      user_id: user.id,
+      token_hash: tokenHash,
+      expires_at: expiresAt
+    }
+  });
 
   await sendTemplatedEmail('password_reset', user.email, {
     user_name: user.full_name,
@@ -189,40 +161,25 @@ export async function requestPasswordReset(input: ForgotPasswordInput) {
 
 export async function resetPassword(input: ResetPasswordInput) {
   const tokenHash = hashToken(input.token);
-  const [rows] = await pool.execute<(RowDataPacket & {
-    id: number;
-    user_id: number;
-    expires_at: string;
-    used_at: string | null;
-  })[]>(
-    `SELECT id, user_id, expires_at, used_at
-     FROM password_reset_tokens
-     WHERE token_hash = ?
-     LIMIT 1`,
-    [tokenHash],
-  );
-  const row = rows[0];
-  if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
+  
+  const tokenRecord = await prisma.password_reset_tokens.findFirst({
+    where: { token_hash: tokenHash }
+  });
+
+  if (!tokenRecord || tokenRecord.used_at || tokenRecord.expires_at < new Date()) {
     throw AppError.badRequest('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn', 'RESET_TOKEN_INVALID');
   }
 
   const passwordHash = await bcrypt.hash(input.password, 10);
-  const conn = await pool.getConnection();
-  try {
-    await conn.beginTransaction();
-    await conn.execute<ResultSetHeader>(
-      'UPDATE users SET password_hash = ? WHERE id = ?',
-      [passwordHash, row.user_id],
-    );
-    await conn.execute<ResultSetHeader>(
-      'UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?',
-      [row.id],
-    );
-    await conn.commit();
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    conn.release();
-  }
+  
+  await prisma.$transaction([
+    prisma.users.update({
+      where: { id: tokenRecord.user_id },
+      data: { password_hash: passwordHash }
+    }),
+    prisma.password_reset_tokens.update({
+      where: { id: tokenRecord.id },
+      data: { used_at: new Date() }
+    })
+  ]);
 }

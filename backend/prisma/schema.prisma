@@ -1,0 +1,419 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model admin_system_settings {
+  id                      Int       @id @db.TinyInt
+  company_name            String    @db.VarChar(120)
+  support_email           String    @db.VarChar(255)
+  address                 String    @db.VarChar(255)
+  ticket_hold_minutes     Int       @default(10)
+  max_tickets_per_booking Int       @default(10)
+  timezone                String    @default("Asia/Ho_Chi_Minh") @db.VarChar(80)
+  language                String    @default("vi") @db.VarChar(10)
+  maintenance_mode        Boolean   @default(false)
+  payment_sandbox_mode    Boolean   @default(true)
+  created_at              DateTime? @default(now()) @db.Timestamp(0)
+  updated_at              DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model booking_seats {
+  id         Int      @id @default(autoincrement())
+  booking_id Int
+  seat_id    Int
+  price      Decimal  @db.Decimal(12, 0)
+  bookings   bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_booking_seats_booking")
+  seats      seats    @relation(fields: [seat_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_booking_seats_seat")
+
+  @@index([booking_id], map: "idx_booking_seats_booking_id")
+  @@index([seat_id], map: "idx_booking_seats_seat_id")
+}
+
+model bookings {
+  id              Int             @id @default(autoincrement())
+  user_id         Int
+  event_id        Int
+  promo_code_id   Int?
+  discount_amount Decimal         @default(0) @db.Decimal(12, 0)
+  total_amount    Decimal         @db.Decimal(12, 0)
+  status          bookings_status @default(pending)
+  expires_at      DateTime        @db.Timestamp(0)
+  confirmed_at    DateTime?       @db.Timestamp(0)
+  created_at      DateTime?       @default(now()) @db.Timestamp(0)
+  booking_seats   booking_seats[]
+  events          events          @relation(fields: [event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bookings_event")
+  promo_codes     promo_codes?    @relation(fields: [promo_code_id], references: [id], onUpdate: NoAction, map: "fk_bookings_promo_code")
+  users           users           @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bookings_user")
+  payments        payments?
+  tickets         tickets[]
+
+  @@index([promo_code_id], map: "fk_bookings_promo_code")
+  @@index([event_id], map: "idx_bookings_event_id")
+  @@index([expires_at], map: "idx_bookings_expires_at")
+  @@index([status], map: "idx_bookings_status")
+  @@index([status, expires_at], map: "idx_bookings_status_expires")
+  @@index([user_id], map: "idx_bookings_user_id")
+  @@index([user_id, status, created_at(sort: Desc)], map: "idx_bookings_user_status_created")
+}
+
+model email_outbox {
+  id              BigInt              @id @default(autoincrement())
+  template_id     String?             @db.VarChar(60)
+  recipient       String              @db.VarChar(255)
+  subject         String              @db.VarChar(255)
+  body            String              @db.Text
+  status          email_outbox_status @default(queued)
+  error_message   String?             @db.VarChar(500)
+  sent_at         DateTime?           @db.DateTime(0)
+  created_at      DateTime?           @default(now()) @db.Timestamp(0)
+  email_templates email_templates?    @relation(fields: [template_id], references: [id], onUpdate: NoAction, map: "fk_email_outbox_template")
+
+  @@index([template_id], map: "fk_email_outbox_template")
+  @@index([status, created_at], map: "idx_email_outbox_status_created")
+}
+
+model email_templates {
+  id           String                 @id @db.VarChar(60)
+  name         String                 @db.VarChar(120)
+  subject      String                 @db.VarChar(255)
+  body         String                 @db.Text
+  status       email_templates_status @default(active)
+  updated_at   DateTime?              @default(now()) @db.Timestamp(0)
+  email_outbox email_outbox[]
+}
+
+model event_favorites {
+  user_id    Int
+  event_id   Int
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  events     events    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_favorites_event")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_favorites_user")
+
+  @@id([user_id, event_id])
+  @@index([event_id], map: "idx_event_favorites_event")
+}
+
+model events {
+  id              Int                 @id @default(autoincrement())
+  title           String              @db.VarChar(255)
+  description     String?             @db.Text
+  category        events_category     @default(other)
+  seating_mode    events_seating_mode @default(seated)
+  venue           String              @db.VarChar(255)
+  event_date      DateTime            @db.DateTime(0)
+  poster_url      String?             @db.VarChar(500)
+  status          events_status       @default(draft)
+  queue_enabled   Boolean             @default(false)
+  created_by      Int
+  created_at      DateTime?           @default(now()) @db.Timestamp(0)
+  bookings        bookings[]
+  event_favorites event_favorites[]
+  users           users               @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_events_created_by")
+  promo_codes     promo_codes[]
+  seat_zones      seat_zones[]
+
+  @@unique([title, venue, event_date], map: "uq_events_identity")
+  @@index([category], map: "idx_events_category")
+  @@index([created_by], map: "idx_events_created_by")
+  @@index([event_date], map: "idx_events_event_date")
+  @@index([status], map: "idx_events_status")
+  @@index([status, event_date], map: "idx_events_status_date")
+}
+
+model newsletter_subscriptions {
+  id              Int                             @id @default(autoincrement())
+  email           String                          @unique(map: "uq_newsletter_email") @db.VarChar(255)
+  user_id         Int?
+  status          newsletter_subscriptions_status @default(active)
+  subscribed_at   DateTime?                       @default(now()) @db.Timestamp(0)
+  unsubscribed_at DateTime?                       @db.Timestamp(0)
+  users           users?                          @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "fk_newsletter_user")
+
+  @@index([user_id], map: "fk_newsletter_user")
+  @@index([status], map: "idx_newsletter_status")
+}
+
+model password_reset_tokens {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  token_hash String    @unique(map: "uq_password_reset_token") @db.Char(64)
+  expires_at DateTime  @db.DateTime(0)
+  used_at    DateTime? @db.DateTime(0)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_password_reset_user")
+
+  @@index([user_id, expires_at], map: "idx_password_reset_user")
+}
+
+model payment_gateways {
+  id           String    @id @db.VarChar(40)
+  name         String    @db.VarChar(120)
+  description  String    @db.VarChar(255)
+  enabled      Boolean   @default(false)
+  partner_code String?   @db.VarChar(255)
+  access_key   String?   @db.VarChar(255)
+  secret_key   String?   @db.VarChar(255)
+  webhook_url  String    @db.VarChar(500)
+  updated_at   DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model payments {
+  id                 Int             @id @default(autoincrement())
+  booking_id         Int             @unique(map: "uq_payments_booking")
+  payment_method     String          @db.VarChar(40)
+  amount             Decimal         @db.Decimal(12, 2)
+  status             payments_status @default(initiated)
+  provider_reference String?         @db.VarChar(120)
+  paid_at            DateTime?       @db.Timestamp(0)
+  created_at         DateTime?       @default(now()) @db.Timestamp(0)
+  updated_at         DateTime?       @default(now()) @db.Timestamp(0)
+  bookings           bookings        @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_payments_booking")
+
+  @@index([status, created_at], map: "idx_payments_status_created")
+}
+
+model post_bookmarks {
+  user_id    Int
+  post_id    Int
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  posts      posts     @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_post_bookmarks_post")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_post_bookmarks_user")
+
+  @@id([user_id, post_id])
+  @@index([post_id], map: "idx_post_bookmarks_post")
+}
+
+model posts {
+  id             Int              @id @default(autoincrement())
+  slug           String           @unique(map: "uq_posts_slug") @db.VarChar(180)
+  title          String           @db.VarChar(255)
+  excerpt        String           @db.Text
+  body           Json
+  quote          String?          @db.Text
+  author_name    String           @db.VarChar(120)
+  category       String           @db.VarChar(60)
+  cover_url      String           @db.VarChar(500)
+  read_time_min  Int              @default(5)
+  featured       Boolean          @default(false)
+  status         posts_status     @default(draft)
+  view_count     Int              @default(0)
+  published_at   DateTime?        @db.DateTime(0)
+  created_by     Int
+  created_at     DateTime?        @default(now()) @db.Timestamp(0)
+  updated_at     DateTime?        @default(now()) @db.Timestamp(0)
+  post_bookmarks post_bookmarks[]
+  users          users            @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_posts_created_by")
+
+  @@index([created_by], map: "fk_posts_created_by")
+  @@index([category, status], map: "idx_posts_category_status")
+  @@index([status, published_at], map: "idx_posts_status_published")
+  @@index([view_count], map: "idx_posts_views")
+}
+
+model promo_codes {
+  id             Int                       @id @default(autoincrement())
+  code           String                    @unique(map: "uq_promo_codes_code") @db.VarChar(50)
+  discount_type  promo_codes_discount_type
+  discount_value Decimal                   @db.Decimal(12, 0)
+  max_uses       Int?
+  used_count     Int                       @default(0)
+  event_id       Int?
+  min_amount     Decimal                   @default(0) @db.Decimal(12, 0)
+  starts_at      DateTime                  @db.Timestamp(0)
+  expires_at     DateTime                  @db.Timestamp(0)
+  is_active      Boolean                   @default(true)
+  created_at     DateTime?                 @default(now()) @db.Timestamp(0)
+  bookings       bookings[]
+  events         events?                   @relation(fields: [event_id], references: [id], onUpdate: NoAction, map: "fk_promo_codes_event")
+
+  @@index([event_id], map: "idx_promo_codes_event_id")
+  @@index([expires_at], map: "idx_promo_codes_expires_at")
+}
+
+model seat_zones {
+  id         Int     @id @default(autoincrement())
+  event_id   Int
+  name       String  @db.VarChar(50)
+  price      Decimal @db.Decimal(12, 0)
+  color      String  @db.VarChar(7)
+  total_rows Int
+  total_cols Int
+  events     events  @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_seat_zones_event")
+  seats      seats[]
+
+  @@unique([event_id, name], map: "uq_seat_zones_event_name")
+  @@index([event_id], map: "idx_seat_zones_event_id")
+}
+
+model seats {
+  id            Int             @id @default(autoincrement())
+  zone_id       Int
+  row_label     String          @db.VarChar(5)
+  col_number    Int
+  status        seats_status    @default(available)
+  locked_by     Int?
+  locked_at     DateTime?       @db.Timestamp(0)
+  booking_seats booking_seats[]
+  users         users?          @relation(fields: [locked_by], references: [id], onUpdate: NoAction, map: "fk_seats_locked_by")
+  seat_zones    seat_zones      @relation(fields: [zone_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_seats_zone")
+  tickets       tickets[]
+
+  @@unique([zone_id, row_label, col_number], map: "uq_seat_position")
+  @@index([locked_by], map: "fk_seats_locked_by")
+  @@index([status, locked_at], map: "idx_seat_release")
+  @@index([zone_id, status], map: "idx_seats_zone_status")
+}
+
+model smtp_settings {
+  id         Int                      @id @db.TinyInt
+  host       String                   @db.VarChar(255)
+  port       Int
+  from_name  String                   @db.VarChar(255)
+  from_email String                   @db.VarChar(255)
+  username   String                   @db.VarChar(255)
+  password   String?                  @db.VarChar(255)
+  encryption smtp_settings_encryption @default(tls)
+  updated_at DateTime?                @default(now()) @db.Timestamp(0)
+}
+
+model tickets {
+  id            Int            @id @default(autoincrement())
+  booking_id    Int
+  seat_id       Int
+  qr_code       String         @unique(map: "uq_tickets_qr_code") @db.VarChar(500)
+  status        tickets_status @default(active)
+  checked_in_at DateTime?      @db.Timestamp(0)
+  created_at    DateTime?      @default(now()) @db.Timestamp(0)
+  bookings      bookings       @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tickets_booking")
+  seats         seats          @relation(fields: [seat_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tickets_seat")
+
+  @@unique([booking_id, seat_id], map: "uq_tickets_booking_seat")
+  @@index([booking_id], map: "idx_tickets_booking_id")
+  @@index([booking_id, seat_id], map: "idx_tickets_booking_seat")
+  @@index([seat_id], map: "idx_tickets_seat_id")
+  @@index([status], map: "idx_tickets_status")
+  @@index([status, created_at(sort: Desc)], map: "idx_tickets_status_created")
+}
+
+model users {
+  id                       Int                        @id @default(autoincrement())
+  email                    String                     @unique(map: "uq_users_email") @db.VarChar(255)
+  password_hash            String                     @db.VarChar(255)
+  full_name                String                     @db.VarChar(100)
+  phone                    String?                    @db.VarChar(20)
+  gender                   users_gender?
+  birth_date               DateTime?                  @db.Date
+  role                     users_role                 @default(customer)
+  oauth_provider           String?                    @db.VarChar(20)
+  oauth_provider_id        String?                    @db.VarChar(255)
+  avatar_url               String?                    @db.VarChar(500)
+  category_preferences     Json?
+  preferred_city           String?                    @db.VarChar(100)
+  created_at               DateTime?                  @default(now()) @db.Timestamp(0)
+  bookings                 bookings[]
+  event_favorites          event_favorites[]
+  events                   events[]
+  newsletter_subscriptions newsletter_subscriptions[]
+  password_reset_tokens    password_reset_tokens[]
+  post_bookmarks           post_bookmarks[]
+  posts                    posts[]
+  seats                    seats[]
+}
+
+enum promo_codes_discount_type {
+  percent
+  fixed
+}
+
+enum events_category {
+  music
+  arts
+  sports
+  food
+  entertainment
+  workshop
+  stage
+  other
+}
+
+enum newsletter_subscriptions_status {
+  active
+  unsubscribed
+}
+
+enum email_templates_status {
+  active
+  inactive
+}
+
+enum events_seating_mode {
+  seated
+  zoned
+  admission
+}
+
+enum payments_status {
+  initiated
+  succeeded
+  failed
+  cancelled
+}
+
+enum seats_status {
+  available
+  locked
+  sold
+}
+
+enum tickets_status {
+  active
+  used
+  cancelled
+}
+
+enum email_outbox_status {
+  queued
+  sent
+  failed
+  skipped
+}
+
+enum users_gender {
+  male
+  female
+  other
+}
+
+enum bookings_status {
+  pending
+  confirmed
+  cancelled
+}
+
+enum smtp_settings_encryption {
+  tls
+  ssl
+  none
+}
+
+enum users_role {
+  customer
+  admin
+}
+
+enum events_status {
+  draft
+  published
+  cancelled
+  completed
+}
+
+enum posts_status {
+  draft
+  published
+}
