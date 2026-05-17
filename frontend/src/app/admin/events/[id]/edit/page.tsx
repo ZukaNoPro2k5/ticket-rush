@@ -44,6 +44,7 @@ export default function EditEventPage() {
     title:       event.title,
     description: event.description ?? '',
     category:    event.category,
+    seating_mode: event.seating_mode,
     venue:       event.venue,
     event_date:  (() => {
       const d = new Date(event.event_date);

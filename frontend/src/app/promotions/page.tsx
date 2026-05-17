@@ -1,27 +1,88 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Copy, Check, Clock, Tag, Flame, Sparkles, Crown, Zap, ArrowRight, TicketPercent,
+  Copy, Check, Clock, Tag, Flame, Sparkles, Zap, ArrowRight, TicketPercent,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { PROMOTIONS, type Promotion } from '@/data/promotions';
+import { listPublicPromoCodes } from '@/lib/api/promoCodes';
 import { fadeUp, staggerContainer, cardVariant, useSectionInView } from '@/lib/motion';
 import { formatVnd } from '@/data/uiConfig';
+import type { EventCategory, PublicPromoCode } from '@/types';
 
 const FILTERS = [
   { key: 'all',      label: 'Tất cả' },
-  { key: 'new-user', label: 'Người mới' },
-  { key: 'concert',  label: 'Concert' },
-  { key: 'sport',    label: 'Thể thao' },
-  { key: 'workshop', label: 'Workshop' },
-  { key: 'theatre',  label: 'Kịch & nghệ thuật' },
+  { key: 'global',   label: 'Toàn hệ thống' },
+  { key: 'music',    label: 'Âm nhạc' },
+  { key: 'arts',     label: 'Nghệ thuật' },
+  { key: 'sports',   label: 'Thể thao' },
+  { key: 'food',     label: 'Ẩm thực' },
+  { key: 'entertainment', label: 'Giải trí' },
+  { key: 'workshop', label: 'Hội thảo' },
+  { key: 'stage',    label: 'Sân khấu' },
+  { key: 'other',    label: 'Khác' },
 ] as const;
 
 type FilterKey = typeof FILTERS[number]['key'];
+type PromoTag = 'hot' | 'new' | 'flash';
+
+interface PromotionView {
+  id: number;
+  title: string;
+  subtitle: string;
+  code: string;
+  type: 'percent' | 'fixed';
+  value: number;
+  category: FilterKey | EventCategory;
+  minSpend: number;
+  expiresAt: string;
+  usedPercent: number;
+  tag?: PromoTag;
+  sponsor: string;
+  sponsorColor: string;
+}
+
+const CATEGORY_COLORS: Partial<Record<EventCategory, string>> = {
+  music: 'bg-rose-500',
+  arts: 'bg-sky-600',
+  sports: 'bg-emerald-600',
+  workshop: 'bg-amber-600',
+  stage: 'bg-orange-600',
+  food: 'bg-teal-600',
+  entertainment: 'bg-purple-600',
+  other: 'bg-stone-600',
+};
+
+function toPromotionView(p: PublicPromoCode): PromotionView {
+  const usedPercent = p.max_uses
+    ? Math.min(100, Math.round((p.used_count / p.max_uses) * 100))
+    : 0;
+  const scoped = Boolean(p.event_id && p.event_title);
+  const discountText = p.discount_type === 'percent'
+    ? `Giảm ${p.discount_value}%`
+    : `Giảm ${formatVnd(p.discount_value)}`;
+
+  return {
+    id: p.id,
+    title: scoped ? `Ưu đãi ${p.event_title}` : 'Ưu đãi toàn hệ thống',
+    subtitle: scoped
+      ? `${discountText} khi đặt vé sự kiện này`
+      : `${discountText} cho mọi sự kiện đủ điều kiện`,
+    code: p.code,
+    type: p.discount_type,
+    value: p.discount_value,
+    category: p.event_category ?? 'global',
+    minSpend: p.min_amount,
+    expiresAt: p.expires_at,
+    usedPercent,
+    tag: usedPercent >= 80 ? 'flash' : scoped ? 'hot' : 'new',
+    sponsor: scoped ? p.event_title! : 'TicketRush',
+    sponsorColor: p.event_category ? (CATEGORY_COLORS[p.event_category] ?? 'bg-amber-500') : 'bg-amber-500',
+  };
+}
 
 function useCountdown(iso: string) {
   const target = new Date(iso).getTime();
@@ -34,13 +95,12 @@ function useCountdown(iso: string) {
   return { expired: false, label: `Còn ${hours}h — sắp hết!`, urgent: true };
 }
 
-function TagPill({ tag }: { tag?: Promotion['tag'] }) {
+function TagPill({ tag }: { tag?: PromoTag }) {
   if (!tag) return null;
   const map = {
     hot:   { bg: 'bg-rose-500',    Icon: Flame,    label: 'HOT' },
     new:   { bg: 'bg-emerald-600', Icon: Sparkles, label: 'NGƯỜI MỚI' },
     flash: { bg: 'bg-orange-600',  Icon: Zap,      label: 'FLASH' },
-    vip:   { bg: 'bg-purple-600',  Icon: Crown,    label: 'VIP' },
   } as const;
   const { bg, Icon, label } = map[tag];
   return (
@@ -50,7 +110,7 @@ function TagPill({ tag }: { tag?: Promotion['tag'] }) {
   );
 }
 
-function VoucherCard({ p }: { p: Promotion }) {
+function VoucherCard({ p }: { p: PromotionView }) {
   const [copied, setCopied] = useState(false);
   const countdown = useCountdown(p.expiresAt);
 
@@ -65,11 +125,7 @@ function VoucherCard({ p }: { p: Promotion }) {
     }
   };
 
-  const valueLabel =
-    p.type === 'percent'   ? `${p.value}%` :
-    p.type === 'cashback'  ? `HOÀN ${p.value}%` :
-    p.type === 'shipping'  ? 'FREE SHIP' :
-    formatVnd(p.value);
+  const valueLabel = p.type === 'percent' ? `${p.value}%` : formatVnd(p.value);
 
   return (
     <motion.article
@@ -83,7 +139,7 @@ function VoucherCard({ p }: { p: Promotion }) {
         <TicketPercent className="absolute right-2 top-2 h-4 w-4 opacity-30" />
         <span className="font-display text-2xl font-extrabold leading-none sm:text-3xl">{valueLabel}</span>
         <span className="mt-1 text-[10px] font-semibold uppercase tracking-wider opacity-90">
-          {p.type === 'cashback' ? 'hoàn tiền' : 'giảm ngay'}
+          giảm ngay
         </span>
         {/* Punch holes */}
         <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-stone-50" />
@@ -104,7 +160,7 @@ function VoucherCard({ p }: { p: Promotion }) {
           <h3 className="truncate font-display text-base font-bold text-stone-900">{p.title}</h3>
           <p className="mt-0.5 line-clamp-1 text-xs text-stone-500">{p.subtitle}</p>
 
-          {p.minSpend && (
+          {p.minSpend > 0 && (
             <p className="mt-2 text-[11px] text-stone-500">
               Đơn tối thiểu <span className="font-semibold text-stone-700">{formatVnd(p.minSpend)}</span>
             </p>
@@ -148,19 +204,39 @@ export default function PromotionsPage() {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [query, setQuery] = useState('');
   const [pendingQuery, setPendingQuery] = useState('');
+  const [promos, setPromos] = useState<PromotionView[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const { ref, inView } = useSectionInView();
 
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    listPublicPromoCodes()
+      .then((rows) => {
+        if (alive) setPromos(rows.map(toPromotionView));
+      })
+      .catch(() => {
+        if (alive) setPromos([]);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => { alive = false; };
+  }, []);
+
   const list = useMemo(() => {
-    return PROMOTIONS.filter((p) => {
+    return promos.filter((p) => {
       if (filter !== 'all' && p.category !== filter) return false;
       if (query.trim()) {
         const q = query.trim().toLowerCase();
-        return p.title.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
+        return p.title.toLowerCase().includes(q)
+          || p.code.toLowerCase().includes(q)
+          || p.sponsor.toLowerCase().includes(q);
       }
       return true;
     });
-  }, [filter, query]);
+  }, [filter, promos, query]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,7 +258,7 @@ export default function PromotionsPage() {
               Săn mã giảm giá — <span className="text-amber-400">tiết kiệm tới 50%</span>
             </h1>
             <p className="mt-3 max-w-xl text-base text-stone-300 md:text-lg">
-              Kho ưu đãi cập nhật hàng ngày. Chọn mã, sao chép và nhập khi thanh toán để giảm ngay.
+              Kho ưu đãi cập nhật hàng ngày. Chọn mã, sao chép và nhập ở bước xác nhận để giảm ngay.
             </p>
 
             <form onSubmit={handleSearch} className="mt-6 flex max-w-md gap-2">
@@ -205,7 +281,7 @@ export default function PromotionsPage() {
       </section>
 
       {/* Filter bar */}
-      <section className="sticky top-16 z-20 border-b border-stone-200 bg-stone-50/90 backdrop-blur">
+      <section className="sticky top-16 z-20 border-b border-stone-200 bg-stone-50/90 backdrop-blur lg:top-20">
         <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-3 lg:px-8">
           {FILTERS.map((f) => {
             const active = filter === f.key;
@@ -231,12 +307,18 @@ export default function PromotionsPage() {
               {list.length} ưu đãi đang hoạt động
             </h2>
             <p className="mt-1 text-sm text-stone-500">
-              Nhấp vào mã để sao chép, sau đó dán khi thanh toán.
+              Nhấp vào mã để sao chép, sau đó dán ở bước xác nhận đặt vé.
             </p>
           </div>
         </div>
 
-        {list.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-44 animate-pulse rounded-2xl bg-white shadow-soft" />
+            ))}
+          </div>
+        ) : list.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-12 text-center">
             <TicketPercent className="mx-auto h-10 w-10 text-stone-300" />
             <p className="mt-3 font-semibold text-stone-700">Không tìm thấy ưu đãi phù hợp</p>
@@ -260,7 +342,7 @@ export default function PromotionsPage() {
             {[
               { n: 1, t: 'Sao chép mã', d: 'Nhấp nút mã ở thẻ ưu đãi bạn thích.' },
               { n: 2, t: 'Chọn vé', d: 'Vào sự kiện và chọn vé như bình thường.' },
-              { n: 3, t: 'Dán khi thanh toán', d: 'Nhập mã ở ô "Mã ưu đãi" để được giảm ngay.' },
+              { n: 3, t: 'Dán khi xác nhận', d: 'Nhập mã ở ô "Mã ưu đãi" để được giảm ngay.' },
             ].map((s) => (
               <li key={s.n} className="flex items-start gap-3">
                 <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-amber-500 font-display text-base font-bold text-white">{s.n}</span>

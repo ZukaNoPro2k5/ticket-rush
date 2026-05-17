@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   ArrowUpRight, ArrowDownRight,
@@ -14,7 +15,10 @@ import {
 } from 'recharts';
 import { fadeUp, staggerContainer } from '@/lib/motion';
 import api from '@/lib/api/client';
+import { listPosts } from '@/lib/api/posts';
 import { useAuthStore } from '@/stores/authStore';
+import { formatPostDate } from '@/lib/utils/posts';
+import type { Post } from '@/types';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -49,17 +53,6 @@ interface FillRate {
   poster_url?: string | null;
 }
 
-interface TopEvent {
-  id: number;
-  title: string;
-  poster_url: string | null;
-  event_date: string;
-  venue: string;
-  bookings: number;
-  revenue: number;
-  fill_rate: number;
-}
-
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function fmtCurrency(n: number) {
@@ -70,8 +63,14 @@ function fmtCurrency(n: number) {
 }
 
 const CATEGORY_VI: Record<string, string> = {
-  music: 'Âm nhạc', sports: 'Thể thao', stage: 'Nghệ thuật',
-  workshop: 'Hội thảo', other: 'Khác',
+  music: 'Âm nhạc',
+  arts: 'Nghệ thuật',
+  sports: 'Thể thao',
+  food: 'Ẩm thực',
+  entertainment: 'Giải trí',
+  workshop: 'Hội thảo',
+  stage: 'Sân khấu',
+  other: 'Khác',
 };
 
 // Day-of-week label (Mon…Sun → T2…CN)
@@ -209,17 +208,17 @@ export default function AdminOverviewPage() {
   const [stats,     setStats]     = useState<DashboardStats | null>(null);
   const [todayData, setTodayData] = useState<TodayStats | null>(null);
   const [trending,  setTrending]  = useState<FillRate[]>([]);
-  const [popular,   setPopular]   = useState<TopEvent[]>([]);
+  const [popularPosts, setPopularPosts] = useState<Post[]>([]);
   const [loading,   setLoading]   = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) setLoading(true);
     try {
-      const [s, td, fr, te] = await Promise.all([
+      const [s, td, fr, posts] = await Promise.all([
         api.get<{ success: boolean; data: DashboardStats }>('/admin/dashboard'),
         api.get<{ success: boolean; data: TodayStats     }>('/admin/today-stats'),
         api.get<{ success: boolean; data: FillRate[]     }>('/admin/fill-rates'),
-        api.get<{ success: boolean; data: TopEvent[]     }>('/admin/top-events?limit=5'),
+        listPosts({ status: 'published', sort: 'views', order: 'desc', limit: 5 }),
       ]);
       setStats(s.data.data);
       setTodayData(td.data.data);
@@ -234,12 +233,18 @@ export default function AdminOverviewPage() {
           .sort((a, b) => b.fill_rate - a.fill_rate)
           .slice(0, 5),
       );
-      setPopular(te.data.data ?? []);
+      setPopularPosts(posts.posts);
     } catch { /* silent */ }
-    finally { setLoading(false); }
+    finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const id = window.setInterval(() => void load({ silent: true }), 15_000);
+    return () => window.clearInterval(id);
+  }, [load]);
 
   const user      = useAuthStore(s => s.user);
   const firstName = user?.full_name?.trim().split(/\s+/).slice(-1)[0] || 'Admin';
@@ -262,6 +267,7 @@ export default function AdminOverviewPage() {
 
   const weeklyTotalRevenue = weekly.reduce((s, d) => s + d.revenue, 0);
   const weeklyTotalBookings = weekly.reduce((s, d) => s + d.bookings, 0);
+  const interestingPosts = popularPosts;
 
   return (
     <motion.div variants={staggerContainer()} initial="hidden" animate="visible" className="space-y-5">
@@ -288,7 +294,7 @@ export default function AdminOverviewPage() {
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">Truy cập nhanh</p>
             <div className="flex flex-wrap justify-end gap-2">
               <QuickPill href="/admin/events/new"  icon={Plus}      label="Tạo sự kiện"  accent="text-amber-700 hover:bg-amber-100/60" />
-              <QuickPill href="/admin/news/new"     icon={Newspaper} label="Tạo bài đăng" accent="text-violet-700 hover:bg-violet-100/60" />
+              <QuickPill href="/admin/posts"        icon={Newspaper} label="Bài đăng" accent="text-violet-700 hover:bg-violet-100/60" />
               <QuickPill href="/admin/promo-codes" icon={Tag}       label="Mã giảm giá"  accent="text-rose-600 hover:bg-rose-100/60" />
               <QuickPill href="/admin/analytics"   icon={BarChart2} label="Phân tích"    accent="text-emerald-700 hover:bg-emerald-100/60" />
             </div>
@@ -456,7 +462,7 @@ export default function AdminOverviewPage() {
                   }`}>{i + 1}</span>
                   {/* Poster thumbnail */}
                   {ev.poster_url
-                    ? <img src={ev.poster_url} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover" />
+                    ? <Image src={ev.poster_url} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-xl object-cover" unoptimized />
                     : <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-300"><CalendarDays className="h-4 w-4" /></div>
                   }
                   <div className="min-w-0 flex-1">
@@ -489,15 +495,15 @@ export default function AdminOverviewPage() {
         )}
       </motion.div>
 
-      {/* ── Bài đăng quan tâm ─────────────────────────────────────────── */}
+      {/* ── Bài đăng được quan tâm ───────────────────────────────────── */}
       <motion.div variants={fadeUp} className="rounded-2xl border border-stone-200 bg-white shadow-soft">
         <div className="flex items-center justify-between border-b border-stone-100 px-5 py-4">
           <div>
             <p className="section-title">Bài đăng được quan tâm</p>
-            <p className="text-xs text-stone-400">Sự kiện có doanh thu cao nhất</p>
+            <p className="text-xs text-stone-400">Nội dung nổi bật ngoài newsroom</p>
           </div>
-          <Link href="/admin/analytics" className="flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-700">
-            Phân tích <ArrowUpRight className="h-3.5 w-3.5" />
+          <Link href="/admin/posts" className="flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-700">
+            Quản lý bài đăng <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         {loading ? (
@@ -514,35 +520,32 @@ export default function AdminOverviewPage() {
               </div>
             ))}
           </div>
-        ) : popular.length === 0 ? (
+        ) : interestingPosts.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <CalendarDays className="h-8 w-8 text-stone-200" />
-            <p className="text-sm text-stone-400">Chưa có dữ liệu</p>
-            <p className="text-xs text-stone-300">Tạo sự kiện và bán vé để thấy thống kê tại đây</p>
+            <Newspaper className="h-8 w-8 text-stone-200" />
+            <p className="text-sm text-stone-400">Chưa có bài đăng</p>
+            <p className="text-xs text-stone-300">Khi có nội dung, các bài đáng chú ý sẽ hiện ở đây</p>
           </div>
         ) : (
           <div className="divide-y divide-stone-100">
-            {popular.map((ev, i) => (
-              <div key={ev.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-stone-50/60">
+            {interestingPosts.map((post, i) => (
+              <Link key={post.id} href={`/news/${post.slug}`} target="_blank" className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-stone-50/60">
                 <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold ${
                   i === 0 ? 'bg-amber-100 text-amber-600'
                   : i === 1 ? 'bg-stone-200 text-stone-600'
                   : i === 2 ? 'bg-orange-50 text-orange-500'
                   : 'bg-stone-100 text-stone-400'
                 }`}>{i + 1}</span>
-                {ev.poster_url
-                  ? <img src={ev.poster_url} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover" />
-                  : <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-300"><CalendarDays className="h-4 w-4" /></div>
-                }
+                <Image src={post.cover_url} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-xl object-cover" unoptimized />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-stone-800">{ev.title}</p>
-                  <p className="mt-0.5 text-[11px] text-stone-400">{ev.bookings.toLocaleString('vi-VN')} đơn · {ev.venue}</p>
+                  <p className="truncate text-sm font-semibold text-stone-800">{post.title}</p>
+                  <p className="mt-0.5 text-[11px] text-stone-400">{post.category} · {post.author_name}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-sm font-bold tabular-nums text-stone-900">{fmtCurrency(ev.revenue)}đ</p>
-                  <p className="text-[11px] text-stone-400">{ev.fill_rate.toFixed(0)}% đầy</p>
+                  <p className="text-sm font-bold tabular-nums text-stone-900">{post.view_count.toLocaleString('vi-VN')}</p>
+                  <p className="text-[11px] text-stone-400">{formatPostDate(post.published_at)}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

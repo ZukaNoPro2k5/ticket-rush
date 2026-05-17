@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Calendar, Flame, MapPin, TrendingUp } from 'lucide-react';
-import { TRENDING_LEADERBOARD, formatVnd } from '@/data/uiConfig';
+import { formatVnd } from '@/data/uiConfig';
 import type { DisplayEvent } from '@/types';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface RankStyle {
   num: string;
@@ -19,13 +20,13 @@ function getRankStyle(rank: number): RankStyle {
   return { num: 'text-stone-400', ring: 'ring-transparent bg-transparent' };
 }
 
-function getVelocityGradient(velocity: number): string {
-  if (velocity > 28) return 'from-rose-400 to-orange-500';
-  if (velocity > 16) return 'from-amber-400 to-orange-400';
+function getSellThroughGradient(soldPercent: number): string {
+  if (soldPercent > 80) return 'from-rose-400 to-orange-500';
+  if (soldPercent > 50) return 'from-amber-400 to-orange-400';
   return 'from-amber-300 to-amber-500';
 }
 
-const COLUMN_HEADERS = ['Hạng', 'Sự kiện', 'Thời gian', 'Tốc độ bán', 'Giá từ'] as const;
+const COLUMN_HEADERS = ['Hạng', 'Sự kiện', 'Thời gian', 'Tỷ lệ bán', 'Giá từ'] as const;
 
 function SectionHeader() {
   return (
@@ -42,8 +43,8 @@ function SectionHeader() {
           Live
         </span>
       </div>
-      <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Đang được tìm nhiều nhất</h2>
-      <p className="mt-1 text-sm text-stone-500 md:text-base">Cập nhật theo lượng đặt vé 24 giờ qua</p>
+      <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Được quan tâm nhất</h2>
+      <p className="mt-1 text-sm text-stone-500 md:text-base">Xếp theo tỷ lệ vé đã bán từ dữ liệu đang mở bán</p>
     </div>
   );
 }
@@ -69,9 +70,8 @@ function RankBadge({ rank, change }: { rank: number; change: number }) {
 
 function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
   const change = ev.rankChange ?? 0;
-  const velocity = Math.min(ev.velocity ?? 0, 40);
-  const velPct = Math.round((velocity / 40) * 100);
-  const velGradient = getVelocityGradient(velocity);
+  const soldPercent = Math.min(ev.soldPercent, 100);
+  const sellThroughGradient = getSellThroughGradient(soldPercent);
 
   return (
     <motion.div variants={cardVariant}>
@@ -106,7 +106,7 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
             <div className="mt-1.5 flex items-center gap-3 text-[11px] text-stone-500 md:hidden">
               <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{ev.dateLabel}</span>
               <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-600">
-                <TrendingUp className="h-3 w-3" />+{ev.velocity}%
+                <TrendingUp className="h-3 w-3" />{soldPercent}% đã bán
               </span>
             </div>
           </div>
@@ -122,14 +122,14 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
         <div className="hidden md:block">
           <div className="mb-1.5 flex items-center justify-between">
             <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
-              <TrendingUp className="h-3.5 w-3.5" /> +{ev.velocity}%
+              <TrendingUp className="h-3.5 w-3.5" /> {soldPercent}%
             </span>
-            <span className="text-[11px] text-stone-400">{ev.soldPercent}% đã bán</span>
+            <span className="text-[11px] text-stone-400">đã bán</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-stone-100">
             <div
-              className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${velGradient}`}
-              style={{ width: `${velPct}%` }}
+              className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${sellThroughGradient}`}
+              style={{ width: `${soldPercent}%` }}
             />
           </div>
         </div>
@@ -141,7 +141,7 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
             <div className="font-display text-base font-bold text-amber-700">{formatVnd(ev.priceFrom)}</div>
           </div>
           <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-stone-600 transition-colors group-hover:bg-amber-500 group-hover:text-white">
-            Xem vé
+            Chi tiết
           </span>
         </div>
       </Link>
@@ -149,9 +149,11 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
   );
 }
 
-export function TrendingLeaderboard({ events }: { events?: DisplayEvent[] }) {
+export function TrendingLeaderboard({ events, loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
   const { ref, inView } = useSectionInView(0.1);
-  const data = events && events.length > 0 ? events.slice(0, 10) : TRENDING_LEADERBOARD;
+  const data = [...(events ?? [])]
+    .sort((a, b) => b.soldPercent - a.soldPercent)
+    .slice(0, 10);
 
   return (
     <section className="bg-stone-50 py-12 lg:py-16">
@@ -168,6 +170,16 @@ export function TrendingLeaderboard({ events }: { events?: DisplayEvent[] }) {
           </Link>
         </motion.div>
 
+        {loading ? (
+          <div className="h-72 animate-pulse rounded-3xl border border-stone-200 bg-white shadow-soft" />
+        ) : data.length === 0 ? (
+          <EmptyState
+            variant="events"
+            headline="Chưa có dữ liệu xếp hạng"
+            subtext="Khi vé bắt đầu bán, bảng xếp hạng sẽ tự cập nhật."
+            className="rounded-3xl border border-stone-200 bg-white shadow-soft"
+          />
+        ) : (
         <motion.div
           variants={staggerContainer(0.05)}
           initial="hidden"
@@ -187,6 +199,7 @@ export function TrendingLeaderboard({ events }: { events?: DisplayEvent[] }) {
             <LeaderboardRow key={ev.id} ev={ev} rank={i + 1} />
           ))}
         </motion.div>
+        )}
       </div>
     </section>
   );

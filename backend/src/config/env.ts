@@ -31,6 +31,8 @@ function getEnvAsInt(key: string): number {
 export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.BACKEND_PORT || '4000', 10), // Default is fine for non-critical port
+  publicUrl: process.env.BACKEND_PUBLIC_URL || `http://localhost:${process.env.BACKEND_PORT || '4000'}`,
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   db: {
     host: getEnv('DB_HOST'),
     port: getEnvAsInt('DB_PORT'),

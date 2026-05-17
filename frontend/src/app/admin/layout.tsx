@@ -1,13 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   CalendarDays, LineChart, LayoutDashboard, Newspaper, PanelLeft,
-  Receipt, Settings, Sparkles, Tag, Users, Zap, CreditCard, Mail
+  Receipt, Sparkles, Tag, Users, Zap, CreditCard, Mail, Wrench
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { useAdminPreferencesStore } from '@/stores/adminPreferencesStore';
 import { cn } from '@/lib/utils/cn';
 import Topbar from '@/components/admin/Topbar';
 
@@ -25,11 +26,19 @@ const NAV_SECONDARY = [
   { href: '/admin/reports',   label: 'Báo cáo tự động',  icon: Sparkles },
   { href: '/admin/payments',  label: 'Thanh toán',       icon: CreditCard },
   { href: '/admin/mail',      label: 'Tùy chỉnh mail',   icon: Mail },
+  { href: '/admin/operations', label: 'Vận hành hệ thống', icon: Wrench },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(true);
-  const { user, isAuthenticated, clearAuth, _hasHydrated } = useAuthStore();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const {
+    workspaceTone,
+    density,
+    sidebarExpanded,
+    reducedMotion,
+    _hasHydrated: prefsHydrated,
+  } = useAdminPreferencesStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -40,18 +49,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [_hasHydrated, isAuthenticated, user, router]);
 
+  useEffect(() => {
+    if (!prefsHydrated) return;
+    setCollapsed(!sidebarExpanded);
+  }, [prefsHydrated, sidebarExpanded]);
+
   if (!_hasHydrated) return null;
   if (!isAuthenticated || user?.role !== 'admin') return null;
-
-  const initials =
-    user?.full_name
-      ?.trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(-2)
-      .map(n => n[0])
-      .join('')
-      .toUpperCase() ?? 'A';
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
@@ -59,7 +63,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-stone-50">
+    <div className={cn(
+      'admin-shell flex h-screen overflow-hidden',
+      workspaceTone === 'paper' && 'bg-white',
+      workspaceTone === 'sand' && 'bg-amber-50/40',
+      workspaceTone === 'stone' && 'bg-stone-50',
+      density === 'compact' && 'admin-density-compact',
+      reducedMotion && 'admin-reduced-motion',
+    )}>
       {/* Sidebar */}
       <aside className={cn(
         'relative z-10 flex h-full shrink-0 flex-col bg-stone-900 transition-all duration-300',
@@ -172,7 +183,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <main className="flex flex-col flex-1 overflow-hidden">
         <Topbar />
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-6 py-8">
+          <div className={cn(
+            'mx-auto max-w-7xl px-6 py-8',
+            density === 'compact' && 'py-5',
+          )}>
             {children}
           </div>
         </div>

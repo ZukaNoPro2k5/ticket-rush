@@ -20,7 +20,8 @@ export async function applyPromoCode(
             event_id, min_amount, starts_at, expires_at, is_active
      FROM promo_codes
      WHERE code = ? AND is_active = TRUE
-     AND starts_at <= NOW() AND expires_at >= NOW()`,
+     AND starts_at <= NOW() AND expires_at >= NOW()
+     FOR UPDATE`,
     [code],
   );
 

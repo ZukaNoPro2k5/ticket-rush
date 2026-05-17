@@ -9,4 +9,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, seats);
 });
 
-// TODO: Dev 2 — additional seat handlers
+export const listZone = asyncHandler(async (req: Request, res: Response) => {
+  const seats = await seatsService.listByZone(Number(req.params.eventId), Number(req.params.zoneId));
+  sendSuccess(res, seats);
+});

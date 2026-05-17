@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { User, Ticket, History, Settings, ChevronRight } from 'lucide-react';
+import { User, Ticket, Heart, History, Settings, ChevronRight } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils/cn';
 import { Navbar } from '@/components/layout/Navbar';
@@ -13,6 +13,7 @@ import { Footer } from '@/components/layout/Footer';
 
 const NAV = [
   { href: '/profile',       icon: User,    label: 'Tài khoản của tôi' },
+  { href: '/saved-events',  icon: Heart,   label: 'Sự kiện đã lưu' },
   { href: '/my-tickets',    icon: Ticket,  label: 'Vé của tôi' },
   { href: '/order-history', icon: History, label: 'Lịch sử đặt vé' },
   { href: '/settings',      icon: Settings, label: 'Cài đặt' },

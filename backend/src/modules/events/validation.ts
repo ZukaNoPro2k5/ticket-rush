@@ -1,6 +1,17 @@
 import { z } from 'zod';
 
-const categoryEnum = z.enum(['music', 'stage', 'sports', 'workshop', 'other', 'arts', 'tech', 'food', 'entertainment']);
+export const eventCategoryValues = [
+  'music',
+  'arts',
+  'sports',
+  'food',
+  'entertainment',
+  'workshop',
+  'stage',
+  'other',
+] as const;
+
+const categoryEnum = z.enum(eventCategoryValues);
 const statusEnum = z.enum(['draft', 'published', 'cancelled', 'completed']);
 const seatingModeEnum = z.enum(['seated', 'zoned', 'admission']);
 
@@ -33,9 +44,12 @@ export const listEventsQuerySchema = z.object({
   category: categoryEnum.optional(),
   status: statusEnum.optional(),
   search: z.string().optional(),
+  city: z.enum(['ha-noi', 'ho-chi-minh', 'da-nang', 'hai-phong', 'hue', 'other']).optional(),
+  time_range: z.enum(['today', 'weekend', 'week', 'month', 'next_month', 'other']).optional(),
+  max_price: z.coerce.number().int().positive().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(200).default(12),
-  sort: z.enum(['event_date', 'created_at']).default('event_date'),
+  sort: z.enum(['event_date', 'created_at', 'sold', 'price']).default('event_date'),
   order: z.enum(['asc', 'desc']).default('asc'),
 });
 

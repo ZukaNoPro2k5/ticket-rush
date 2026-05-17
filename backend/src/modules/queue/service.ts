@@ -128,3 +128,20 @@ export async function hasGrant(eventId: number, userId: number): Promise<boolean
 export async function consumeGrant(eventId: number, userId: number): Promise<void> {
   await redis.del(GRANT_KEY(eventId, userId));
 }
+
+/**
+ * Remove all waiting/granted users for an event that is no longer bookable
+ * (currently used when an admin cancels the event).
+ */
+export async function clearEventQueue(eventId: number): Promise<void> {
+  await redis.del(QUEUE_KEY(eventId));
+
+  // One event cancellation is a rare control-plane action; KEYS keeps the
+  // implementation simple here and matches the repo's existing Redis usage.
+  const grantKeys = await redis.keys(`queue:granted:${eventId}:*`);
+  if (grantKeys.length > 0) {
+    await redis.del(...grantKeys);
+  }
+
+  queueWaitingGauge.set({ event_id: String(eventId) }, 0);
+}

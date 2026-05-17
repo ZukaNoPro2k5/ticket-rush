@@ -2,7 +2,12 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../../shared/asyncHandler';
 import { sendSuccess } from '../../shared/response';
 import * as usersService from './service';
-import type { UpdateProfileInput, ChangePasswordInput, SavePreferencesInput } from './validation';
+import type {
+  UpdateProfileInput,
+  ChangePasswordInput,
+  SavePreferencesInput,
+  UpdateAvatarInput,
+} from './validation';
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const user = await usersService.getProfile(req.user!.userId);
@@ -22,4 +27,9 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
 export const savePreferences = asyncHandler(async (req: Request, res: Response) => {
   await usersService.savePreferences(req.user!.userId, req.body as SavePreferencesInput);
   sendSuccess(res, null, 'Đã lưu sở thích');
+});
+
+export const updateAvatar = asyncHandler(async (req: Request, res: Response) => {
+  const user = await usersService.updateAvatar(req.user!.userId, req.body as UpdateAvatarInput);
+  sendSuccess(res, user, 'Đã cập nhật ảnh đại diện');
 });

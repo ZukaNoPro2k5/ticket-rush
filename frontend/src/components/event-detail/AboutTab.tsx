@@ -11,20 +11,25 @@ interface Props {
   event: DisplayEvent;
   description?: string | null;
   zones: ZoneWithStats[];
+  holdMinutes: number;
 }
 
-const FEATURE_ICONS = [
-  { icon: Users, label: 'Sơ đồ ghế rõ ràng' },
-  { icon: Clock, label: 'Giữ ghế 10 phút' },
-  { icon: Building2, label: 'Cập nhật realtime' },
-  { icon: Info, label: 'QR sau thanh toán' },
-];
+function getFeatureIcons(holdMinutes: number) {
+  return [
+    { icon: Users, label: 'Sơ đồ ghế rõ ràng' },
+    { icon: Clock, label: `Giữ ghế ${holdMinutes} phút` },
+    { icon: Building2, label: 'Cập nhật realtime' },
+    { icon: Info, label: 'QR sau xác nhận' },
+  ];
+}
 
 function formatVnd(value: number): string {
   return `${value.toLocaleString('vi-VN')}đ`;
 }
 
-export function AboutTab({ event, description, zones }: Props) {
+export function AboutTab({ event, description, zones, holdMinutes }: Props) {
+  const featureIcons = getFeatureIcons(holdMinutes);
+
   return (
     <div className="space-y-6 animate-fadeInUp">
       <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-soft lg:p-8">
@@ -41,7 +46,7 @@ export function AboutTab({ event, description, zones }: Props) {
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {FEATURE_ICONS.map((f) => (
+          {featureIcons.map((f) => (
             <div key={f.label} className="rounded-2xl border border-stone-200 bg-stone-50 p-3 text-center">
               <f.icon className="mx-auto h-5 w-5 text-amber-600" />
               <div className="mt-1 text-xs font-semibold text-stone-700">{f.label}</div>

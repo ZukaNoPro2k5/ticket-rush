@@ -6,6 +6,9 @@ import * as promoController from './controller';
 
 const router = Router();
 
+// Public: active promos customers can actually use right now
+router.get('/public', promoController.listPublic);
+
 // Customer: validate a promo code before booking
 router.post('/validate', authenticate, validateBody(validatePromoSchema), promoController.validate);
 

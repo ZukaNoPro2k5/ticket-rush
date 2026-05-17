@@ -1,6 +1,7 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../../config/database';
 import { AppError } from '../../shared/AppError';
+import { getBookingRules } from '../../config/runtimeSettings';
 
 interface SeatRow extends RowDataPacket {
   id: number;
@@ -11,6 +12,13 @@ interface SeatRow extends RowDataPacket {
   row_label: string;
   col_number: number;
   status: string;
+}
+
+function normalizeSeat(row: SeatRow) {
+  return {
+    ...row,
+    zone_price: Number(row.zone_price),
+  };
 }
 
 /**
@@ -28,10 +36,27 @@ export async function listByEvent(eventId: number) {
      ORDER BY sz.id, s.row_label, s.col_number`,
     [eventId],
   );
-  return rows;
+  return rows.map(normalizeSeat);
 }
 
-// TODO: Dev 2 — listByZone
+/**
+ * List seats for one zone within an event.
+ * Keeping the event guard avoids leaking a valid zone id across events.
+ */
+export async function listByZone(eventId: number, zoneId: number) {
+  const [rows] = await pool.execute<SeatRow[]>(
+    `SELECT
+       s.id, s.zone_id,
+       sz.name AS zone_name, sz.color AS zone_color, sz.price AS zone_price,
+       s.row_label, s.col_number, s.status
+     FROM seats s
+     JOIN seat_zones sz ON sz.id = s.zone_id
+     WHERE sz.event_id = ? AND sz.id = ?
+     ORDER BY s.row_label, s.col_number`,
+    [eventId, zoneId],
+  );
+  return rows.map(normalizeSeat);
+}
 
 /**
  * Lock ghế cho user — sử dụng SELECT ... FOR UPDATE để tránh race condition
@@ -107,12 +132,23 @@ export async function markSold(seatIds: number[]) {
 }
 
 /**
- * Cronjob: tìm và release ghế locked quá 10 phút
+ * Cronjob: tìm và release ghế locked quá thời gian giữ vé hiện tại
  */
 export async function releaseExpiredSeats() {
+  const { ticketHoldMinutes } = await getBookingRules();
+  const cutoff = new Date(Date.now() - ticketHoldMinutes * 60 * 1000);
   const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT s.id FROM seats s
-     WHERE s.status = 'locked' AND s.locked_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)`,
+    `SELECT s.id
+     FROM seats s
+     WHERE s.status = 'locked'
+       AND s.locked_at < ?
+       AND NOT EXISTS (
+         SELECT 1
+         FROM booking_seats bs
+         JOIN bookings b ON b.id = bs.booking_id
+         WHERE bs.seat_id = s.id AND b.status = 'pending'
+       )`,
+    [cutoff],
   );
 
   const seatIds = rows.map((r) => r.id as number);

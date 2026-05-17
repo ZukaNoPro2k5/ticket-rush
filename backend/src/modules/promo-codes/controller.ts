@@ -9,6 +9,11 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, promos);
 });
 
+export const listPublic = asyncHandler(async (_req: Request, res: Response) => {
+  const promos = await promoService.listPublicPromoCodes();
+  sendSuccess(res, promos);
+});
+
 export const getOne = asyncHandler(async (req: Request, res: Response) => {
   const promo = await promoService.getPromoById(Number(req.params.id));
   sendSuccess(res, promo);

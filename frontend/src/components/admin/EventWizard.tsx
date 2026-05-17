@@ -6,9 +6,9 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Calendar, Check, Clapperboard,
+  AlertTriangle, ArrowLeft, ArrowRight, Calendar, Check, Clapperboard,
   GraduationCap, ImageIcon, LayoutGrid, Layers, Link2, Loader2,
-  MapPin, Maximize2, Music, Palette, Plus, Save, Sparkles, Tag, Ticket, Trash2, Trophy, Upload, Utensils, Cpu, Laugh, X,
+  MapPin, Maximize2, Music, Palette, Plus, Save, Sparkles, Tag, Ticket, Trash2, Trophy, Upload, Utensils, Laugh, X,
 } from 'lucide-react';
 import { fadeUp } from '@/lib/motion';
 import api from '@/lib/api/client';
@@ -41,13 +41,12 @@ const CATEGORY_OPTIONS: {
 }[] = [
   { value: 'music',         label: 'Âm nhạc',   Icon: Music,         accent: 'bg-rose-100 text-rose-600',       ring: 'ring-rose-200' },
   { value: 'arts',          label: 'Nghệ thuật', Icon: Palette,       accent: 'bg-sky-100 text-sky-600',         ring: 'ring-sky-200' },
-  { value: 'tech',          label: 'Công nghệ',  Icon: Cpu,           accent: 'bg-pink-100 text-pink-600',       ring: 'ring-pink-200' },
   { value: 'sports',        label: 'Thể thao',   Icon: Trophy,        accent: 'bg-emerald-100 text-emerald-600', ring: 'ring-emerald-200' },
   { value: 'food',          label: 'Ẩm thực',    Icon: Utensils,      accent: 'bg-teal-100 text-teal-600',       ring: 'ring-teal-200' },
   { value: 'entertainment', label: 'Giải trí',   Icon: Laugh,         accent: 'bg-purple-100 text-purple-600',   ring: 'ring-purple-200' },
   { value: 'workshop',      label: 'Hội thảo',   Icon: GraduationCap, accent: 'bg-amber-100 text-amber-600',     ring: 'ring-amber-200' },
   { value: 'stage',         label: 'Sân khấu',   Icon: Clapperboard,  accent: 'bg-orange-100 text-orange-600',   ring: 'ring-orange-200' },
-  { value: 'other',         label: 'Khác',       Icon: Sparkles,      accent: 'bg-violet-100 text-violet-600',   ring: 'ring-violet-200' },
+  { value: 'other',         label: 'Khác',       Icon: Sparkles,      accent: 'bg-stone-100 text-stone-600',     ring: 'ring-stone-200' },
 ];
 
 const ZONE_COLORS = [
@@ -126,6 +125,48 @@ const ZONED_PATTERNS: LayoutPattern[] = [
 interface ZonePos {
   x: number; y: number; w: number; h: number; // percentage of canvas
 }
+
+const DEFAULT_ZONE_POS = { x: 5, y: 14, w: 28, h: 32 };
+const MAX_SEATED_ROWS = 26;
+const MAX_SEATED_COLS = 50;
+const SEATED_ZONE_MAX_WIDTH = 92;
+const SEATED_ZONE_PADDING_X = 2.6;
+const SEATED_ZONE_PADDING_Y = 2.4;
+const SEATED_ZONE_LABEL_HEIGHT = 4.2;
+const SEAT_PITCH_X = (SEATED_ZONE_MAX_WIDTH - SEATED_ZONE_PADDING_X) / MAX_SEATED_COLS;
+const NORMAL_CANVAS_ASPECT = 16 / 10;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function deriveSeatedZoneSize(zone: SeatZoneForm, base: ZonePos): Pick<ZonePos, 'w' | 'h'> {
+  const rows = Number(zone.total_rows || 0);
+  const cols = Number(zone.total_cols || 0);
+
+  // Chưa có ma trận thì giữ kích thước mặc định để khu vẫn dễ chọn, dễ kéo.
+  if (!rows || !cols) return { w: base.w, h: base.h };
+
+  // Ghế là đơn vị đo. 50 cột chiếm trọn bề ngang cho phép,
+  // ít cột hơn thì khu co đúng theo số ghế, không còn khoảng rỗng giả.
+  const safeRows = clamp(rows, 1, MAX_SEATED_ROWS);
+  const safeCols = clamp(cols, 1, MAX_SEATED_COLS);
+  const seatPitchY = SEAT_PITCH_X * NORMAL_CANVAS_ASPECT;
+
+  return {
+    w: SEATED_ZONE_PADDING_X + safeCols * SEAT_PITCH_X,
+    h: SEATED_ZONE_LABEL_HEIGHT + SEATED_ZONE_PADDING_Y + safeRows * seatPitchY,
+  };
+}
+
+function fitZoneIntoCanvas(pos: ZonePos): ZonePos {
+  return {
+    ...pos,
+    x: clamp(pos.x, 0, Math.max(0, 100 - pos.w)),
+    y: clamp(pos.y, 0, Math.max(0, 100 - pos.h)),
+  };
+}
+
 const PATTERN_POSITIONS: Record<string, ZonePos[]> = {
   'stage-simple': [{ x: 5, y: 15, w: 90, h: 78 }],
   'theater-vip':  [{ x: 5, y: 12, w: 90, h: 30 }, { x: 5, y: 44, w: 90, h: 46 }],
@@ -149,13 +190,6 @@ const PATTERN_POSITIONS: Record<string, ZonePos[]> = {
     { x: 0, y: 60, w: 100, h: 40 },
   ],
 };
-
-function toDateTimeLocal(value: string): string {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
 
 // ── Step indicator ─────────────────────────────────────────────────────────
 
@@ -487,9 +521,8 @@ function ZoneDiagram({ diagram, zones }: { diagram: DiagramType; zones: ZoneTemp
 }
 
 function PatternPicker({
-  mode, patterns, selectedId, onSelect,
+  patterns, selectedId, onSelect,
 }: {
-  mode: 'seated' | 'zoned';
   patterns: LayoutPattern[];
   selectedId: string | null;
   onSelect: (p: LayoutPattern) => void;
@@ -538,33 +571,33 @@ const PATTERN_FIXTURES: Record<string, CanvasFixture[]> = {
   'festival':     [{ id: 'stage',  label: 'Main Stage',    color: '#57534e', textColor: 'white',   pos: { x: 27, y: 0, w: 46, h: 17 } }],
 };
 
-// Mini seat-grid shown inside each zone box on the seated canvas
-function SeatMiniGrid({ zone }: { zone: SeatZoneForm }) {
+// Detailed seat-grid shown inside each zone box on the seated canvas
+function SeatMatrixPreview({ zone }: { zone: SeatZoneForm }) {
   const rows = Number(zone.total_rows || 0);
   const cols = Number(zone.total_cols || 0);
   if (!rows || !cols) return null;
-  const showRows = Math.min(rows, 5);
-  const showCols = Math.min(cols, 18);
-  const dense = cols > 18 || rows * cols > 250;
-  if (dense) {
-    return (
-      <div className="flex flex-col gap-[2px] px-1">
-        {Array.from({ length: showRows }).map((_, r) => (
-          <div key={r} className="h-[5px] rounded-[2px]" style={{ backgroundColor: 'rgba(255,255,255,0.4)' }} />
-        ))}
-        {rows > showRows && (
-          <div className="text-[6px]" style={{ color: 'rgba(255,255,255,0.5)' }}>+{rows - showRows}</div>
-        )}
-      </div>
-    );
-  }
+  const safeRows = clamp(rows, 1, MAX_SEATED_ROWS);
+  const safeCols = clamp(cols, 1, MAX_SEATED_COLS);
+
   return (
-    <div className="flex flex-col gap-[2px] px-1">
-      {Array.from({ length: showRows }).map((_, r) => (
-        <div key={r} className="flex gap-[1.5px]">
-          {Array.from({ length: showCols }).map((_, c) => (
-            <div key={c} className="h-[4px] w-[4px] shrink-0 rounded-[1px]" style={{ backgroundColor: 'rgba(255,255,255,0.5)' }} />
-          ))}
+    <div className="flex w-full flex-col gap-[2px]">
+      {Array.from({ length: safeRows }).map((_, rowIndex) => (
+        <div key={rowIndex} className="flex items-center gap-[3px]">
+          <span className="w-[10px] shrink-0 text-[7px] font-bold leading-none text-white/80">
+            {String.fromCharCode(65 + rowIndex)}
+          </span>
+          <div
+            className="grid min-w-0 flex-1 gap-[2px]"
+            style={{ gridTemplateColumns: `repeat(${safeCols}, minmax(0, 1fr))` }}
+          >
+            {Array.from({ length: safeCols }).map((__, colIndex) => (
+              <div
+                key={colIndex}
+                className="aspect-square rounded-[2px]"
+                style={{ backgroundColor: 'rgba(255,255,255,0.72)' }}
+              />
+            ))}
+          </div>
         </div>
       ))}
     </div>
@@ -577,12 +610,12 @@ function SeatMiniGrid({ zone }: { zone: SeatZoneForm }) {
 // Resize handles: e (right), s (bottom), se (bottom-right), sw (bottom-left).
 // Grid overlay + snap-to-5% available for fullscreen mode.
 function VenueCanvas({
-  mode, zones, positions, fixtures, selectedIdx, fullscreen, showGrid, snapGrid,
+  mode, zones, positions, fixtures, selectedIdx, showGrid, snapGrid,
   onSelect, onPositionsChange, onFixturesChange,
 }: {
   mode: 'seated' | 'zoned';
   zones: SeatZoneForm[]; positions: ZonePos[]; fixtures: CanvasFixture[];
-  selectedIdx: number | null; fullscreen?: boolean;
+  selectedIdx: number | null;
   showGrid?: boolean; snapGrid?: boolean;
   onSelect: (i: number | null) => void;
   onPositionsChange: (p: ZonePos[]) => void;
@@ -605,9 +638,24 @@ function VenueCanvas({
     };
   }, []);
 
-  const getZonePos = useCallback((i: number): ZonePos =>
-    positions[i] ?? { x: 5 + (i % 3) * 32, y: 14 + Math.floor(i / 3) * 38, w: 28, h: 32 },
-  [positions]);
+  const getZonePos = useCallback((i: number): ZonePos => {
+    const base = positions[i] ?? {
+      ...DEFAULT_ZONE_POS,
+      x: DEFAULT_ZONE_POS.x + (i % 3) * 32,
+      y: DEFAULT_ZONE_POS.y + Math.floor(i / 3) * 38,
+    };
+
+    if (mode !== 'seated') return base;
+
+    const size = deriveSeatedZoneSize(zones[i], base);
+    return fitZoneIntoCanvas({
+      ...base,
+      ...size,
+      // Mẫu cũ từng lưu chiều rộng tuỳ ý. Khi chuyển sang kích thước theo ma trận,
+      // giữ tâm ngang để khu vẫn nằm đúng trục sân khấu thay vì dạt sang trái.
+      x: base.x + (base.w - size.w) / 2,
+    });
+  }, [mode, positions, zones]);
 
   const getFixPos = (i: number): ZonePos => fixtures[i]?.pos ?? { x: 30, y: 0, w: 40, h: 10 };
 
@@ -630,6 +678,7 @@ function VenueCanvas({
 
   const startResize = (e: React.PointerEvent, kind: 'zone' | 'fix', i: number, handle: ResizeAct['handle']) => {
     e.preventDefault(); e.stopPropagation();
+    if (mode === 'seated' && (kind === 'zone' || fixtures[i]?.id !== 'stage')) return;
     const { cx, cy } = getXY(e);
     const pos = kind === 'zone' ? getZonePos(i) : getFixPos(i);
     canvasRef.current!.setPointerCapture(e.pointerId);
@@ -652,7 +701,8 @@ function VenueCanvas({
     } else {
       const dx = cx - action.startX, dy = cy - action.startY;
       const { orig, handle } = action;
-      let { x, y, w, h } = orig;
+      let { x, w, h } = orig;
+      const { y } = orig;
       if (handle === 'e')  { w = doSnap(Math.max(MIN, Math.min(100 - x, orig.w + dx))); }
       if (handle === 's')  { h = doSnap(Math.max(MIN, Math.min(100 - y, orig.h + dy))); }
       if (handle === 'se') { w = doSnap(Math.max(MIN, Math.min(100 - x, orig.w + dx))); h = doSnap(Math.max(MIN, Math.min(100 - y, orig.h + dy))); }
@@ -671,12 +721,16 @@ function VenueCanvas({
     setAction(null);
   };
 
-  const aspect = fullscreen ? '2.4 / 1' : '16 / 10';
+  // Giữ canvas phóng to đủ cao để ma trận tối đa 26 hàng vẫn còn khoảng thở và không bị cắt đáy.
+  const aspect = '16 / 10';
   const gridBg = showGrid
     ? `repeating-linear-gradient(0deg,transparent,transparent calc(5% - 1px),rgba(99,102,241,0.12) calc(5% - 1px),rgba(99,102,241,0.12) 5%),repeating-linear-gradient(90deg,transparent,transparent calc(5% - 1px),rgba(99,102,241,0.12) calc(5% - 1px),rgba(99,102,241,0.12) 5%)`
     : undefined;
 
   const selFixIdx = selectedIdx !== null && selectedIdx < 0 ? -selectedIdx - 1 : null;
+
+  const canResize = (kind: 'zone' | 'fix', i: number) =>
+    mode !== 'seated' || (kind === 'fix' && fixtures[i]?.id === 'stage');
 
   const ResizeHandles = ({ kind, i }: { kind: 'zone' | 'fix'; i: number }) => (
     <>
@@ -718,7 +772,7 @@ function VenueCanvas({
               style={{ color: fix.textColor }}>
               {fix.label}
             </span>
-            {sel && <ResizeHandles kind="fix" i={fi} />}
+            {sel && canResize('fix', fi) && <ResizeHandles kind="fix" i={fi} />}
           </div>
         );
       })}
@@ -747,21 +801,21 @@ function VenueCanvas({
                 )}
               </div>
             ) : (
-              <div className="flex h-full flex-col items-start justify-start overflow-hidden p-1.5">
-                <div className="mb-0.5 flex w-full items-center gap-1 overflow-hidden">
-                  <span className="truncate text-[9px] font-bold leading-tight text-white drop-shadow">
+              <div className="relative flex h-full flex-col items-start justify-start overflow-hidden p-[5px]">
+                <div className="mb-1 flex h-3 w-full items-center gap-1 overflow-hidden">
+                  <span className="truncate rounded-full bg-black/15 px-1.5 py-[1px] text-[9px] font-bold leading-tight text-white shadow-sm">
                     {zone.name || `Khu ${zi + 1}`}
                   </span>
                   {Number(zone.total_rows || 0) > 0 && Number(zone.total_cols || 0) > 0 && (
-                    <span className="shrink-0 text-[7px] text-white/65">
+                    <span className="shrink-0 rounded-full bg-black/10 px-1 py-[1px] text-[7px] text-white/80">
                       {zone.total_rows}×{zone.total_cols}
                     </span>
                   )}
                 </div>
-                <SeatMiniGrid zone={zone} />
+                <SeatMatrixPreview zone={zone} />
               </div>
             )}
-            {sel && <ResizeHandles kind="zone" i={zi} />}
+            {sel && canResize('zone', zi) && <ResizeHandles kind="zone" i={zi} />}
           </div>
         );
       })}
@@ -789,7 +843,7 @@ function CanvasModal({ onClose, children }: { onClose: () => void; children: Rea
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+        className="flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
         style={{ maxHeight: '92vh' }}
         onClick={e => e.stopPropagation()}
       >
@@ -801,6 +855,91 @@ function CanvasModal({ onClose, children }: { onClose: () => void; children: Rea
           </button>
         </div>
         <div className="flex-1 overflow-auto p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function SeatZoneCreateModal({
+  rows,
+  cols,
+  onRowsChange,
+  onColsChange,
+  onClose,
+  onCreate,
+}: {
+  rows: string;
+  cols: string;
+  onRowsChange: (value: string) => void;
+  onColsChange: (value: string) => void;
+  onClose: () => void;
+  onCreate: () => void;
+}) {
+  const validRows = Number(rows) >= 1 && Number(rows) <= MAX_SEATED_ROWS;
+  const validCols = Number(cols) >= 1 && Number(cols) <= MAX_SEATED_COLS;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-sm rounded-3xl border border-stone-200 bg-white p-5 shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-stone-900">Tạo khu ghế</p>
+            <p className="mt-1 text-xs leading-relaxed text-stone-500">
+              Nhập ma trận ban đầu để khu có kích thước ngay từ lúc tạo. Bạn vẫn chỉnh lại được ở panel bên phải.
+            </p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <FieldLabel>Hàng (1–26)</FieldLabel>
+            <input
+              autoFocus
+              type="number"
+              min="1"
+              max={MAX_SEATED_ROWS}
+              value={rows}
+              onChange={e => onRowsChange(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && validRows && validCols) onCreate(); }}
+              placeholder="8"
+              className="h-10 w-full rounded-xl border border-stone-200 px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+            />
+          </div>
+          <div>
+            <FieldLabel>Cột (1–50)</FieldLabel>
+            <input
+              type="number"
+              min="1"
+              max={MAX_SEATED_COLS}
+              value={cols}
+              onChange={e => onColsChange(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && validRows && validCols) onCreate(); }}
+              placeholder="14"
+              className="h-10 w-full rounded-xl border border-stone-200 px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+            />
+          </div>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose}
+            className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50">
+            Huỷ
+          </button>
+          <button
+            type="button"
+            onClick={onCreate}
+            disabled={!validRows || !validCols}
+            className="rounded-xl bg-stone-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Tạo khu
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -852,23 +991,28 @@ function ZoneConfigPanel({
         />
       </div>
       {mode === 'seated' && (
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <FieldLabel>Hàng (1–26) <span className="text-red-400">*</span></FieldLabel>
-            <input
-              type="number" min="1" max="26" value={zone.total_rows}
-              onChange={e => onChange({ ...zone, total_rows: e.target.value })} placeholder="8"
-              className="h-9 w-full rounded-xl border border-stone-200 px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-            />
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <FieldLabel>Hàng (1–26) <span className="text-red-400">*</span></FieldLabel>
+              <input
+                type="number" min="1" max={MAX_SEATED_ROWS} value={zone.total_rows}
+                onChange={e => onChange({ ...zone, total_rows: e.target.value })} placeholder="8"
+                className="h-9 w-full rounded-xl border border-stone-200 px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+              />
+            </div>
+            <div>
+              <FieldLabel>Cột (1–50) <span className="text-red-400">*</span></FieldLabel>
+              <input
+                type="number" min="1" max={MAX_SEATED_COLS} value={zone.total_cols}
+                onChange={e => onChange({ ...zone, total_cols: e.target.value })} placeholder="14"
+                className="h-9 w-full rounded-xl border border-stone-200 px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+              />
+            </div>
           </div>
-          <div>
-            <FieldLabel>Cột (1–100) <span className="text-red-400">*</span></FieldLabel>
-            <input
-              type="number" min="1" max="100" value={zone.total_cols}
-              onChange={e => onChange({ ...zone, total_cols: e.target.value })} placeholder="14"
-              className="h-9 w-full rounded-xl border border-stone-200 px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-            />
-          </div>
+          <p className="text-[11px] leading-snug text-stone-400">
+            Khu ôm sát ma trận ghế. Tối đa 50 cột, kéo trên sơ đồ để đổi vị trí.
+          </p>
         </div>
       )}
       {mode === 'zoned' && (
@@ -955,6 +1099,9 @@ function Step2({
   const [fixtures, setFixtures] = useState<CanvasFixture[]>([]);
   const [showGrid, setShowGrid] = useState(false);
   const [snapGrid, setSnapGrid] = useState(false);
+  const [showSeatZoneCreate, setShowSeatZoneCreate] = useState(false);
+  const [newZoneRows, setNewZoneRows] = useState('');
+  const [newZoneCols, setNewZoneCols] = useState('');
 
   const handlePatternSelect = (p: LayoutPattern) => {
     setPatternId(p.id);
@@ -971,14 +1118,34 @@ function Step2({
     setSelectedIdx(newZones.length > 0 ? 0 : null);
   };
 
-  const addZone = () => {
+  const appendZone = (zoneOverrides: Partial<SeatZoneForm> = {}) => {
     const color = ZONE_COLORS[zones.length % ZONE_COLORS.length];
-    onChange([...zones, { ...EMPTY_ZONE, color }]);
+    onChange([...zones, { ...EMPTY_ZONE, color, ...zoneOverrides }]);
     setPositions([
       ...positions,
       { x: 5 + (zones.length % 3) * 32, y: 20 + Math.floor(zones.length / 3) * 40, w: 28, h: 35 },
     ]);
     setSelectedIdx(zones.length);
+  };
+
+  const addZone = () => {
+    if (mode === 'seated') {
+      setNewZoneRows('');
+      setNewZoneCols('');
+      setShowSeatZoneCreate(true);
+      return;
+    }
+    appendZone();
+  };
+
+  const createSeatedZone = () => {
+    const rows = Number(newZoneRows);
+    const cols = Number(newZoneCols);
+    if (rows < 1 || rows > MAX_SEATED_ROWS || cols < 1 || cols > MAX_SEATED_COLS) return;
+    appendZone({ total_rows: String(rows), total_cols: String(cols) });
+    setShowSeatZoneCreate(false);
+    setNewZoneRows('');
+    setNewZoneCols('');
   };
 
   const updateZone = (i: number, z: SeatZoneForm) => { const next = [...zones]; next[i] = z; onChange(next); };
@@ -1103,7 +1270,6 @@ function Step2({
         mode={mode as 'seated' | 'zoned'}
         zones={zones} positions={positions} fixtures={fixtures}
         selectedIdx={selectedIdx}
-        fullscreen={inModal}
         showGrid={inModal ? showGrid : false}
         snapGrid={inModal ? snapGrid : false}
         onSelect={setSelectedIdx}
@@ -1287,10 +1453,30 @@ function Step2({
               <div>
                 <p className="text-sm font-semibold text-stone-700">Chọn sơ đồ bố trí</p>
                 <p className="mt-0.5 text-xs text-stone-400">
-                  Bắt đầu từ mẫu có sẵn — sau đó kéo để di chuyển & phóng to/thu nhỏ từng khu.
+                  {mode === 'seated'
+                    ? 'Bắt đầu từ mẫu có sẵn. Kích thước khu tự theo ma trận ghế, bạn chỉ cần kéo để sắp vị trí.'
+                    : 'Bắt đầu từ mẫu có sẵn. Sau đó kéo để di chuyển và phóng to/thu nhỏ từng khu.'}
                 </p>
               </div>
-              <PatternPicker mode={mode} patterns={allPatterns} selectedId={patternId} onSelect={handlePatternSelect} />
+              <PatternPicker patterns={allPatterns} selectedId={patternId} onSelect={handlePatternSelect} />
+            </div>
+          )}
+
+          {patternId === 'custom' && zones.length === 0 && (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-stone-200 py-12 text-center">
+              <LayoutGrid className="h-9 w-9 text-stone-300" />
+              <div>
+                <p className="font-semibold text-stone-600">Bắt đầu từ khu đầu tiên</p>
+                <p className="mt-0.5 text-xs text-stone-400">
+                  {mode === 'seated'
+                    ? 'Nhập ma trận ghế trước, rồi kéo để bố trí trên sơ đồ.'
+                    : 'Tạo khu vực đầu tiên, rồi kéo để bố trí trên sơ đồ.'}
+                </p>
+              </div>
+              <button type="button" onClick={addZone}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white hover:bg-stone-800">
+                <Plus className="h-3.5 w-3.5" /> {addBtnLabel}
+              </button>
             </div>
           )}
 
@@ -1332,11 +1518,22 @@ function Step2({
           )}
 
           {/* Fullscreen modal — canvas only, full width */}
-          {fullscreen && (
-            <CanvasModal onClose={() => setFullscreen(false)}>
-              {renderCanvasPanel(true)}
-            </CanvasModal>
-          )}
+      {fullscreen && (
+        <CanvasModal onClose={() => setFullscreen(false)}>
+          {renderCanvasPanel(true)}
+        </CanvasModal>
+      )}
+
+      {showSeatZoneCreate && mode === 'seated' && (
+        <SeatZoneCreateModal
+          rows={newZoneRows}
+          cols={newZoneCols}
+          onRowsChange={setNewZoneRows}
+          onColsChange={setNewZoneCols}
+          onClose={() => setShowSeatZoneCreate(false)}
+          onCreate={createSeatedZone}
+        />
+      )}
         </>
       )}
     </motion.div>
@@ -1457,6 +1654,11 @@ interface EventWizardProps {
 export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWizardProps) {
   const router = useRouter();
   const isEdit = !!eventId;
+  const initialZoneIds = useRef(initialZones.map((zone) => zone.id));
+  const affectedSeats = initialZones.reduce(
+    (sum, zone) => sum + Math.max(0, Number(zone.total_seats ?? 0) - Number(zone.available_seats ?? zone.total_seats ?? 0)),
+    0,
+  );
 
   const [step,   setStep]   = useState<Step>(1);
   const [saving, setSaving] = useState(false);
@@ -1474,7 +1676,7 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
       color:      z.color,
       total_rows: String(z.total_rows),
       total_cols: String(z.total_cols),
-      capacity:   '',
+      capacity:   defaultForm.seating_mode === 'seated' ? '' : String(z.total_cols),
     })),
   );
 
@@ -1512,12 +1714,12 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
       if (mode === 'seated') {
         const rows = Number(z.total_rows);
         const cols = Number(z.total_cols);
-        if (!z.total_rows || rows < 1 || rows > 26) {
-          toast.error(`${label}: Số hàng phải từ 1–26.`);
+        if (!z.total_rows || rows < 1 || rows > MAX_SEATED_ROWS) {
+          toast.error(`${label}: Số hàng phải từ 1–${MAX_SEATED_ROWS}.`);
           return false;
         }
-        if (!z.total_cols || cols < 1 || cols > 100) {
-          toast.error(`${label}: Số cột phải từ 1–100.`);
+        if (!z.total_cols || cols < 1 || cols > MAX_SEATED_COLS) {
+          toast.error(`${label}: Số cột phải từ 1–${MAX_SEATED_COLS}.`);
           return false;
         }
       } else {
@@ -1570,10 +1772,14 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
         toast.success('Đã tạo sự kiện nháp!');
       }
 
-      // Create / update seat zones
-      if (savedId && zones.length > 0) {
+      // Create / update / delete seat zones so backend stays identical to the admin editor.
+      if (savedId) {
         const seatingMode = form.seating_mode ?? 'seated';
-        await Promise.all(
+        const currentIds = new Set(zones.flatMap((zone) => zone.id ? [zone.id] : []));
+        const removedIds = initialZoneIds.current.filter((id) => !currentIds.has(id));
+
+        await Promise.all([
+          ...removedIds.map((id) => api.delete(`/events/${savedId}/seat-zones/${id}`)),
           zones.map(async (z) => {
             // For zoned/admission: encode capacity as total_rows=1, total_cols=capacity
             const isSeated = seatingMode === 'seated';
@@ -1593,7 +1799,7 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
               await api.post(`/events/${savedId}/seat-zones`, zPayload);
             }
           }),
-        );
+        ].flat());
       }
 
       router.push('/admin/events');
@@ -1621,6 +1827,23 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
         </h1>
         <p className="mt-0.5 text-sm text-stone-400">Hoàn thành 3 bước để tạo sự kiện</p>
       </div>
+
+      {isEdit && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700">
+              <AlertTriangle className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="font-semibold">Chỉnh sửa có thể ảnh hưởng người đã đặt vé</p>
+              <p className="mt-1 leading-6 text-amber-800">
+                Nếu đổi thời gian, địa điểm hoặc sơ đồ ghế, hãy chủ động thông báo cho người dùng đã đặt vé trước khi lưu thay đổi.
+                {affectedSeats > 0 && ` Hiện có ${affectedSeats.toLocaleString('vi-VN')} ghế đã được giữ hoặc bán.`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Step indicator */}
       <StepIndicator step={step} totalSteps={3} />

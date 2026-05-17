@@ -7,6 +7,7 @@ import { Sparkles, ArrowRight, Check, Loader2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { CATEGORIES, type CategoryKey } from '@/data/uiConfig';
+import api from '@/lib/api/client';
 import { EASE_OUT_EXPO } from '@/lib/motion';
 
 const CITY_OPTIONS = [
@@ -17,8 +18,6 @@ const CITY_OPTIONS = [
   { key: 'hue',     label: 'Huế' },
   { key: 'other',   label: 'Khác / Đi xa' },
 ];
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -48,19 +47,16 @@ export default function OnboardingPage() {
     if (!city) { toast.error('Hãy chọn thành phố của bạn'); return; }
     setSubmitting(true);
     try {
-      // Best-effort save — don't block UX if backend fails.
-      await fetch(`${BACKEND_URL}/users/preferences`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          interests: Array.from(interests),
-          city,
-        }),
-      }).catch(() => null);
+      const preferredCity = CITY_OPTIONS.find((item) => item.key === city)?.label ?? city;
+      await api.post('/users/preferences', {
+        categories: Array.from(interests),
+        preferred_city: preferredCity,
+      });
       toast.success('Sở thích đã lưu. Chúc bạn săn vé vui!');
       router.push('/');
       router.refresh();
+    } catch {
+      toast.error('Chưa lưu được sở thích. Thử lại giúp mình nhé.');
     } finally {
       setSubmitting(false);
     }

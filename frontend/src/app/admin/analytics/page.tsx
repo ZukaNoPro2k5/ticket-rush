@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowDownRight, ArrowUpRight, LayoutGrid, BarChart2,
   AlertTriangle, TrendingUp, Repeat2, Clock, Tag, Zap,
-  ChevronLeft, ChevronRight, ChevronDown, Users,
+  ChevronLeft, ChevronRight, Users,
 } from 'lucide-react';
 import { fadeUp, staggerContainer } from '@/lib/motion';
 import api from '@/lib/api/client';
@@ -30,11 +30,17 @@ const CURRENT_YEAR  = NOW.getFullYear();
 const MIN_YEAR      = CURRENT_YEAR - 4;
 
 const BASE_MONTH_LABELS = ['','T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-const CAT_COLORS = ['#d97706','#10b981','#3b82f6','#8b5cf6','#f43f5e'];
+const CAT_COLORS = ['#f43f5e','#0ea5e9','#10b981','#14b8a6','#8b5cf6','#d97706','#f97316','#78716c'];
 
 const CATEGORY_VI: Record<string, string> = {
-  music: 'Âm nhạc', stage: 'Sân khấu', sports: 'Thể thao',
-  workshop: 'Workshop', other: 'Khác',
+  music: 'Âm nhạc',
+  arts: 'Nghệ thuật',
+  sports: 'Thể thao',
+  food: 'Ẩm thực',
+  entertainment: 'Giải trí',
+  workshop: 'Hội thảo',
+  stage: 'Sân khấu',
+  other: 'Khác',
 };
 
 const GENDER_VI: Record<string, string>     = { male: 'Nam', female: 'Nữ', other: 'Khác' };
@@ -155,7 +161,6 @@ export default function AdminAnalyticsPage() {
   const [period,     setPeriod]     = useState<Period>('year');
   const [selMonth,   setSelMonth]   = useState(CURRENT_MONTH);
   const [selYear,    setSelYear]    = useState(CURRENT_YEAR);
-  const [showOpsKpi, setShowOpsKpi] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
 
@@ -422,8 +427,8 @@ export default function AdminAnalyticsPage() {
     <motion.div variants={staggerContainer()} initial="hidden" animate="visible" className="space-y-6">
 
       {/* ── Header + Controls ── */}
-      <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <motion.div variants={fadeUp} className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div className="min-h-10">
 
           {/* Navigator — hidden in 'years' mode */}
           {period !== 'years' && (
@@ -522,8 +527,10 @@ export default function AdminAnalyticsPage() {
             </div>
           )}
 
-          {/* Period toggle — 3 modes */}
-          <div className="flex items-center gap-1 rounded-2xl border border-stone-200 bg-stone-50 p-1">
+        </div>
+
+        {/* Period toggle — 3 modes */}
+        <div className="flex items-center justify-self-start gap-1 rounded-2xl border border-stone-200 bg-stone-50 p-1 sm:justify-self-end">
             {(['month', 'year', 'years'] as Period[]).map(p => (
               <button
                 key={p}
@@ -535,7 +542,6 @@ export default function AdminAnalyticsPage() {
                 {p === 'month' ? 'Theo tháng' : p === 'year' ? 'Theo năm' : 'Các năm gần đây'}
               </button>
             ))}
-          </div>
         </div>
       </motion.div>
 
@@ -574,31 +580,25 @@ export default function AdminAnalyticsPage() {
         </div>
       </motion.div>
 
-      {/* ── Operational KPIs — collapsible (default closed) ── */}
+      {/* ── Operational KPIs ── */}
       <motion.div variants={fadeUp}>
-        <button
-          onClick={() => setShowOpsKpi(v => !v)}
-          className="mb-3 flex w-full items-center gap-2 rounded-xl px-1 py-1 text-left transition-colors hover:bg-stone-50"
-        >
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <Zap className="h-3.5 w-3.5 text-stone-400" />
           <span className="text-[11px] font-semibold uppercase tracking-widest text-stone-400">
             Chỉ số vận hành nghiệp vụ
           </span>
-          <span className="ml-2 text-[10px] text-stone-300">(luôn cập nhật hiện tại)</span>
-          <ChevronDown
-            className={`ml-auto h-3.5 w-3.5 text-stone-400 transition-transform duration-200 ${showOpsKpi ? 'rotate-180' : ''}`}
-          />
-        </button>
-        {showOpsKpi && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <OpKpi icon={AlertTriangle} label="Tỷ lệ huỷ vé"       value={adv ? `${adv.cancellation_rate}%`    : '—'} sub="30 ngày gần nhất"     accent="bg-rose-50 text-rose-500"       loading={advLoading} />
-            <OpKpi icon={TrendingUp}   label="Doanh thu / vé"     value={adv ? fmt(adv.revenue_per_ticket)    : '—'} sub="Yield mỗi vé bán ra"  accent="bg-amber-50 text-amber-600"     loading={advLoading} />
-            <OpKpi icon={Repeat2}      label="Khách quay lại"     value={adv ? `${adv.repeat_customer_pct}%` : '—'} sub="Đặt vé ≥ 2 lần"      accent="bg-emerald-50 text-emerald-600" loading={advLoading} />
-            <OpKpi icon={Clock}        label="Mua trước TB"       value={adv ? `${adv.avg_lead_days} ngày`   : '—'} sub="Trước ngày sự kiện"   accent="bg-sky-50 text-sky-500"         loading={advLoading} />
-            <OpKpi icon={Tag}          label="Dùng mã KM"         value={adv ? `${adv.promo_usage_pct}%`     : '—'} sub="Đơn có khuyến mãi"    accent="bg-violet-50 text-violet-500"   loading={advLoading} />
-            <OpKpi icon={Zap}          label="Tốc độ bán / ngày"  value={adv ? `${adv.bookings_per_day}`     : '—'} sub="Đơn/ngày tháng này"   accent="bg-stone-100 text-stone-600"    loading={advLoading} />
-          </div>
-        )}
+          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-500">
+            Luôn cập nhật hiện tại
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <OpKpi icon={AlertTriangle} label="Tỷ lệ huỷ vé"       value={adv ? `${adv.cancellation_rate}%`    : '—'} sub="30 ngày gần nhất"     accent="bg-rose-50 text-rose-500"       loading={advLoading} />
+          <OpKpi icon={TrendingUp}   label="Doanh thu / vé"     value={adv ? fmt(adv.revenue_per_ticket)    : '—'} sub="Yield mỗi vé bán ra"  accent="bg-amber-50 text-amber-600"     loading={advLoading} />
+          <OpKpi icon={Repeat2}      label="Khách quay lại"     value={adv ? `${adv.repeat_customer_pct}%` : '—'} sub="Đặt vé ≥ 2 lần"      accent="bg-emerald-50 text-emerald-600" loading={advLoading} />
+          <OpKpi icon={Clock}        label="Mua trước TB"       value={adv ? `${adv.avg_lead_days} ngày`   : '—'} sub="Trước ngày sự kiện"   accent="bg-sky-50 text-sky-500"         loading={advLoading} />
+          <OpKpi icon={Tag}          label="Dùng mã KM"         value={adv ? `${adv.promo_usage_pct}%`     : '—'} sub="Đơn có khuyến mãi"    accent="bg-violet-50 text-violet-500"   loading={advLoading} />
+          <OpKpi icon={Zap}          label="Tốc độ bán / ngày"  value={adv ? `${adv.bookings_per_day}`     : '—'} sub="Đơn/ngày tháng này"   accent="bg-stone-100 text-stone-600"    loading={advLoading} />
+        </div>
       </motion.div>
 
       {/* ── 3 Donut Charts — equal grid ── */}
@@ -652,55 +652,6 @@ export default function AdminAnalyticsPage() {
 
         </div>
       </motion.div>
-
-      {/* ── Insight nhanh ── */}
-      {(!catLoading && (catStats.length > 0 || kpiCards.length > 0)) && (
-        <motion.div variants={fadeUp}>
-          <div className="mb-3 flex items-center gap-2">
-            <h2 className="section-title">Insight nhanh</h2>
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-              <Zap className="h-3 w-3" /> Tự động
-            </span>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {catStats[0] && (
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-amber-700">Danh mục dẫn đầu</p>
-                <p className="mt-2 font-display text-xl font-bold text-stone-900">
-                  {CATEGORY_VI[catStats[0].category] ?? catStats[0].category}
-                </p>
-                <p className="mt-0.5 text-[11px] text-stone-400">
-                  {fmt(catStats[0].revenue)} doanh thu · {catStats[0].bookings} đơn
-                </p>
-              </div>
-            )}
-            {kpiCards[0] && (
-              <div className="rounded-2xl border border-sky-100 bg-sky-50/50 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-700">{kpiCards[0].label}</p>
-                <p className="mt-2 font-display text-xl font-bold text-stone-900">{kpiCards[0].value}</p>
-                <div className="mt-0.5 flex items-center gap-1.5">
-                  <Delta pct={kpiCards[0].delta} />
-                  {kpiCards[0].delta !== null && (
-                    <span className="text-[11px] text-stone-400">{kpiCards[0].hint}</span>
-                  )}
-                </div>
-              </div>
-            )}
-            {kpiCards[1] && (
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-emerald-700">{kpiCards[1].label}</p>
-                <p className="mt-2 font-display text-xl font-bold text-stone-900">{kpiCards[1].value}</p>
-                <div className="mt-0.5 flex items-center gap-1.5">
-                  <Delta pct={kpiCards[1].delta} />
-                  {kpiCards[1].delta !== null && (
-                    <span className="text-[11px] text-stone-400">{kpiCards[1].hint}</span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
 
     </motion.div>
   );

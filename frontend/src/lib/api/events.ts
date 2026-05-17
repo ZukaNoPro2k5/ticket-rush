@@ -14,9 +14,12 @@ export interface ListEventsParams {
   category?: EventCategory;
   status?: EventStatus;
   search?: string;
+  city?: 'ha-noi' | 'ho-chi-minh' | 'da-nang' | 'hai-phong' | 'hue' | 'other';
+  time_range?: 'today' | 'weekend' | 'week' | 'month' | 'next_month' | 'other';
+  max_price?: number;
   page?: number;
   limit?: number;
-  sort?: 'event_date' | 'created_at';
+  sort?: 'event_date' | 'created_at' | 'sold' | 'price';
   order?: 'asc' | 'desc';
 }
 
@@ -115,6 +118,6 @@ export async function listSeatZonesTolerant(eventId: number): Promise<{
   return {
     available: false,
     zones: [],
-    message: 'API cấu hình khu ghế chưa sẵn sàng ở backend.',
+    message: 'Không tìm thấy dữ liệu khu ghế từ backend.',
   };
 }

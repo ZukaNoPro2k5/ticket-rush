@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AlertCircle, Search } from 'lucide-react';
 import type { DisplayEvent, Event, EventCategory } from '@/types';
@@ -26,14 +26,26 @@ import {
   EventsListSkeleton,
 } from '@/components/events';
 
+const VALID_CATEGORIES: EventCategory[] = [
+  'music',
+  'arts',
+  'sports',
+  'food',
+  'entertainment',
+  'workshop',
+  'stage',
+  'other',
+];
 const DAY_MS = 86_400_000;
-const VALID_CATEGORIES: EventCategory[] = ['music', 'stage', 'sports', 'workshop', 'other'];
 const CATEGORY_LABELS: Record<EventCategory, string> = {
   music: 'Âm nhạc',
-  stage: 'Sân khấu',
+  arts: 'Nghệ thuật',
   sports: 'Thể thao',
+  food: 'Ẩm thực',
+  entertainment: 'Giải trí',
   workshop: 'Workshop',
-  other: 'Sự kiện',
+  stage: 'Sân khấu',
+  other: 'Khác',
 };
 
 function isEventCategory(value: string | null): value is EventCategory {
@@ -93,26 +105,29 @@ function toDisplayEvent(e: Event): DisplayEvent {
   };
 }
 
-function filterByTimeRange(events: DisplayEvent[], range: TimeRangeKey): DisplayEvent[] {
-  if (range === 'all') return events;
-  const now = Date.now();
-  return events.filter((e) => {
-    const t = new Date(e.date).getTime();
-    if (range === 'today') return t >= now && t <= now + DAY_MS;
-    if (range === 'weekend') {
-      const d = new Date(e.date).getDay();
-      return d === 0 || d === 6;
-    }
-    if (range === 'week') return t >= now && t <= now + 7 * DAY_MS;
-    if (range === 'month') return t >= now && t <= now + 30 * DAY_MS;
-    return true;
-  });
+function parseTimeRange(value: string | null): TimeRangeKey {
+  const valid: TimeRangeKey[] = ['all', 'today', 'weekend', 'week', 'month', 'next_month', 'other'];
+  return valid.includes(value as TimeRangeKey) ? (value as TimeRangeKey) : 'all';
 }
 
-function sortEvents(events: DisplayEvent[], sort: SortKey): DisplayEvent[] {
-  if (sort === 'priceAsc') return [...events].sort((a, b) => (a.priceFrom ?? 0) - (b.priceFrom ?? 0));
-  if (sort === 'priceDesc') return [...events].sort((a, b) => (b.priceFrom ?? 0) - (a.priceFrom ?? 0));
-  return events;
+function parseCity(value: string | null): string {
+  const valid = ['Tất cả', 'Hà Nội', 'TP. HCM', 'Đà Nẵng', 'Hải Phòng', 'Huế', 'Khác'];
+  return value && valid.includes(value) ? value : 'Tất cả';
+}
+
+function parsePriceMax(value: string | null): number {
+  const price = Number(value);
+  return Number.isFinite(price) && price > 0 && price <= DEFAULT_PRICE_MAX ? price : DEFAULT_PRICE_MAX;
+}
+
+function toApiCity(value: string): 'ha-noi' | 'ho-chi-minh' | 'da-nang' | 'hai-phong' | 'hue' | 'other' | undefined {
+  if (value === 'Hà Nội') return 'ha-noi';
+  if (value === 'TP. HCM') return 'ho-chi-minh';
+  if (value === 'Đà Nẵng') return 'da-nang';
+  if (value === 'Hải Phòng') return 'hai-phong';
+  if (value === 'Huế') return 'hue';
+  if (value === 'Khác') return 'other';
+  return undefined;
 }
 
 export default function EventsListingPage() {
@@ -150,6 +165,15 @@ export default function EventsListingPage() {
     setQuery(initialQuery);
     setActiveCat(isEventCategory(initialCategory) ? initialCategory : null);
     setSort(parseSort(params.get('sort')));
+    const initialTime = parseTimeRange(params.get('time'));
+    const initialCity = parseCity(params.get('city'));
+    const initialPrice = parsePriceMax(params.get('maxPrice'));
+    setStagedTime(initialTime);
+    setTimeRange(initialTime);
+    setStagedCity(initialCity);
+    setCity(initialCity);
+    setStagedPriceMax(initialPrice);
+    setPriceMax(initialPrice);
     setCurrentPage(parsePage(params.get('page')));
     setUrlReady(true);
   }, []);
@@ -160,11 +184,14 @@ export default function EventsListingPage() {
     if (query) params.set('search', query);
     if (activeCat) params.set('category', activeCat);
     if (sort !== 'trending') params.set('sort', sort);
+    if (timeRange !== 'all') params.set('time', timeRange);
+    if (city !== 'Tất cả') params.set('city', city);
+    if (priceMax < DEFAULT_PRICE_MAX) params.set('maxPrice', String(priceMax));
     if (currentPage > 1) params.set('page', String(currentPage));
 
     const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
     router.replace(nextUrl, { scroll: false });
-  }, [activeCat, currentPage, pathname, query, router, sort, urlReady]);
+  }, [activeCat, city, currentPage, pathname, priceMax, query, router, sort, timeRange, urlReady]);
 
   const pendingChanges =
     (stagedTime !== timeRange ? 1 : 0) +
@@ -182,11 +209,20 @@ export default function EventsListingPage() {
     setLoading(true);
     setError(null);
     try {
-      const apiSort = sort === 'newest' ? 'created_at' : 'event_date';
-      const apiOrder = sort === 'newest' ? 'desc' : 'asc';
+      const apiSort = sort === 'newest'
+        ? 'created_at'
+        : sort === 'trending'
+          ? 'sold'
+          : sort === 'priceAsc' || sort === 'priceDesc'
+            ? 'price'
+            : 'event_date';
+      const apiOrder = sort === 'newest' || sort === 'trending' || sort === 'priceDesc' ? 'desc' : 'asc';
       const result = await listEvents({
         search: query || undefined,
         category: activeCat ?? undefined,
+        city: toApiCity(city),
+        time_range: timeRange === 'all' ? undefined : timeRange,
+        max_price: priceMax < DEFAULT_PRICE_MAX ? priceMax : undefined,
         sort: apiSort,
         order: apiOrder,
         page: currentPage,
@@ -203,7 +239,7 @@ export default function EventsListingPage() {
     } finally {
       setLoading(false);
     }
-  }, [query, activeCat, sort, currentPage]);
+  }, [query, activeCat, city, timeRange, priceMax, sort, currentPage]);
 
   useEffect(() => {
     if (!urlReady) return;
@@ -212,7 +248,7 @@ export default function EventsListingPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, activeCat, sort]);
+  }, [query, activeCat, city, timeRange, priceMax, sort]);
 
   const submitSearch = () => setQuery(searchInput.trim());
   const clearSearch = () => {
@@ -256,14 +292,6 @@ export default function EventsListingPage() {
     setQuery('');
     setCurrentPage(1);
   };
-
-  const filtered = useMemo(() => {
-    let arr = apiEvents;
-    if (city !== 'Tất cả') arr = arr.filter((e) => e.city === city);
-    if (priceMax < DEFAULT_PRICE_MAX) arr = arr.filter((e) => !e.priceFrom || e.priceFrom <= priceMax);
-    arr = filterByTimeRange(arr, timeRange);
-    return sortEvents(arr, sort);
-  }, [apiEvents, city, priceMax, timeRange, sort]);
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -325,17 +353,17 @@ export default function EventsListingPage() {
               <EventsListSkeleton view={view} />
             ) : error ? (
               <ErrorState message={error} onRetry={fetchEvents} />
-            ) : filtered.length === 0 ? (
+            ) : apiEvents.length === 0 ? (
               <EmptyState onReset={resetFilters} />
             ) : view === 'grid' ? (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {filtered.map((ev) => (
+                {apiEvents.map((ev) => (
                   <EventCardCompact key={ev.id} event={ev} />
                 ))}
               </div>
             ) : (
               <div className="space-y-3">
-                {filtered.map((ev) => (
+                {apiEvents.map((ev) => (
                   <EventCardList key={ev.id} event={ev} />
                 ))}
               </div>

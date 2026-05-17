@@ -2,7 +2,7 @@ import type { CategoryKey } from '@/data/uiConfig';
 
 export type SortKey = 'trending' | 'newest' | 'upcoming' | 'priceAsc' | 'priceDesc';
 export type ViewMode = 'grid' | 'list';
-export type TimeRangeKey = 'all' | 'today' | 'weekend' | 'week' | 'month';
+export type TimeRangeKey = 'all' | 'today' | 'weekend' | 'week' | 'month' | 'next_month' | 'other';
 
 export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'trending',  label: 'Phổ biến nhất' },
@@ -12,7 +12,7 @@ export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'priceDesc', label: 'Giá: Cao → Thấp' },
 ];
 
-export const CITIES = ['Tất cả', 'Hà Nội', 'TP. HCM', 'Đà Nẵng', 'Hải Phòng', 'Huế'] as const;
+export const CITIES = ['Tất cả', 'Hà Nội', 'TP. HCM', 'Đà Nẵng', 'Hải Phòng', 'Huế', 'Khác'] as const;
 
 export const TIME_RANGES: { key: TimeRangeKey; label: string }[] = [
   { key: 'all',     label: 'Tất cả thời gian' },
@@ -20,6 +20,8 @@ export const TIME_RANGES: { key: TimeRangeKey; label: string }[] = [
   { key: 'weekend', label: 'Cuối tuần' },
   { key: 'week',    label: 'Tuần này' },
   { key: 'month',   label: 'Tháng này' },
+  { key: 'next_month', label: 'Tháng sau' },
+  { key: 'other', label: 'Khác' },
 ];
 
 export const DEFAULT_PRICE_MAX = 5_000_000;

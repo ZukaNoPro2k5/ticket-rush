@@ -7,8 +7,9 @@ import {
   bookingsFailedTotal,
   seatLockContentionTotal,
 } from '../../../config/metrics';
+import { getBookingRules } from '../../../config/runtimeSettings';
 import type { CreateBookingInput } from '../validation';
-import { applyPromoCode, lockAndValidateSeats, updateSeatsStatus } from './helpers';
+import { lockAndValidateSeats, updateSeatsStatus } from './helpers';
 
 // Distributed lock TTL (seconds). Short window — just guards the DB transaction
 // against thundering-herd contention. After commit the DB seat row (status='locked')
@@ -45,12 +46,21 @@ async function acquireSeatLocks(eventId: number, seatIds: number[]): Promise<str
     throw new AppError(
       'Một hoặc nhiều ghế đang được người khác đặt, vui lòng thử lại',
       409,
+      'SEATS_UNAVAILABLE',
     );
   }
   return keys;
 }
 
 export async function createBooking(userId: number, input: CreateBookingInput) {
+  const rules = await getBookingRules();
+  if (input.seat_ids.length > rules.maxTicketsPerBooking) {
+    throw AppError.badRequest(
+      `Tối đa ${rules.maxTicketsPerBooking} vé cho mỗi giao dịch`,
+      'MAX_TICKETS_PER_BOOKING',
+    );
+  }
+
   // Fast-fail Redis lock BEFORE opening DB transaction (avoids holding row locks
   // while waiting on contended seats). The DB FOR UPDATE inside still gives us
   // strong consistency.
@@ -60,21 +70,31 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
   try {
     await conn.beginTransaction();
 
+    const [eventRows] = await conn.execute<
+      (import('mysql2').RowDataPacket & { status: string; event_date: string })[]
+    >(
+      'SELECT status, event_date FROM events WHERE id = ? FOR UPDATE',
+      [input.event_id],
+    );
+    if (eventRows.length === 0) {
+      throw AppError.notFound('Sự kiện không tồn tại', 'EVENT_NOT_FOUND');
+    }
+    if (eventRows[0].status !== 'published') {
+      throw AppError.conflict('Sự kiện chưa mở bán', 'EVENT_NOT_BOOKABLE');
+    }
+    if (new Date(eventRows[0].event_date) <= new Date()) {
+      throw AppError.conflict('Sự kiện đã diễn ra hoặc đã đóng bán', 'EVENT_NOT_BOOKABLE');
+    }
+
     const seatRows = await lockAndValidateSeats(conn, input.seat_ids, input.event_id);
     const subtotal = seatRows.reduce((sum, s) => sum + Number(s.price), 0);
+    const totalAmount = subtotal;
 
-    const { promoCodeId, discountAmount } = await applyPromoCode(
-      conn,
-      input.promo_code,
-      input.event_id,
-      subtotal,
-    );
-    const totalAmount = subtotal - discountAmount;
-
+    const expiresAt = new Date(Date.now() + rules.ticketHoldMinutes * 60 * 1000);
     const [bookingResult] = await conn.execute<ResultSetHeader>(
       `INSERT INTO bookings (user_id, event_id, promo_code_id, discount_amount, total_amount, expires_at)
-       VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))`,
-      [userId, input.event_id, promoCodeId, discountAmount, totalAmount],
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, input.event_id, null, 0, totalAmount, expiresAt],
     );
     const bookingId = bookingResult.insertId;
 
@@ -96,17 +116,17 @@ export async function createBooking(userId: number, input: CreateBookingInput) {
 
     bookingsCreatedTotal.inc({ event_id: String(input.event_id) });
 
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     return {
       id: bookingId,
       event_id: input.event_id,
       seat_ids: input.seat_ids,
       subtotal,
-      discount_amount: discountAmount,
+      discount_amount: 0,
       total_amount: totalAmount,
-      promo_code: input.promo_code ?? null,
+      promo_code: null,
       status: 'pending',
-      expires_at: expiresAt,
+      expires_at: expiresAt.toISOString(),
+      hold_minutes: rules.ticketHoldMinutes,
     };
   } catch (err) {
     await conn.rollback();

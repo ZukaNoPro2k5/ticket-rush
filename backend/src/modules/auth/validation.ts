@@ -29,6 +29,21 @@ export const oauthSyncSchema = z.object({
   avatar:            z.string().url().max(500).optional(),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Email không hợp lệ'),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Thiếu mã đặt lại mật khẩu'),
+  password: z
+    .string()
+    .min(8, 'Mật khẩu tối thiểu 8 ký tự')
+    .regex(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ hoa')
+    .regex(/[0-9]/, 'Mật khẩu phải có ít nhất 1 chữ số'),
+});
+
 export type RegisterInput  = z.infer<typeof registerSchema>;
 export type LoginInput     = z.infer<typeof loginSchema>;
 export type OAuthSyncInput = z.infer<typeof oauthSyncSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

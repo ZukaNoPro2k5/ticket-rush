@@ -4,6 +4,7 @@ import { RowDataPacket } from 'mysql2';
 import { getIO } from './config/socket';
 import * as seatsService from './modules/seats/service';
 import { processQueueTick } from './modules/queue/service';
+import { completePastPublishedEvents } from './modules/events/service';
 
 /**
  * Release expired bookings: pending bookings past expires_at
@@ -18,7 +19,8 @@ async function releaseExpiredBookings() {
     const [expiredRows] = await conn.execute<RowDataPacket[]>(
       `SELECT b.id, b.event_id, b.promo_code_id
        FROM bookings b
-       WHERE b.status = 'pending' AND b.expires_at < NOW()`,
+       WHERE b.status = 'pending' AND b.expires_at < NOW()
+       FOR UPDATE`,
     );
 
     if (expiredRows.length === 0) {
@@ -90,11 +92,23 @@ async function releaseLockedSeats() {
   }
 }
 
+async function completePastEvents() {
+  try {
+    const completed = await completePastPublishedEvents();
+    if (completed.length > 0) {
+      console.log(`[Cron] Completed ${completed.length} past event(s)`);
+    }
+  } catch (err) {
+    console.error('[Cron] Error completing past events:', err);
+  }
+}
+
 export function startCronJobs() {
   // Run every minute
   cron.schedule('* * * * *', async () => {
     await releaseExpiredBookings();
     await releaseLockedSeats();
+    await completePastEvents();
   });
 
   // Virtual queue: grant tokens every 5 seconds

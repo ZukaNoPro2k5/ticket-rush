@@ -1,18 +1,57 @@
+'use client';
+
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
-import { ArrowRight, Check, Heart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Check, Heart, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
+import { getEventFavorite, removeEventFavorite, saveEventFavorite } from '@/lib/api/engagement';
 
 interface Props {
   event: DisplayEvent;
   minPrice: number;
   maxPrice: number;
+  bookingHref: string;
 }
 
 function formatVnd(value: number): string {
   return `${value.toLocaleString('vi-VN')}đ`;
 }
 
-export function DetailSidebarCTA({ event, minPrice, maxPrice }: Props) {
+export function DetailSidebarCTA({ event, minPrice, maxPrice, bookingHref }: Props) {
+  const { isAuthenticated } = useAuthStore();
+  const { openLoginModal } = useUIStore();
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    getEventFavorite(event.id)
+      .then((result) => setSaved(result.saved))
+      .catch(() => undefined);
+  }, [event.id, isAuthenticated]);
+
+  const toggleFavorite = async () => {
+    if (!isAuthenticated) {
+      openLoginModal('login');
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = saved
+        ? await removeEventFavorite(event.id)
+        : await saveEventFavorite(event.id);
+      setSaved(result.saved);
+      toast.success(result.saved ? 'Đã lưu sự kiện' : 'Đã bỏ lưu sự kiện');
+    } catch {
+      toast.error('Chưa thể cập nhật danh sách lưu');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-24 space-y-4">
@@ -25,24 +64,30 @@ export function DetailSidebarCTA({ event, minPrice, maxPrice }: Props) {
 
           <div className="mt-4 space-y-2 rounded-2xl bg-amber-50 p-3">
             <div className="flex items-center gap-2 text-sm text-amber-900">
-              <Check className="h-4 w-4" /> Nhận QR ngay sau thanh toán
+              <Check className="h-4 w-4" /> Nhận QR ngay sau xác nhận
             </div>
             <div className="flex items-center gap-2 text-sm text-amber-900">
               <Check className="h-4 w-4" /> Ghế được cập nhật realtime
             </div>
             <div className="flex items-center gap-2 text-sm text-amber-900">
-              <Check className="h-4 w-4" /> Có thể hủy giữ ghế trước khi thanh toán
+              <Check className="h-4 w-4" /> Có thể hủy giữ ghế trước khi xác nhận
             </div>
           </div>
 
           <Link
-            href={`/events/${event.id}/seats`}
+            href={bookingHref}
             className="group mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-amber-500 py-3.5 font-semibold text-white shadow-lift transition-all duration-300 hover:-translate-y-0.5 hover:bg-amber-600"
           >
             Chọn vé ngay <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
-          <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-stone-200 py-3 text-sm font-semibold text-stone-700 transition-colors hover:border-stone-400">
-            <Heart className="h-4 w-4" /> Lưu sự kiện
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            disabled={saving}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-stone-200 py-3 text-sm font-semibold text-stone-700 transition-colors hover:border-stone-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heart className={`h-4 w-4 ${saved ? 'fill-rose-500 text-rose-500' : ''}`} />}
+            {saved ? 'Đã lưu sự kiện' : 'Lưu sự kiện'}
           </button>
 
           <div className="mt-5 border-t border-stone-100 pt-4">
@@ -66,7 +111,7 @@ export function DetailSidebarCTA({ event, minPrice, maxPrice }: Props) {
   );
 }
 
-export function MobileStickyCTA({ eventId, minPrice }: { eventId: number; minPrice: number }) {
+export function MobileStickyCTA({ minPrice, bookingHref }: { minPrice: number; bookingHref: string }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white/95 px-4 py-3 shadow-lift backdrop-blur-md lg:hidden">
       <div className="flex items-center justify-between gap-3">
@@ -75,7 +120,7 @@ export function MobileStickyCTA({ eventId, minPrice }: { eventId: number; minPri
           <div className="font-display text-lg font-bold text-amber-700">{formatVnd(minPrice)}</div>
         </div>
         <Link
-          href={`/events/${eventId}/seats`}
+          href={bookingHref}
           className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber-500 py-3 text-sm font-semibold text-white shadow-lift transition-all hover:bg-amber-600"
         >
           Chọn vé ngay <ArrowRight className="h-4 w-4" />

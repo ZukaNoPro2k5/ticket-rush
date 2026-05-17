@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { DisplayEvent, Event, EventCategory, EventDetail } from '@/types';
+import type { BookingRules, DisplayEvent, Event, EventCategory, EventDetail } from '@/types';
 import { Navbar } from '@/components/layout/Navbar';
 import type { EventTabKey } from '@/data/eventDetailData';
 import {
@@ -9,10 +9,7 @@ import {
   DetailSidebarCTA,
   EventHero,
   EventTabs,
-  FaqTab,
-  LineupTab,
   MobileStickyCTA,
-  ReviewsTab,
   SimilarEvents,
   VenueTab,
 } from '@/components/event-detail';
@@ -20,10 +17,13 @@ import {
 const DAY_MS = 86_400_000;
 const CATEGORY_LABELS: Record<EventCategory, string> = {
   music: 'Âm nhạc',
-  stage: 'Sân khấu',
+  arts: 'Nghệ thuật',
   sports: 'Thể thao',
+  food: 'Ẩm thực',
+  entertainment: 'Giải trí',
   workshop: 'Workshop',
-  other: 'Sự kiện',
+  stage: 'Sân khấu',
+  other: 'Khác',
 };
 
 function deriveCityFromVenue(venue: string): string {
@@ -79,13 +79,15 @@ function getPriceRange(event: EventDetail): { minPrice: number; maxPrice: number
 interface Props {
   event: EventDetail;
   similarEvents: Event[];
+  bookingRules: BookingRules | null;
 }
 
-export default function EventDetailClient({ event, similarEvents }: Props) {
+export default function EventDetailClient({ event, similarEvents, bookingRules }: Props) {
   const [tab, setTab] = useState<EventTabKey>('about');
   const displayEvent = useMemo(() => toDisplayEvent(event), [event]);
   const similar = useMemo(() => similarEvents.map(toDisplayEvent), [similarEvents]);
   const { minPrice, maxPrice } = getPriceRange(event);
+  const bookingHref = event.queue_enabled ? `/events/${event.id}/queue` : `/events/${event.id}/seats`;
 
   return (
     <main className="min-h-screen bg-stone-50 pb-24 lg:pb-0">
@@ -96,18 +98,22 @@ export default function EventDetailClient({ event, similarEvents }: Props) {
         <div>
           <EventTabs active={tab} onChange={setTab} />
 
-          {tab === 'about' && <AboutTab event={displayEvent} description={event.description} zones={event.seat_zones} />}
-          {tab === 'lineup' && <LineupTab />}
+          {tab === 'about' && (
+            <AboutTab
+              event={displayEvent}
+              description={event.description}
+              zones={event.seat_zones}
+              holdMinutes={bookingRules?.ticket_hold_minutes ?? 10}
+            />
+          )}
           {tab === 'venue' && <VenueTab event={displayEvent} />}
-          {tab === 'faq' && <FaqTab />}
-          {tab === 'reviews' && <ReviewsTab eventId={event.id} />}
         </div>
 
-        <DetailSidebarCTA event={displayEvent} minPrice={minPrice} maxPrice={maxPrice} />
+        <DetailSidebarCTA event={displayEvent} minPrice={minPrice} maxPrice={maxPrice} bookingHref={bookingHref} />
       </div>
 
       <SimilarEvents events={similar} />
-      <MobileStickyCTA eventId={event.id} minPrice={minPrice} />
+      <MobileStickyCTA minPrice={minPrice} bookingHref={bookingHref} />
     </main>
   );
 }

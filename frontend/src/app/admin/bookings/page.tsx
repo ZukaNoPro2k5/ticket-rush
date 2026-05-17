@@ -37,19 +37,17 @@ const STATUS_TABS = [
   { value: 'pending',   label: 'Chờ xác nhận' },
   { value: 'confirmed', label: 'Đã xác nhận' },
   { value: 'cancelled', label: 'Đã huỷ' },
-  { value: 'expired',   label: 'Hết hạn' },
 ];
 
-const STATUS_BADGE_VARIANTS: Record<string, 'pending' | 'active' | 'cancelled' | 'expired'> = {
+const STATUS_BADGE_VARIANTS: Record<string, 'pending' | 'active' | 'cancelled'> = {
   pending:   'pending',
   confirmed: 'active',
   cancelled: 'cancelled',
-  expired:   'expired',
 };
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận',
-  cancelled: 'Đã huỷ',      expired: 'Hết hạn',
+  cancelled: 'Đã huỷ',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────

@@ -9,10 +9,7 @@ interface Props {
 
 const TABS: { key: EventTabKey; label: string }[] = [
   { key: 'about', label: 'Giới thiệu' },
-  { key: 'lineup', label: 'Chương trình' },
   { key: 'venue', label: 'Địa điểm' },
-  { key: 'faq', label: 'Hỏi đáp' },
-  { key: 'reviews', label: 'Đánh giá' },
 ];
 
 export function EventTabs({ active, onChange }: Props) {

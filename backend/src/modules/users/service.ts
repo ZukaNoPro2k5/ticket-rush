@@ -1,8 +1,11 @@
 import bcrypt from 'bcryptjs';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
 import pool from '../../config/database';
+import { config } from '../../config/env';
 import { AppError } from '../../shared/AppError';
-import type { UpdateProfileInput, ChangePasswordInput } from './validation';
+import type { UpdateProfileInput, ChangePasswordInput, UpdateAvatarInput } from './validation';
 
 interface UserRow extends RowDataPacket {
   id: number;
@@ -14,12 +17,14 @@ interface UserRow extends RowDataPacket {
   birth_date: string | null;
   role: string;
   avatar_url: string | null;
+  category_preferences: string[] | string | null;
+  preferred_city: string | null;
   created_at: string;
 }
 
 export async function getProfile(userId: number) {
   const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, password_hash, created_at FROM users WHERE id = ? LIMIT 1',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, category_preferences, preferred_city, password_hash, created_at FROM users WHERE id = ? LIMIT 1',
     [userId],
   );
   if (rows.length === 0) {
@@ -49,7 +54,7 @@ export async function updateProfile(userId: number, input: UpdateProfileInput) {
   );
 
   const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, password_hash, created_at FROM users WHERE id = ? LIMIT 1',
+    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, category_preferences, preferred_city, password_hash, created_at FROM users WHERE id = ? LIMIT 1',
     [userId],
   );
 
@@ -84,4 +89,33 @@ export async function savePreferences(userId: number, input: { categories: strin
     'UPDATE users SET category_preferences = ?, preferred_city = ? WHERE id = ?',
     [JSON.stringify(input.categories), input.preferred_city ?? null, userId],
   );
+}
+
+function parseAvatarDataUrl(dataUrl: string) {
+  const match = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+  if (!match) {
+    throw AppError.badRequest('Ảnh đại diện phải là PNG, JPG hoặc WEBP', 'INVALID_AVATAR');
+  }
+  const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+  const buffer = Buffer.from(match[2], 'base64');
+  if (buffer.byteLength === 0 || buffer.byteLength > 1_500_000) {
+    throw AppError.badRequest('Ảnh đại diện tối đa 1.5MB', 'AVATAR_TOO_LARGE');
+  }
+  return { ext, buffer };
+}
+
+export async function updateAvatar(userId: number, input: UpdateAvatarInput) {
+  const { ext, buffer } = parseAvatarDataUrl(input.data_url);
+  const avatarDir = path.join(process.cwd(), 'uploads', 'avatars');
+  await mkdir(avatarDir, { recursive: true });
+  const fileName = `user-${userId}-${Date.now()}.${ext}`;
+  await writeFile(path.join(avatarDir, fileName), buffer);
+  const avatarUrl = `${config.publicUrl}/uploads/avatars/${fileName}`;
+
+  await pool.execute<ResultSetHeader>(
+    'UPDATE users SET avatar_url = ? WHERE id = ?',
+    [avatarUrl, userId],
+  );
+
+  return getProfile(userId);
 }

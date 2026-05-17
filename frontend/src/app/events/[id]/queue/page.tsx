@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Users, Clock, Sparkles, ArrowLeft } from 'lucide-react';
+import { Users, Clock, ArrowLeft, Ticket, ShieldCheck } from 'lucide-react';
 import { ProtectedRoute } from '@/components/providers/ProtectedRoute';
 import { Card, Button } from '@/components/ui';
 import { enterQueue, getQueueStatus, leaveQueue, type QueueStatus } from '@/lib/api';
@@ -74,11 +74,11 @@ function QueueContent() {
 
   if (error) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4">
-        <Card className="max-w-md w-full p-8 text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+      <div className="flex min-h-[70vh] items-center justify-center bg-stone-50 px-4">
+        <Card className="w-full max-w-md border-stone-200 p-8 text-center shadow-soft">
+          <p className="mb-4 text-red-600">{error}</p>
           <Button onClick={() => router.back()} variant="secondary">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại
           </Button>
         </Card>
@@ -88,8 +88,8 @@ function QueueContent() {
 
   if (!status) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Đang kết nối phòng chờ...</div>
+      <div className="flex min-h-[70vh] items-center justify-center bg-stone-50">
+        <div className="animate-pulse text-sm font-medium text-stone-500">Đang kết nối phòng chờ...</div>
       </div>
     );
   }
@@ -102,86 +102,124 @@ function QueueContent() {
   const seconds = status.estimatedWaitSec % 60;
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      <Card className="max-w-xl w-full p-8 md:p-12 shadow-xl border border-indigo-100">
-        <div className="flex items-center justify-center mb-6">
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-            className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg"
-          >
-            <Sparkles className="w-8 h-8 text-white" />
-          </motion.div>
-        </div>
-
-        <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-2">
-          Phòng chờ ảo
-        </h1>
-        <p className="text-center text-gray-600 mb-8">
-          Sự kiện đang có lượng truy cập lớn. Vui lòng giữ trang này để giữ vị trí của bạn.
-        </p>
-
-        {/* Position badge */}
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white text-center mb-6">
-          <div className="text-sm opacity-80 uppercase tracking-wider mb-1">Vị trí của bạn</div>
-          <motion.div
-            key={status.position}
-            initial={{ scale: 1.2, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-5xl md:text-6xl font-bold tabular-nums"
-          >
-            #{status.position}
-          </motion.div>
-          <div className="text-sm opacity-80 mt-2">
-            trong tổng số {status.totalWaiting.toLocaleString('vi-VN')} người đang chờ
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        {initialPosition && initialPosition > 0 && (
-          <div className="mb-6">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>Tiến độ</span>
-              <span>{Math.round(progress)}%</span>
+    <div className="min-h-[80vh] bg-stone-50 px-4 py-10 md:py-14">
+      <div className="mx-auto grid w-full max-w-5xl items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Card className="border-stone-200 p-6 shadow-soft md:p-8">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-700">
+              <Ticket className="h-7 w-7" />
             </div>
-            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-              <motion.div
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
-              />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Phòng chờ ảo</p>
+              <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-stone-900 md:text-3xl">
+                Đang giữ lượt cho bạn
+              </h1>
             </div>
           </div>
-        )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <Users className="w-5 h-5 mx-auto mb-1 text-indigo-600" />
-            <div className="text-xs text-gray-500 mb-1">Trước bạn</div>
-            <div className="text-lg font-semibold text-gray-900 tabular-nums">
-              {status.ahead.toLocaleString('vi-VN')}
-            </div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <Clock className="w-5 h-5 mx-auto mb-1 text-indigo-600" />
-            <div className="text-xs text-gray-500 mb-1">Thời gian chờ ước tính</div>
-            <div className="text-lg font-semibold text-gray-900 tabular-nums">
-              {minutes > 0 ? `${minutes}p ` : ''}{seconds}s
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-center text-gray-500">
-            Hệ thống sẽ tự động chuyển bạn sang trang chọn ghế khi đến lượt.
-            Đừng tải lại hoặc tắt trang.
+          <p className="max-w-2xl text-sm leading-6 text-stone-600">
+            Lượng truy cập đang cao. Cứ giữ trang này mở, hệ thống sẽ tự chuyển bạn sang chọn ghế khi đến lượt.
           </p>
-          <Button onClick={handleLeave} variant="ghost" className="text-gray-500 hover:text-red-600">
-            Rời khỏi phòng chờ
-          </Button>
-        </div>
-      </Card>
+
+          <div className="mt-8 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-6 md:px-6">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Vị trí hiện tại</div>
+            <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
+              <motion.div
+                key={status.position}
+                initial={{ y: 8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="font-display text-5xl font-bold tabular-nums tracking-tight text-stone-900 md:text-6xl"
+              >
+                #{status.position}
+              </motion.div>
+              <p className="pb-1 text-sm text-stone-600">
+                trong {status.totalWaiting.toLocaleString('vi-VN')} người đang chờ
+              </p>
+            </div>
+          </div>
+
+          {initialPosition && initialPosition > 0 && (
+            <div className="mt-6">
+              <div className="mb-2 flex justify-between text-sm text-stone-600">
+                <span>Tiến độ</span>
+                <span className="font-semibold text-stone-900">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-stone-200">
+                <motion.div
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full rounded-full bg-amber-500"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-stone-200 bg-white p-4">
+              <div className="flex items-center gap-2 text-sm text-stone-500">
+                <Users className="h-4 w-4 text-amber-600" />
+                Trước bạn
+              </div>
+              <div className="mt-2 text-2xl font-bold tabular-nums text-stone-900">
+                {status.ahead.toLocaleString('vi-VN')}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-stone-200 bg-white p-4">
+              <div className="flex items-center gap-2 text-sm text-stone-500">
+                <Clock className="h-4 w-4 text-amber-600" />
+                Chờ ước tính
+              </div>
+              <div className="mt-2 text-2xl font-bold tabular-nums text-stone-900">
+                {minutes > 0 ? `${minutes}p ` : ''}{seconds}s
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 border-t border-stone-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs leading-5 text-stone-500">
+              Đừng tải lại hoặc tắt trang, làm vậy có thể mất lượt đang giữ.
+            </p>
+            <Button onClick={handleLeave} variant="ghost" className="justify-center text-stone-500 hover:text-red-600">
+              Rời phòng chờ
+            </Button>
+          </div>
+        </Card>
+
+        <aside className="space-y-4">
+          <Card className="border-stone-200 p-5 shadow-soft">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-stone-900">Vị trí được giữ tự động</h2>
+                <p className="mt-1 text-sm leading-6 text-stone-600">
+                  Hệ thống cấp lượt theo từng nhóm để giảm nghẽn khi flash sale mở bán.
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="border-stone-200 p-5 shadow-soft">
+            <h2 className="font-semibold text-stone-900">Khi tới lượt</h2>
+            <ol className="mt-3 space-y-3 text-sm text-stone-600">
+              <li className="flex gap-3">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone-100 text-xs font-bold text-stone-700">1</span>
+                Trang tự chuyển sang sơ đồ ghế.
+              </li>
+              <li className="flex gap-3">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone-100 text-xs font-bold text-stone-700">2</span>
+                Bạn chọn ghế và giữ chỗ trong thời gian quy định.
+              </li>
+              <li className="flex gap-3">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone-100 text-xs font-bold text-stone-700">3</span>
+                Xác nhận để hoàn tất đặt vé.
+              </li>
+            </ol>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

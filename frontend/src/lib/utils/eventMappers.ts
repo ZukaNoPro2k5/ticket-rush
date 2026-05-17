@@ -2,10 +2,13 @@ import type { Event, DisplayEvent } from '@/types';
 
 export const CATEGORY_LABELS: Record<string, string> = {
   music: 'Âm nhạc',
+  arts: 'Nghệ thuật',
   stage: 'Sân khấu',
   sports: 'Thể thao',
+  food: 'Ẩm thực',
+  entertainment: 'Giải trí',
   workshop: 'Hội thảo',
-  other: 'Sự kiện',
+  other: 'Khác',
 };
 
 export const WEEK_DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -43,7 +46,7 @@ export function toDisplayEvent(e: Event): DisplayEvent {
   return {
     id: e.id,
     title: e.title,
-    category: CATEGORY_LABELS[e.category] ?? 'Sự kiện',
+    category: CATEGORY_LABELS[e.category] ?? 'Khác',
     categoryKey: e.category as DisplayEvent['categoryKey'],
     venue: e.venue,
     city: deriveCityFromVenue(e.venue),

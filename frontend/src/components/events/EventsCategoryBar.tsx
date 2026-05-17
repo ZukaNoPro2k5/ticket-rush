@@ -9,9 +9,12 @@ export const EVENT_CATEGORY_OPTIONS: {
   icon: string;
 }[] = [
   { key: 'music', label: 'Âm nhạc', icon: 'fa-solid fa-music' },
-  { key: 'stage', label: 'Sân khấu', icon: 'fa-solid fa-theater-masks' },
+  { key: 'arts', label: 'Nghệ thuật', icon: 'fa-solid fa-palette' },
   { key: 'sports', label: 'Thể thao', icon: 'fa-solid fa-futbol' },
+  { key: 'food', label: 'Ẩm thực', icon: 'fa-solid fa-utensils' },
+  { key: 'entertainment', label: 'Giải trí', icon: 'fa-solid fa-masks-theater' },
   { key: 'workshop', label: 'Workshop', icon: 'fa-solid fa-chalkboard-user' },
+  { key: 'stage', label: 'Sân khấu', icon: 'fa-solid fa-theater-masks' },
   { key: 'other', label: 'Khác', icon: 'fa-solid fa-tag' },
 ];
 

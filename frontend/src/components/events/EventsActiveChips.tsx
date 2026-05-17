@@ -11,6 +11,8 @@ const TIME_LABELS: Record<TimeRangeKey, string> = {
   weekend: 'Cuối tuần',
   week: 'Tuần này',
   month: 'Tháng này',
+  next_month: 'Tháng sau',
+  other: 'Khác',
 };
 
 function formatVnd(value: number): string {

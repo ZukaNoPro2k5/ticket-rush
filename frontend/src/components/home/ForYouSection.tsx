@@ -7,7 +7,7 @@ import type { DisplayEvent } from '@/types';
 import { useAuthStore } from '@/stores/authStore';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import { EventCard, EventCardSkeleton } from '@/components/events';
-import { THIS_WEEK_EVENTS } from '@/data/uiConfig';
+import EmptyState from '@/components/ui/EmptyState';
 
 function GuestCallout() {
   return (
@@ -18,11 +18,11 @@ function GuestCallout() {
         </div>
         <div>
           <div className="font-semibold text-stone-900">Mở khóa đề xuất riêng cho bạn</div>
-          <div className="text-sm text-stone-500">Đăng nhập để nhận gợi ý chính xác hơn từ TicketRush AI</div>
+          <div className="text-sm text-stone-500">Đăng nhập để lưu chủ đề yêu thích và nhận gợi ý sát gu hơn</div>
         </div>
       </div>
       <Link
-        href="#"
+        href="/login"
         className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-amber-600"
       >
         Đăng nhập <ArrowRight className="h-4 w-4" />
@@ -31,16 +31,26 @@ function GuestCallout() {
   );
 }
 
-export function ForYouSection({ events = [], loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
+export function ForYouSection({
+  events = [],
+  loading = false,
+  personalized = false,
+}: {
+  events?: DisplayEvent[];
+  loading?: boolean;
+  personalized?: boolean;
+}) {
   const { isAuthenticated, user } = useAuthStore();
   const { ref, inView } = useSectionInView();
-  const displayEvents = events.length > 0 ? events : THIS_WEEK_EVENTS.slice(0, 4);
+  const displayEvents = events;
 
   const heading = isAuthenticated && user
     ? `${user.full_name.split(' ').pop()}, có thể bạn sẽ thích`
     : 'Cá nhân hóa cho bạn';
   const description = isAuthenticated
-    ? 'Gợi ý dựa trên các sự kiện bạn từng quan tâm'
+    ? personalized
+      ? 'Gợi ý dựa trên chủ đề và thành phố bạn đã chọn'
+      : 'Gợi ý từ các sự kiện đang mở bán'
     : 'Đăng nhập để nhận gợi ý phù hợp gu của bạn';
 
   return (
@@ -59,7 +69,7 @@ export function ForYouSection({ events = [], loading = false }: { events?: Displ
             <h2 className="mt-3 font-display text-2xl font-bold text-stone-900 md:text-3xl">{heading}</h2>
             <p className="mt-1 text-sm text-stone-500 md:text-base">{description}</p>
           </div>
-          <Link href="/events?sort=for-you" className="hidden items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800 md:inline-flex">
+          <Link href="/events" className="hidden items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800 md:inline-flex">
             Xem tất cả <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
@@ -74,6 +84,13 @@ export function ForYouSection({ events = [], loading = false }: { events?: Displ
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => <EventCardSkeleton key={i} />)}
           </div>
+        ) : displayEvents.length === 0 ? (
+          <EmptyState
+            variant="events"
+            headline="Chưa đủ dữ liệu để gợi ý"
+            subtext="Khi có sự kiện đang mở bán, khu này sẽ tự cập nhật."
+            className="rounded-2xl border border-stone-200 bg-white"
+          />
         ) : (
           <motion.div
             variants={staggerContainer(0.05)}

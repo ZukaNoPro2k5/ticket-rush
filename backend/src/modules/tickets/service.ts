@@ -86,10 +86,12 @@ function normalizeScannerPayload(input: unknown): ScannerPayload {
  */
 export async function generateTickets(bookingId: number) {
   const [seatRows] = await pool.execute<RowDataPacket[]>(
-    `SELECT bs.seat_id, sz.name AS zone_name, s.row_label, s.col_number
+    `SELECT bs.seat_id, sz.name AS zone_name, s.row_label, s.col_number,
+            t.id AS ticket_id, t.qr_code AS ticket_qr_code
      FROM booking_seats bs
      JOIN seats s ON s.id = bs.seat_id
      JOIN seat_zones sz ON sz.id = s.zone_id
+     LEFT JOIN tickets t ON t.booking_id = bs.booking_id AND t.seat_id = bs.seat_id
      WHERE bs.booking_id = ?`,
     [bookingId],
   );
@@ -97,17 +99,43 @@ export async function generateTickets(bookingId: number) {
   const tickets: { id: number; seat: string; qr_code: string }[] = [];
 
   for (const seat of seatRows) {
-    const token = randomUUID();
-    const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO tickets (booking_id, seat_id, qr_code) VALUES (?, ?, ?)',
-      [bookingId, seat.seat_id, token],
-    );
+    let ticketId = Number(seat.ticket_id ?? 0);
+    let token = seat.ticket_qr_code as string | undefined;
 
-    const ticketId = result.insertId;
-    const qr_code = await QRCode.toDataURL(
-      buildQrPayload(ticketId, bookingId, Number(seat.seat_id), token),
-      { width: 300, margin: 2 },
-    );
+    if (!ticketId || !token) {
+      token = randomUUID();
+      try {
+        const [result] = await pool.execute<ResultSetHeader>(
+          'INSERT INTO tickets (booking_id, seat_id, qr_code) VALUES (?, ?, ?)',
+          [bookingId, seat.seat_id, token],
+        );
+        ticketId = result.insertId;
+      } catch (err) {
+        // A retry racing with another successful confirmation may have created
+        // the same booking-seat ticket a millisecond earlier. Reuse it rather
+        // than minting another QR or failing the otherwise-valid checkout.
+        const mysqlErr = err as { code?: string };
+        if (mysqlErr.code !== 'ER_DUP_ENTRY') throw err;
+
+        const [existing] = await pool.execute<RowDataPacket[]>(
+          `SELECT id, qr_code
+           FROM tickets
+           WHERE booking_id = ? AND seat_id = ?
+           LIMIT 1`,
+          [bookingId, seat.seat_id],
+        );
+        if (existing.length === 0) throw err;
+        ticketId = Number(existing[0].id);
+        token = existing[0].qr_code as string;
+      }
+    }
+
+    const qr_code = await qrDataUrlForTicket({
+      id: ticketId,
+      booking_id: bookingId,
+      seat_id: Number(seat.seat_id),
+      qr_code: token,
+    });
 
     tickets.push({
       id: ticketId,
@@ -226,11 +254,11 @@ export async function checkIn(ticketId: number) {
      FROM tickets t
      JOIN bookings b ON b.id = t.booking_id
      JOIN events e ON e.id = b.event_id
-     WHERE t.id = ? AND DATE(e.event_date) >= CURDATE()`,
+     WHERE t.id = ? AND DATE(e.event_date) = CURDATE()`,
     [ticketId],
   );
   if (rows.length === 0) {
-    throw AppError.notFound('Ticket not found or event already passed', 'TICKET_NOT_FOUND');
+    throw AppError.notFound('Ticket not found or event is not today', 'TICKET_NOT_FOUND');
   }
   if (rows[0].status === 'used') {
     throw AppError.badRequest('Ticket already checked in', 'TICKET_ALREADY_USED');

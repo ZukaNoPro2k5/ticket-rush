@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Save, Loader2, User as UserIcon, Phone, Calendar, Users, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api/client';
+import { updateMyAvatar } from '@/lib/api/users';
 import type { User } from '@/types';
 
 const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as const;
@@ -68,6 +69,8 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const setField = useCallback(<K extends keyof FormState>(k: K, v: FormState[K]) => {
     setForm(f => ({ ...f, [k]: v }));
@@ -115,6 +118,38 @@ export default function ProfilePage() {
 
   const dirty = isDirty(orig, form);
 
+  const handleAvatarChange = async (file?: File) => {
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast.error('Chỉ hỗ trợ PNG, JPG hoặc WEBP');
+      return;
+    }
+    if (file.size > 1.5 * 1024 * 1024) {
+      toast.error('Ảnh tối đa 1.5MB');
+      return;
+    }
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('READ_FAILED'));
+      reader.readAsDataURL(file);
+    });
+
+    setAvatarUploading(true);
+    try {
+      const updated = await updateMyAvatar(dataUrl);
+      if (token && user) {
+        setAuth(token, { ...user, avatar_url: updated.avatar_url });
+      }
+      toast.success('Đã cập nhật ảnh đại diện');
+    } catch {
+      toast.error('Chưa thể cập nhật ảnh đại diện');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   return (
     <AccountLayout>
       <motion.div variants={fadeUp} initial="hidden" animate="visible">
@@ -153,12 +188,21 @@ export default function ProfilePage() {
                   </span>
                 )}
                 <div>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(e) => void handleAvatarChange(e.target.files?.[0])}
+                  />
                   <button
                     type="button"
                     className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
-                    onClick={() => toast('Tính năng đổi ảnh sẽ sớm ra mắt 🚧', { icon: '📸' })}
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
                   >
-                    <Camera className="h-3.5 w-3.5" /> Đổi ảnh
+                    {avatarUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                    {avatarUploading ? 'Đang tải…' : 'Đổi ảnh'}
                   </button>
                   {user?.avatar_url && (
                     <p className="mt-1.5 text-xs text-stone-400">Ảnh đồng bộ từ Google / Facebook</p>

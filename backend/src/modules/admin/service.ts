@@ -1,5 +1,60 @@
-import { RowDataPacket } from 'mysql2';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from '../../config/database';
+import { AppError } from '../../shared/AppError';
+import { invalidateRuntimeSystemSettingsCache } from '../../config/runtimeSettings';
+import type {
+  UpdateEmailTemplateInput,
+  UpdatePaymentGatewayInput,
+  UpdateSmtpSettingsInput,
+  UpdateSystemSettingsInput,
+} from './validation';
+
+interface SystemSettingsRow extends RowDataPacket {
+  id: number;
+  company_name: string;
+  support_email: string;
+  address: string;
+  ticket_hold_minutes: number;
+  max_tickets_per_booking: number;
+  timezone: string;
+  language: 'vi' | 'en';
+  maintenance_mode: number | boolean;
+  payment_sandbox_mode: number | boolean;
+  updated_at: string;
+}
+
+interface PaymentGatewayRow extends RowDataPacket {
+  id: string;
+  name: string;
+  description: string;
+  enabled: number | boolean;
+  partner_code: string | null;
+  access_key: string | null;
+  secret_key: string | null;
+  webhook_url: string;
+  updated_at: string;
+}
+
+interface SmtpSettingsRow extends RowDataPacket {
+  id: number;
+  host: string;
+  port: number;
+  from_name: string;
+  from_email: string;
+  username: string;
+  password: string | null;
+  encryption: 'tls' | 'ssl' | 'none';
+  updated_at: string;
+}
+
+interface EmailTemplateRow extends RowDataPacket {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  status: 'active' | 'inactive';
+  updated_at: string;
+}
 
 export async function getDashboardStats() {
   const [[revenue]] = await pool.query<RowDataPacket[]>(
@@ -299,9 +354,7 @@ export async function listAdminEvents(params: {
        COALESCE(seat_stats.total_seats, 0)      AS total_seats,
        COALESCE(seat_stats.available_seats, 0)  AS available_seats,
        COALESCE(seat_stats.sold_seats, 0)       AS sold_seats,
-       COALESCE(bk.revenue, 0)                  AS revenue,
-       COALESCE(rv.average_rating, 0)           AS average_rating,
-       COALESCE(rv.review_count, 0)             AS review_count
+       COALESCE(bk.revenue, 0)                  AS revenue
      FROM events e
      LEFT JOIN seat_zones sz ON sz.event_id = e.id
      LEFT JOIN (
@@ -319,11 +372,6 @@ export async function listAdminEvents(params: {
        WHERE b.status = 'confirmed'
        GROUP BY b.event_id
      ) bk ON bk.event_id = e.id
-     LEFT JOIN (
-       SELECT event_id, AVG(rating) AS average_rating, COUNT(*) AS review_count
-       FROM reviews
-       GROUP BY event_id
-     ) rv ON rv.event_id = e.id
      ${where}
      GROUP BY e.id
      ORDER BY e.created_at DESC
@@ -347,8 +395,6 @@ export async function listAdminEvents(params: {
     available_seats: Number(r.available_seats),
     sold_seats:      Number(r.sold_seats),
     revenue:         Number(r.revenue),
-    average_rating:  Number(r.average_rating) || null,
-    review_count:    Number(r.review_count),
   }));
 
   return {
@@ -670,7 +716,7 @@ export async function getTodayStats() {
 export interface Insight {
   id: string;
   severity: 'opportunity' | 'warning' | 'critical' | 'info';
-  category: 'revenue' | 'events' | 'customers' | 'pricing' | 'reviews' | 'operations';
+  category: 'revenue' | 'events' | 'customers' | 'pricing' | 'operations';
   title: string;
   description: string;
   metric?: { value: string; label: string };
@@ -782,7 +828,7 @@ export async function generateInsights() {
       severity: 'warning',
       category: 'operations',
       title: 'Nhiều đơn pending quá hạn',
-      description: `Có ${pendingRow.cnt} đơn đang treo trên 30 phút. Đề xuất kiểm tra cron-job hoặc gửi reminder thanh toán cho khách.`,
+      description: `Có ${pendingRow.cnt} đơn đang treo trên 30 phút. Đề xuất kiểm tra cron-job hoặc gửi reminder xác nhận cho khách.`,
       metric: { value: String(pendingRow.cnt), label: 'đơn quá hạn' },
       action: { label: 'Xem đơn pending', href: '/admin/bookings' },
     });
@@ -810,30 +856,7 @@ export async function generateInsights() {
     }
   }
 
-  // ── 6. Reviews — low-rated events ──────────────────────────────────────
-  const [lowRated] = await pool.query<RowDataPacket[]>(
-    `SELECT e.id, e.title, AVG(r.rating) AS avg_rating, COUNT(r.id) AS cnt
-     FROM events e
-     JOIN reviews r ON r.event_id = e.id
-     GROUP BY e.id
-     HAVING cnt >= 3 AND avg_rating < 3.5
-     ORDER BY avg_rating ASC
-     LIMIT 1`,
-  );
-  if (lowRated.length > 0) {
-    const ev = lowRated[0];
-    insights.push({
-      id: `low-rated-${ev.id}`,
-      severity: 'critical',
-      category: 'reviews',
-      title: 'Sự kiện có đánh giá thấp',
-      description: `"${ev.title}" trung bình chỉ ${Number(ev.avg_rating).toFixed(1)}/5 sao từ ${ev.cnt} đánh giá. Cần xem xét nội dung phản hồi để cải thiện.`,
-      metric: { value: `${Number(ev.avg_rating).toFixed(1)}★`, label: `${ev.cnt} đánh giá` },
-      action: { label: 'Xem đánh giá', href: '/admin/reviews' },
-    });
-  }
-
-  // ── 7. Promo code under-utilization ────────────────────────────────────
+  // ── 6. Promo code under-utilization ────────────────────────────────────
   const [unused] = await pool.query<RowDataPacket[]>(
     `SELECT pc.code, pc.max_uses, pc.used_count
      FROM promo_codes pc
@@ -859,7 +882,7 @@ export async function generateInsights() {
     });
   }
 
-  // ── 8. Forecast — extrapolate next month ──────────────────────────────
+  // ── 7. Forecast — extrapolate next month ──────────────────────────────
   const [last3] = await pool.query<RowDataPacket[]>(
     `SELECT MONTH(created_at) AS m, SUM(total_amount) AS rev
      FROM bookings
@@ -985,70 +1008,192 @@ export async function listAdminBookings(
   };
 }
 
-export async function listAdminReviews(
-  page = 1,
-  limit = 20,
-  eventId?: number,
-  search?: string,
-) {
-  const offset = (page - 1) * limit;
-  const params: (string | number)[] = [];
-  const conditions: string[] = [];
+function mapSystemSettings(row: SystemSettingsRow) {
+  return {
+    company_name: row.company_name,
+    support_email: row.support_email,
+    address: row.address,
+    ticket_hold_minutes: Number(row.ticket_hold_minutes),
+    max_tickets_per_booking: Number(row.max_tickets_per_booking),
+    timezone: row.timezone,
+    language: row.language,
+    maintenance_mode: Boolean(row.maintenance_mode),
+    payment_sandbox_mode: Boolean(row.payment_sandbox_mode),
+    updated_at: row.updated_at,
+  };
+}
 
-  if (eventId) {
-    conditions.push('r.event_id = ?');
-    params.push(eventId);
-  }
-  if (search) {
-    conditions.push('(u.full_name LIKE ? OR e.title LIKE ? OR r.comment LIKE ?)');
-    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-  }
+export async function getSystemSettings() {
+  const [rows] = await pool.query<SystemSettingsRow[]>(
+    'SELECT * FROM admin_system_settings WHERE id = 1',
+  );
+  if (rows.length === 0) throw AppError.notFound('Chưa có cấu hình hệ thống', 'ADMIN_SETTINGS_NOT_FOUND');
+  return mapSystemSettings(rows[0]);
+}
 
-  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+export async function updateSystemSettings(input: UpdateSystemSettingsInput) {
+  await getSystemSettings();
+  await pool.execute<ResultSetHeader>(
+    `UPDATE admin_system_settings
+     SET company_name = ?, support_email = ?, address = ?,
+         ticket_hold_minutes = ?, max_tickets_per_booking = ?,
+         timezone = ?, language = ?, maintenance_mode = ?
+     WHERE id = 1`,
+    [
+      input.company_name,
+      input.support_email,
+      input.address,
+      input.ticket_hold_minutes,
+      input.max_tickets_per_booking,
+      input.timezone,
+      input.language,
+      input.maintenance_mode,
+    ],
+  );
+  invalidateRuntimeSystemSettingsCache();
+  return getSystemSettings();
+}
 
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT
-       r.id,
-       r.rating,
-       r.comment,
-       r.created_at,
-       u.full_name  AS user_name,
-       u.email      AS user_email,
-       e.title      AS event_title,
-       e.id         AS event_id
-     FROM reviews r
-     JOIN users  u ON u.id = r.user_id
-     JOIN events e ON e.id = r.event_id
-     ${where}
-     ORDER BY r.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [...params, limit, offset],
+export async function updatePaymentSandboxMode(paymentSandboxMode: boolean) {
+  await getSystemSettings();
+  await pool.execute<ResultSetHeader>(
+    'UPDATE admin_system_settings SET payment_sandbox_mode = ? WHERE id = 1',
+    [paymentSandboxMode],
+  );
+  return getSystemSettings();
+}
+
+function mapPaymentGateway(row: PaymentGatewayRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    enabled: Boolean(row.enabled),
+    partner_code: row.partner_code,
+    access_key: row.access_key,
+    secret_key_set: Boolean(row.secret_key),
+    webhook_url: row.webhook_url,
+    updated_at: row.updated_at,
+  };
+}
+
+export async function listPaymentGateways() {
+  const [rows] = await pool.query<PaymentGatewayRow[]>(
+    `SELECT * FROM payment_gateways
+     ORDER BY FIELD(id, 'vnpay', 'momo', 'stripe'), name ASC`,
+  );
+  return rows.map(mapPaymentGateway);
+}
+
+export async function updatePaymentGateway(id: string, input: UpdatePaymentGatewayInput) {
+  const [rows] = await pool.execute<PaymentGatewayRow[]>(
+    'SELECT * FROM payment_gateways WHERE id = ?',
+    [id],
+  );
+  if (rows.length === 0) throw AppError.notFound('Cổng thanh toán không tồn tại', 'PAYMENT_GATEWAY_NOT_FOUND');
+
+  const secretKey = input.secret_key === undefined
+    ? rows[0].secret_key
+    : input.secret_key;
+
+  await pool.execute<ResultSetHeader>(
+    `UPDATE payment_gateways
+     SET enabled = ?, partner_code = ?, access_key = ?, secret_key = ?
+     WHERE id = ?`,
+    [
+      input.enabled,
+      input.partner_code,
+      input.access_key,
+      secretKey,
+      id,
+    ],
   );
 
-  const [[countRow]] = await pool.query<RowDataPacket[]>(
-    `SELECT COUNT(*) AS total
-     FROM reviews r
-     JOIN users  u ON u.id = r.user_id
-     JOIN events e ON e.id = r.event_id
-     ${where}`,
-    params,
+  const [updated] = await pool.execute<PaymentGatewayRow[]>(
+    'SELECT * FROM payment_gateways WHERE id = ?',
+    [id],
   );
+  return mapPaymentGateway(updated[0]);
+}
+
+function mapSmtpSettings(row: SmtpSettingsRow) {
+  return {
+    host: row.host,
+    port: Number(row.port),
+    from_name: row.from_name,
+    from_email: row.from_email,
+    username: row.username,
+    password_set: Boolean(row.password),
+    encryption: row.encryption,
+    updated_at: row.updated_at,
+  };
+}
+
+export async function getMailSettings() {
+  const [[smtp], [templates]] = await Promise.all([
+    pool.query<SmtpSettingsRow[]>('SELECT * FROM smtp_settings WHERE id = 1'),
+    pool.query<EmailTemplateRow[]>('SELECT * FROM email_templates ORDER BY name ASC'),
+  ]);
+
+  if (smtp.length === 0) throw AppError.notFound('Chưa có cấu hình SMTP', 'SMTP_SETTINGS_NOT_FOUND');
 
   return {
-    reviews: rows.map(r => ({
-      id:          Number(r.id),
-      rating:      Number(r.rating),
-      comment:     r.comment as string | null,
-      created_at:  r.created_at as string,
-      user_name:   r.user_name as string,
-      user_email:  r.user_email as string,
-      event_title: r.event_title as string,
-      event_id:    Number(r.event_id),
+    smtp: mapSmtpSettings(smtp[0]),
+    templates: templates.map((row) => ({
+      id: row.id,
+      name: row.name,
+      subject: row.subject,
+      body: row.body,
+      status: row.status,
+      updated_at: row.updated_at,
     })),
-    pagination: {
-      page, limit,
-      total: Number(countRow.total),
-      total_pages: Math.ceil(Number(countRow.total) / limit),
-    },
   };
+}
+
+export async function updateSmtpSettings(input: UpdateSmtpSettingsInput) {
+  const settings = await getMailSettings();
+  const password = input.password === undefined
+    ? null
+    : input.password;
+
+  await pool.execute<ResultSetHeader>(
+    `UPDATE smtp_settings
+     SET host = ?, port = ?, from_name = ?, from_email = ?,
+         username = ?, password = COALESCE(?, password), encryption = ?
+     WHERE id = 1`,
+    [
+      input.host,
+      input.port,
+      input.from_name,
+      input.from_email,
+      input.username,
+      password,
+      input.encryption,
+    ],
+  );
+
+  void settings;
+  const updated = await getMailSettings();
+  return updated.smtp;
+}
+
+export async function updateEmailTemplate(id: string, input: UpdateEmailTemplateInput) {
+  const [rows] = await pool.execute<EmailTemplateRow[]>(
+    'SELECT * FROM email_templates WHERE id = ?',
+    [id],
+  );
+  if (rows.length === 0) throw AppError.notFound('Mẫu email không tồn tại', 'EMAIL_TEMPLATE_NOT_FOUND');
+
+  await pool.execute<ResultSetHeader>(
+    `UPDATE email_templates
+     SET subject = ?, body = ?, status = ?
+     WHERE id = ?`,
+    [input.subject, input.body, input.status, id],
+  );
+
+  const [updated] = await pool.execute<EmailTemplateRow[]>(
+    'SELECT * FROM email_templates WHERE id = ?',
+    [id],
+  );
+  return updated[0];
 }

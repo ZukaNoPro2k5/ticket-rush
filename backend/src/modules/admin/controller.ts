@@ -97,15 +97,6 @@ export const listBookings = asyncHandler(async (req: Request, res: Response) => 
   sendSuccess(res, data);
 });
 
-export const listReviews = asyncHandler(async (req: Request, res: Response) => {
-  const page    = req.query.page     ? Number(req.query.page)    : 1;
-  const limit   = req.query.limit    ? Number(req.query.limit)   : 20;
-  const eventId = req.query.event_id ? Number(req.query.event_id) : undefined;
-  const search  = req.query.search   as string | undefined;
-  const data    = await adminService.listAdminReviews(page, limit, eventId, search);
-  sendSuccess(res, data);
-});
-
 export const advancedStats = asyncHandler(async (_req: Request, res: Response) => {
   const data = await adminService.getAdvancedStats();
   sendSuccess(res, data);
@@ -119,4 +110,50 @@ export const todayStats = asyncHandler(async (_req: Request, res: Response) => {
 export const insights = asyncHandler(async (_req: Request, res: Response) => {
   const data = await adminService.generateInsights();
   sendSuccess(res, data);
+});
+
+export const systemSettings = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await adminService.getSystemSettings();
+  sendSuccess(res, data);
+});
+
+export const updateSystemSettings = asyncHandler(async (req: Request, res: Response) => {
+  const data = await adminService.updateSystemSettings(req.body);
+  sendSuccess(res, data, 'Đã cập nhật cài đặt hệ thống');
+});
+
+export const paymentSettings = asyncHandler(async (_req: Request, res: Response) => {
+  const [system, gateways] = await Promise.all([
+    adminService.getSystemSettings(),
+    adminService.listPaymentGateways(),
+  ]);
+  sendSuccess(res, {
+    payment_sandbox_mode: system.payment_sandbox_mode,
+    gateways,
+  });
+});
+
+export const updatePaymentSandbox = asyncHandler(async (req: Request, res: Response) => {
+  const data = await adminService.updatePaymentSandboxMode(req.body.payment_sandbox_mode);
+  sendSuccess(res, { payment_sandbox_mode: data.payment_sandbox_mode }, 'Đã cập nhật môi trường thanh toán');
+});
+
+export const updatePaymentGateway = asyncHandler(async (req: Request, res: Response) => {
+  const data = await adminService.updatePaymentGateway(req.params.id, req.body);
+  sendSuccess(res, data, 'Đã cập nhật cổng thanh toán');
+});
+
+export const mailSettings = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await adminService.getMailSettings();
+  sendSuccess(res, data);
+});
+
+export const updateSmtpSettings = asyncHandler(async (req: Request, res: Response) => {
+  const data = await adminService.updateSmtpSettings(req.body);
+  sendSuccess(res, data, 'Đã cập nhật cấu hình SMTP');
+});
+
+export const updateEmailTemplate = asyncHandler(async (req: Request, res: Response) => {
+  const data = await adminService.updateEmailTemplate(req.params.id, req.body);
+  sendSuccess(res, data, 'Đã cập nhật mẫu email');
 });

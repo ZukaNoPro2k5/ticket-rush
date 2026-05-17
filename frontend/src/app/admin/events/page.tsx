@@ -1,18 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar, ChevronDown, ChevronLeft, ChevronRight,
-  CheckCircle2, Clock, Edit3, Eye,
+  CheckCircle2, Clock,
   LayoutGrid, LayoutList, Loader2, Plus, Search,
-  Star, TrendingDown, TrendingUp, XCircle, ArrowUpDown,
+  TrendingDown, TrendingUp, ArrowUpDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ProtectedRoute } from '@/components/providers';
-import { changeEventStatus, listAdminEvents } from '@/lib/api/events';
+import { listAdminEvents } from '@/lib/api/events';
 import Badge from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import { cn } from '@/lib/utils/cn';
@@ -25,7 +26,6 @@ const CATEGORY_CHIPS: { value: EventCategory | 'all'; label: string }[] = [
   { value: 'all',           label: 'Tất cả' },
   { value: 'music',         label: 'Âm nhạc' },
   { value: 'arts',          label: 'Nghệ thuật' },
-  { value: 'tech',          label: 'Công nghệ' },
   { value: 'sports',        label: 'Thể thao' },
   { value: 'food',          label: 'Ẩm thực' },
   { value: 'entertainment', label: 'Giải trí' },
@@ -42,12 +42,6 @@ const STATUS_OPTIONS: { value: EventStatus | 'all'; label: string }[] = [
   { value: 'cancelled', label: 'Đã huỷ' },
 ];
 
-const CATEGORY_LABELS: Record<string, string> = {
-  music: 'Âm nhạc', arts: 'Nghệ thuật', tech: 'Công nghệ',
-  sports: 'Thể thao', food: 'Ẩm thực', entertainment: 'Giải trí',
-  workshop: 'Hội thảo', stage: 'Sân khấu', other: 'Khác',
-};
-
 const STATUS_BADGE_VARIANTS: Record<EventStatus, 'active' | 'draft' | 'ended' | 'cancelled'> = {
   published: 'active',
   draft:     'draft',
@@ -63,10 +57,10 @@ const STATUS_LABELS: Record<EventStatus, string> = {
 };
 
 const KPI_DEFS = [
-  { key: 'total'     as const, label: 'Tổng sự kiện', accent: 'bg-amber-400',   icon: TrendingUp },
-  { key: 'published' as const, label: 'Đang bán',     accent: 'bg-emerald-500', icon: CheckCircle2 },
-  { key: 'draft'     as const, label: 'Bản nháp',     accent: 'bg-violet-400',  icon: Clock },
-  { key: 'completed' as const, label: 'Kết thúc',     accent: 'bg-amber-700',   icon: TrendingDown },
+  { key: 'total'     as const, label: 'Tổng sự kiện', iconBg: 'bg-amber-50',   iconColor: 'text-amber-600',   icon: TrendingUp },
+  { key: 'published' as const, label: 'Đang bán',     iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', icon: CheckCircle2 },
+  { key: 'draft'     as const, label: 'Bản nháp',     iconBg: 'bg-violet-50',  iconColor: 'text-violet-600',  icon: Clock },
+  { key: 'completed' as const, label: 'Kết thúc',     iconBg: 'bg-orange-50',  iconColor: 'text-orange-600',  icon: TrendingDown },
 ];
 
 const SORT_OPTIONS = [
@@ -106,145 +100,22 @@ function evtCode(id: number) {
   return 'EVT-' + String(id).padStart(3, '0');
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-// ── Action row state ───────────────────────────────────────────────────────
-
-function useActionRow(
-  saving: boolean,
-  onStatusChange: (ev: AdminEvent, next: Exclude<EventStatus, 'draft'>) => void,
-) {
-  const [pending, setPending] = useState<'completed' | 'cancelled' | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const request = (next: 'completed' | 'cancelled') => {
-    if (timer.current) clearTimeout(timer.current);
-    setPending(next);
-    timer.current = setTimeout(() => setPending(null), 5000);
-  };
-  const confirm = () => {
-    if (!pending) return;
-    if (timer.current) clearTimeout(timer.current);
-    setPending(null);
-    onStatusChange(event, pending);
-  };
-  const cancel = () => {
-    if (timer.current) clearTimeout(timer.current);
-    setPending(null);
-  };
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-  return { pending, request, confirm, cancel, saving };
-}
-
-// ── Confirm strip ──────────────────────────────────────────────────────────
-
-function ConfirmStrip({ pending, saving, onConfirm, onCancel }: {
-  pending: 'completed' | 'cancelled';
-  saving: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2 py-1 shadow-sm">
-      <span className={cn('text-xs font-medium', pending === 'cancelled' ? 'text-rose-600' : 'text-stone-600')}>
-        {pending === 'completed' ? 'Xác nhận kết thúc?' : 'Xác nhận huỷ?'}
-      </span>
-      <button
-        onClick={onConfirm}
-        disabled={saving}
-        className={cn(
-          'inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-white transition-colors disabled:opacity-50',
-          pending === 'completed' ? 'bg-sky-600 hover:bg-sky-700' : 'bg-rose-500 hover:bg-rose-600',
-        )}
-      >
-        {pending === 'completed' ? <Clock className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-        Đồng ý
-      </button>
-      <button onClick={onCancel} className="rounded-lg border border-stone-200 px-2 py-1 text-xs font-semibold text-stone-500 transition-colors hover:bg-stone-50">
-        Không
-      </button>
-    </div>
-  );
-}
-
-// ── Action buttons ─────────────────────────────────────────────────────────
-
-function ActionButtons({ event, saving, onStatusChange }: {
-  event: AdminEvent;
-  saving: boolean;
-  onStatusChange: (ev: AdminEvent, next: Exclude<EventStatus, 'draft'>) => void;
-}) {
-  const { pending, request, confirm, cancel } = useActionRow(event, saving, onStatusChange);
-
-  if (pending) {
-    return <ConfirmStrip pending={pending} saving={saving} onConfirm={confirm} onCancel={cancel} />;
-  }
-
-  return (
-    <div className="flex items-center gap-1">
-      <Link
-        href={'/events/' + event.id}
-        target="_blank"
-        title="Xem trang sự kiện"
-        className="grid h-8 w-8 place-items-center rounded-lg border border-stone-200 text-stone-400 transition-colors hover:border-stone-300 hover:text-stone-600"
-      >
-        <Eye className="h-4 w-4" />
-      </Link>
-      {(event.status === 'draft' || event.status === 'published') && (
-        <Link
-          href={'/admin/events/' + event.id + '/edit'}
-          title="Chỉnh sửa"
-          className="grid h-8 w-8 place-items-center rounded-lg border border-stone-200 text-stone-400 transition-colors hover:border-amber-300 hover:text-amber-600"
-        >
-          <Edit3 className="h-4 w-4" />
-        </Link>
-      )}
-      {event.status === 'draft' && (
-        <button
-          onClick={() => onStatusChange(event, 'published')}
-          disabled={saving}
-          title="Publish"
-          className="grid h-8 w-8 place-items-center rounded-lg border border-stone-200 text-stone-400 transition-colors hover:border-emerald-300 hover:text-emerald-600 disabled:opacity-40"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-        </button>
-      )}
-      {event.status === 'published' && (
-        <button
-          onClick={() => request('completed')}
-          disabled={saving}
-          title="Kết thúc"
-          className="grid h-8 w-8 place-items-center rounded-lg border border-stone-200 text-stone-400 transition-colors hover:border-sky-300 hover:text-sky-600 disabled:opacity-40"
-        >
-          <Clock className="h-4 w-4" />
-        </button>
-      )}
-      {(event.status === 'draft' || event.status === 'published') && (
-        <button
-          onClick={() => request('cancelled')}
-          disabled={saving}
-          title="Huỷ sự kiện"
-          className="grid h-8 w-8 place-items-center rounded-lg border border-stone-200 text-stone-400 transition-colors hover:border-rose-300 hover:text-rose-500 disabled:opacity-40"
-        >
-          <XCircle className="h-4 w-4" />
-        </button>
-      )}
-    </div>
-  );
-}
-
 // ── Table row ──────────────────────────────────────────────────────────────
 
-function TableRow({ event, saving, onStatusChange }: {
+function TableRow({ event, onOpen }: {
   event: AdminEvent;
-  saving: boolean;
-  onStatusChange: (ev: AdminEvent, next: Exclude<EventStatus, 'draft'>) => void;
+  onOpen: (eventId: number) => void;
 }) {
   const pct = soldPct(event);
   return (
     <motion.tr
       variants={fadeUp}
-      className="group border-b border-stone-100 transition-colors last:border-0 hover:bg-stone-50/60"
+      tabIndex={0}
+      onClick={() => onOpen(event.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onOpen(event.id);
+      }}
+      className="group cursor-pointer border-b border-stone-100 transition-colors last:border-0 hover:bg-stone-50/60 focus-visible:bg-amber-50/40 focus-visible:outline-none"
     >
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
@@ -282,75 +153,66 @@ function TableRow({ event, saving, onStatusChange }: {
           {STATUS_LABELS[event.status as EventStatus] ?? event.status}
         </Badge>
       </td>
-      <td className="px-4 py-3">
-        <ActionButtons event={event} saving={saving} onStatusChange={onStatusChange} />
-      </td>
     </motion.tr>
   );
 }
 
 // ── Grid card ──────────────────────────────────────────────────────────────
 
-function GridCard({ event, saving, onStatusChange }: {
+function GridCard({ event }: {
   event: AdminEvent;
-  saving: boolean;
-  onStatusChange: (ev: AdminEvent, next: Exclude<EventStatus, 'draft'>) => void;
 }) {
   const pct = soldPct(event);
   return (
     <motion.div
       variants={fadeUp}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift"
+      className="group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift"
     >
-      <div className="relative h-44 bg-stone-100">
-        {event.poster_url ? (
-          <Image src={event.poster_url} alt={event.title} fill className="object-cover" sizes="(max-width:768px)100vw,33vw" />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <Calendar className="h-10 w-10 text-stone-200" />
+      <Link href={`/admin/events/${event.id}`} className="flex h-full flex-col">
+        <div className="relative h-44 bg-stone-100">
+          {event.poster_url ? (
+            <Image src={event.poster_url} alt={event.title} fill className="object-cover" sizes="(max-width:768px)100vw,33vw" />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Calendar className="h-10 w-10 text-stone-200" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          <div className="absolute left-3 top-3">
+            <Badge variant={STATUS_BADGE_VARIANTS[event.status as EventStatus]} dot size="sm">
+              {STATUS_LABELS[event.status as EventStatus] ?? event.status}
+            </Badge>
           </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        <div className="absolute left-3 top-3">
-          <Badge variant={STATUS_BADGE_VARIANTS[event.status as EventStatus]} dot size="sm">
-            {STATUS_LABELS[event.status as EventStatus] ?? event.status}
-          </Badge>
         </div>
-        {event.average_rating ? (
-          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 backdrop-blur-sm">
-            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-            <span className="text-xs font-bold text-white">{event.average_rating.toFixed(1)}</span>
+        <div className="flex flex-1 flex-col gap-2 p-4">
+          <div>
+            <h3 className="line-clamp-2 font-semibold leading-snug text-stone-900">{event.title}</h3>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-stone-400">
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="h-3 w-3" /> {fmtDate(event.event_date)}
+              </span>
+              <span className="truncate">{event.venue}</span>
+            </div>
           </div>
-        ) : null}
-      </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <div>
-          <h3 className="line-clamp-2 font-semibold leading-snug text-stone-900">{event.title}</h3>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-stone-400">
-            <span className="inline-flex items-center gap-1">
-              <Calendar className="h-3 w-3" /> {fmtDate(event.event_date)}
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[11px]">
+              <span className="text-stone-400">Vé đã bán</span>
+              <span className={cn('font-bold tabular-nums', pct >= 90 ? 'text-rose-500' : pct >= 60 ? 'text-amber-500' : 'text-emerald-600')}>
+                {pct}%
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+              <div className={cn('h-full rounded-full', pctColor(pct))} style={{ width: pct + '%' }} />
+            </div>
+          </div>
+          <div className="mt-auto flex items-center justify-between pt-1">
+            <span className="text-base font-bold tabular-nums text-stone-900">
+              {event.revenue > 0 ? fmtRevenue(event.revenue) : <span className="text-sm text-stone-400">—</span>}
             </span>
-            <span className="truncate">{event.venue}</span>
+            <span className="text-xs font-semibold text-amber-700">Xem trước</span>
           </div>
         </div>
-        <div>
-          <div className="mb-1 flex items-center justify-between text-[11px]">
-            <span className="text-stone-400">Vé đã bán</span>
-            <span className={cn('font-bold tabular-nums', pct >= 90 ? 'text-rose-500' : pct >= 60 ? 'text-amber-500' : 'text-emerald-600')}>
-              {pct}%
-            </span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
-            <div className={cn('h-full rounded-full', pctColor(pct))} style={{ width: pct + '%' }} />
-          </div>
-        </div>
-        <div className="mt-auto flex items-center justify-between pt-1">
-          <span className="text-base font-bold tabular-nums text-stone-900">
-            {event.revenue > 0 ? fmtRevenue(event.revenue) : <span className="text-sm text-stone-400">—</span>}
-          </span>
-          <ActionButtons event={event} saving={saving} onStatusChange={onStatusChange} />
-        </div>
-      </div>
+      </Link>
     </motion.div>
   );
 }
@@ -405,9 +267,9 @@ function Pagination({ page, totalPages, onPageChange }: {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function AdminEventsPage() {
+  const router = useRouter();
   const [events,     setEvents]     = useState<AdminEvent[]>([]);
   const [loading,    setLoading]    = useState(true);
-  const [saving,     setSaving]     = useState(false);
   const [category,   setCategory]   = useState<EventCategory | 'all'>('all');
   const [status,     setStatus]     = useState<EventStatus | 'all'>('all');
   const [search,     setSearch]     = useState('');
@@ -447,19 +309,6 @@ export default function AdminEventsPage() {
     }
   }, [status, category, search, page]);
 
-  const handleStatusChange = async (event: AdminEvent, next: Exclude<EventStatus, 'draft'>) => {
-    setSaving(true);
-    try {
-      await changeEventStatus(event.id, next);
-      toast.success('Đã chuyển trạng thái: ' + STATUS_LABELS[next]);
-      await loadEvents();
-    } catch {
-      toast.error('Không thể chuyển trạng thái.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   useEffect(() => { void loadEvents(); }, [loadEvents]);
   useEffect(() => { setPage(1); }, [status, category, search]);
 
@@ -471,11 +320,15 @@ export default function AdminEventsPage() {
   }), [events, total]);
 
   return (
-    <ProtectedRoute adminOnly>
+    <ProtectedRoute requireAdmin>
       <motion.div variants={staggerContainer()} initial="hidden" animate="visible" className="space-y-5">
 
         {/* Header */}
         <motion.div variants={fadeUp} className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="page-title">Sự kiện</h1>
+            <p className="mt-1 text-sm text-stone-500">Theo dõi, xem trước và chỉnh sửa các sự kiện đang vận hành.</p>
+          </div>
           <Link
             href="/admin/events/new"
             className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
@@ -486,15 +339,16 @@ export default function AdminEventsPage() {
 
         {/* KPI tiles */}
         <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {KPI_DEFS.map(({ key, label, accent, icon: Icon }) => (
+          {KPI_DEFS.map(({ key, label, iconBg, iconColor, icon: Icon }) => (
             <div
               key={key}
-              className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white px-4 py-3.5 shadow-soft transition-all hover:border-amber-200 hover:shadow-[0_0_0_1px_rgba(245,158,11,0.12),0_4px_16px_-4px_rgba(245,158,11,0.12)] cursor-default"
+              className="rounded-2xl border border-stone-200 bg-white px-4 py-3.5 shadow-soft"
             >
-              <div className={'absolute inset-y-0 left-0 w-1 ' + accent} />
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-stone-400">{label}</p>
-                <Icon className="h-4 w-4 text-stone-300" />
+                <span className={`inline-flex rounded-xl p-2 ${iconBg}`}>
+                  <Icon className={`h-4 w-4 ${iconColor}`} />
+                </span>
               </div>
               <p className="mt-2 text-2xl font-bold tabular-nums text-stone-900">
                 {loading
@@ -506,15 +360,14 @@ export default function AdminEventsPage() {
         </motion.div>
 
         {/* Filter bar */}
-        <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-2">
-          {/* Category chips */}
-          <div className="flex flex-wrap gap-1">
+        <motion.div variants={fadeUp} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
+          <div className="flex flex-wrap gap-2">
             {CATEGORY_CHIPS.map(chip => (
               <button
                 key={chip.value}
                 onClick={() => setCategory(chip.value)}
                 className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                  'rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors',
                   category === chip.value
                     ? 'bg-amber-500 text-white shadow-sm'
                     : 'border border-stone-200 bg-white text-stone-600 hover:border-stone-300',
@@ -525,7 +378,7 @@ export default function AdminEventsPage() {
             ))}
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             {/* Search */}
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
@@ -533,7 +386,7 @@ export default function AdminEventsPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Tìm sự kiện..."
-                className="h-8 w-44 rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-800 placeholder-stone-400 outline-none focus:border-amber-400 focus:w-52 transition-all"
+                className="h-10 w-56 rounded-xl border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 placeholder-stone-400 outline-none focus:border-amber-400"
               />
             </div>
 
@@ -542,7 +395,7 @@ export default function AdminEventsPage() {
               <select
                 value={status}
                 onChange={e => setStatus(e.target.value as EventStatus | 'all')}
-                className="h-8 appearance-none rounded-lg border border-stone-200 bg-white pl-3 pr-7 text-xs text-stone-700 outline-none focus:border-amber-400"
+                className="h-10 appearance-none rounded-xl border border-stone-200 bg-white pl-3 pr-9 text-sm text-stone-700 outline-none focus:border-amber-400"
               >
                 {STATUS_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -557,7 +410,7 @@ export default function AdminEventsPage() {
               <select
                 value={sort}
                 onChange={e => setSort(e.target.value)}
-                className="h-8 appearance-none rounded-lg border border-stone-200 bg-white pl-8 pr-7 text-xs text-stone-700 outline-none focus:border-amber-400"
+                className="h-10 appearance-none rounded-xl border border-stone-200 bg-white pl-9 pr-9 text-sm text-stone-700 outline-none focus:border-amber-400"
               >
                 {SORT_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -567,11 +420,11 @@ export default function AdminEventsPage() {
             </div>
 
             {/* View toggle */}
-            <div className="flex overflow-hidden rounded-lg border border-stone-200 bg-white">
+            <div className="ml-auto flex overflow-hidden rounded-xl border border-stone-200 bg-white">
               <button
                 onClick={() => setView('table')}
                 className={cn(
-                  'flex h-8 items-center gap-1 px-2.5 text-xs font-semibold transition-colors',
+                  'flex h-10 items-center gap-1 px-3 text-xs font-semibold transition-colors',
                   view === 'table' ? 'bg-amber-500 text-white' : 'text-stone-500 hover:bg-stone-50',
                 )}
               >
@@ -580,7 +433,7 @@ export default function AdminEventsPage() {
               <button
                 onClick={() => setView('grid')}
                 className={cn(
-                  'flex h-8 items-center gap-1 px-2.5 text-xs font-semibold transition-colors',
+                  'flex h-10 items-center gap-1 px-3 text-xs font-semibold transition-colors',
                   view === 'grid' ? 'bg-amber-500 text-white' : 'text-stone-500 hover:bg-stone-50',
                 )}
               >
@@ -627,7 +480,6 @@ export default function AdminEventsPage() {
                       <th className="px-3 py-3 text-right">Vé bán</th>
                       <th className="px-3 py-3 text-right">Doanh thu</th>
                       <th className="px-3 py-3 text-left">Trạng thái</th>
-                      <th className="px-4 py-3 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <motion.tbody
@@ -637,7 +489,7 @@ export default function AdminEventsPage() {
                     className="divide-y divide-stone-100"
                   >
                     {sortedEvents.map(ev => (
-                      <TableRow key={ev.id} event={ev} saving={saving} onStatusChange={handleStatusChange} />
+                      <TableRow key={ev.id} event={ev} onOpen={(id) => router.push(`/admin/events/${id}`)} />
                     ))}
                   </motion.tbody>
                 </table>
@@ -660,7 +512,7 @@ export default function AdminEventsPage() {
                 className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
               >
                 {sortedEvents.map(ev => (
-                  <GridCard key={ev.id} event={ev} saving={saving} onStatusChange={handleStatusChange} />
+                  <GridCard key={ev.id} event={ev} />
                 ))}
               </motion.div>
               {totalPages > 1 && (

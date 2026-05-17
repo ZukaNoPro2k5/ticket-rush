@@ -1,10 +1,18 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { createHash, randomBytes } from 'crypto';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../../config/database';
 import { config } from '../../config/env';
 import { AppError } from '../../shared/AppError';
-import type { RegisterInput, LoginInput, OAuthSyncInput } from './validation';
+import { sendTemplatedEmail } from '../email/service';
+import type {
+  RegisterInput,
+  LoginInput,
+  OAuthSyncInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+} from './validation';
 
 interface UserRow extends RowDataPacket {
   id: number;
@@ -62,6 +70,7 @@ export async function register(input: RegisterInput) {
 
   const user = rows[0];
   const token = signToken({ userId: user.id, role: user.role });
+  await sendTemplatedEmail('account_welcome', user.email, { user_name: user.full_name });
 
   return { token, user };
 }
@@ -148,4 +157,72 @@ export async function oauthSync(input: OAuthSyncInput) {
   const newUser = rows[0];
   const token = signToken({ userId: newUser.id, role: newUser.role });
   return { token, user: sanitizeUser(newUser), isNewUser: true };
+}
+
+function hashToken(token: string) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+export async function requestPasswordReset(input: ForgotPasswordInput) {
+  const [rows] = await pool.execute<UserRow[]>(
+    'SELECT id, email, full_name FROM users WHERE email = ? LIMIT 1',
+    [input.email],
+  );
+  const user = rows[0];
+  if (!user) return;
+
+  const token = randomBytes(32).toString('hex');
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+  await pool.execute<ResultSetHeader>(
+    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+     VALUES (?, ?, ?)`,
+    [user.id, tokenHash, expiresAt],
+  );
+
+  await sendTemplatedEmail('password_reset', user.email, {
+    user_name: user.full_name,
+    reset_link: `${config.frontendUrl}/reset-password?token=${token}`,
+  });
+}
+
+export async function resetPassword(input: ResetPasswordInput) {
+  const tokenHash = hashToken(input.token);
+  const [rows] = await pool.execute<(RowDataPacket & {
+    id: number;
+    user_id: number;
+    expires_at: string;
+    used_at: string | null;
+  })[]>(
+    `SELECT id, user_id, expires_at, used_at
+     FROM password_reset_tokens
+     WHERE token_hash = ?
+     LIMIT 1`,
+    [tokenHash],
+  );
+  const row = rows[0];
+  if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
+    throw AppError.badRequest('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn', 'RESET_TOKEN_INVALID');
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, 10);
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.execute<ResultSetHeader>(
+      'UPDATE users SET password_hash = ? WHERE id = ?',
+      [passwordHash, row.user_id],
+    );
+    await conn.execute<ResultSetHeader>(
+      'UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?',
+      [row.id],
+    );
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }

@@ -3,15 +3,13 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, LogOut, Settings, CreditCard, Mail, Sliders } from 'lucide-react';
+import { Bell, LogOut, CreditCard, Mail, Sliders } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import { cn } from '@/lib/utils/cn';
 
 const PAGE_LABELS: Record<string, string> = {
   '/admin':               'Tổng quan',
   '/admin/events':        'Sự kiện',
   '/admin/bookings':      'Đặt vé',
-  '/admin/reviews':       'Đánh giá',
   '/admin/posts':         'Bài đăng',
   '/admin/promo-codes':   'Mã giảm giá',
   '/admin/users':         'Người dùng',
@@ -19,7 +17,8 @@ const PAGE_LABELS: Record<string, string> = {
   '/admin/reports':       'Báo cáo tự động',
   '/admin/payments':      'Thanh toán',
   '/admin/mail':          'Tùy chỉnh mail',
-  '/admin/system-settings': 'Cài đặt hệ thống',
+  '/admin/operations':    'Vận hành hệ thống',
+  '/admin/system-settings': 'Tùy chỉnh giao diện',
 };
 
 export default function Topbar() {
@@ -109,7 +108,7 @@ export default function Topbar() {
                 onClick={() => setProfileOpen(false)}
               >
                 <Sliders className="h-4 w-4 text-stone-400" />
-                Cài đặt chung
+                Tùy chỉnh giao diện
               </Link>
             </div>
 

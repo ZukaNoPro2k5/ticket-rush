@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Calendar, ChevronDown, ChevronLeft, ChevronRight, Flame, MapPin, ArrowRight,
+  Calendar, ChevronLeft, ChevronRight, Flame, MapPin, ArrowRight,
 } from 'lucide-react';
-import { HERO_SLIDES, type HeroSlide } from '@/data/uiConfig';
 import type { DisplayEvent } from '@/types';
 
 const AUTOPLAY_MS = 7000;
@@ -16,6 +15,17 @@ const BADGE_LABELS: Record<string, string> = {
   'new': 'MỚI MỞ BÁN',
   'almost-sold': 'SẮP CHÁY VÉ',
 };
+
+interface HeroSlide {
+  id: number;
+  title: string;
+  subtitle: string;
+  tagline: string;
+  badge: string;
+  image: string;
+  date: string;
+  venue: string;
+}
 
 function eventsToSlides(events: DisplayEvent[]): HeroSlide[] {
   return events.slice(0, 6).map((e) => ({
@@ -31,10 +41,7 @@ function eventsToSlides(events: DisplayEvent[]): HeroSlide[] {
 }
 
 export function HeroCarousel({ events, loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
-  // Only fall back to HERO_SLIDES after loading is done (no empty array = loaded but 0 results)
-  const slides: HeroSlide[] = loading
-    ? HERO_SLIDES  // hidden behind skeleton, just needs to exist
-    : (events && events.length > 0) ? eventsToSlides(events) : HERO_SLIDES;
+  const slides: HeroSlide[] = events && events.length > 0 ? eventsToSlides(events) : [];
   const [active, setActive] = useState(0);
   const slide = slides[active];
 
@@ -43,7 +50,7 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
   }, [slides.length]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || slides.length === 0) return;
     const t = setInterval(() => setActive((i) => (i + 1) % slides.length), AUTOPLAY_MS);
     return () => clearInterval(t);
   }, [slides.length, loading]);
@@ -51,18 +58,13 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
   const prev = () => setActive((i) => (i - 1 + slides.length) % slides.length);
   const next = () => setActive((i) => (i + 1) % slides.length);
 
-  const scrollToCategories = () => {
-    const el = document.getElementById('home-categories');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   // Loading skeleton — shown while API hasn't responded yet
   if (loading) {
     return (
-      <section className="relative h-screen min-h-[600px] w-full overflow-hidden bg-stone-900">
+      <section className="relative h-[78vh] min-h-[560px] max-h-[760px] w-full overflow-hidden bg-stone-900">
         <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-stone-800 via-stone-900 to-stone-950" />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/55 to-stone-900/15" />
-        <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-44 pt-24 sm:pb-52 lg:px-8">
+        <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-14 pt-24 sm:pb-16 lg:px-8">
           <div className="max-w-2xl space-y-4">
             <div className="h-5 w-28 rounded-full bg-stone-700" />
             <div className="h-14 w-3/4 rounded-xl bg-stone-700" />
@@ -71,19 +73,42 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
             <div className="h-11 w-32 rounded-full bg-stone-700" />
           </div>
         </div>
-        <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-stone-950/85 via-stone-950/55 to-transparent pb-3 pt-10 sm:pb-4">
-          <div className="mx-auto flex max-w-7xl gap-3 px-4 lg:px-8">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-20 w-40 flex-shrink-0 rounded-xl bg-stone-800" />
-            ))}
-          </div>
+        <div className="absolute inset-x-0 bottom-6 z-20 flex justify-center gap-2">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className={`h-1.5 rounded-full bg-stone-700 ${i === 0 ? 'w-8' : 'w-2'}`} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!slide) {
+    return (
+      <section className="relative flex min-h-[560px] w-full items-end overflow-hidden bg-stone-900">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(245,158,11,0.2),transparent_34%),linear-gradient(135deg,#292524,#0c0a09)]" />
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-20 pt-28 text-white lg:px-8">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-300">
+            <Flame className="h-3.5 w-3.5" /> Đang chờ mở bán
+          </span>
+          <h1 className="mt-4 max-w-xl font-display text-3xl font-bold leading-tight md:text-5xl">
+            Chưa có sự kiện đang bán
+          </h1>
+          <p className="mt-3 max-w-xl text-sm text-stone-300 md:text-base">
+            Khi admin xuất bản sự kiện mới, trang chủ sẽ kéo dữ liệu thật lên ngay tại đây.
+          </p>
+          <Link
+            href="/events"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-600"
+          >
+            Xem tất cả sự kiện <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="relative h-screen min-h-[600px] w-full overflow-hidden">
+    <section className="relative h-[78vh] min-h-[560px] max-h-[760px] w-full overflow-hidden">
       {/* Image stack with crossfade */}
       {slides.map((s, i) => (
         // eslint-disable-next-line @next/next/no-img-element
@@ -102,7 +127,7 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
       <div className="absolute inset-0 bg-gradient-to-r from-stone-900/65 to-transparent md:via-transparent" />
 
       {/* Content */}
-      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-44 pt-24 sm:pb-52 lg:px-8">
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-14 pt-24 sm:pb-16 lg:px-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id}
@@ -115,7 +140,7 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/95 px-3 py-1 text-[11px] font-bold uppercase tracking-wider shadow-lift">
               <Flame className="h-3.5 w-3.5" /> {slide.badge}
             </span>
-            <h1 className="mt-3 font-display text-3xl font-bold leading-tight sm:text-4xl md:mt-4 md:text-5xl lg:text-6xl">
+            <h1 className="mt-3 max-w-xl font-display text-2xl font-bold leading-tight sm:text-3xl md:mt-4 md:text-4xl lg:text-5xl">
               {slide.title}
             </h1>
             <p className="mt-2 text-base font-medium text-amber-200 sm:text-lg md:text-xl">{slide.subtitle}</p>
@@ -154,59 +179,18 @@ export function HeroCarousel({ events, loading = false }: { events?: DisplayEven
         <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
       </button>
 
-      {/* Bottom overlay: thumbnails + scroll cue */}
-      <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-stone-950/85 via-stone-950/55 to-transparent pb-3 pt-10 sm:pb-4">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          {/* Desktop thumbnails — flex with fixed width so they never stretch */}
-          <div className="hidden gap-2 sm:flex sm:gap-3">
-            {slides.map((s, i) => (
-              <button
-                key={`${s.id}-${i}`}
-                onClick={() => setActive(i)}
-                aria-label={`Đến slide ${i + 1}: ${s.title}`}
-                style={{ flex: '0 0 auto', width: `clamp(120px, calc((100% - ${(slides.length - 1) * 12}px) / ${slides.length}), 220px)` }}
-                className={`group relative aspect-[16/10] overflow-hidden rounded-xl border-2 text-left transition-all duration-300 ${
-                  i === active
-                    ? 'border-amber-400 shadow-lift'
-                    : 'border-white/15 opacity-70 hover:border-white/50 hover:opacity-100'
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.image} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/85 via-stone-900/20 to-transparent" />
-                <div className="absolute inset-x-2 bottom-1.5">
-                  <div className="line-clamp-1 text-[11px] font-semibold text-white">{s.title}</div>
-                  <div className="mt-0.5 line-clamp-1 text-[10px] text-white/70">{s.date.split(' · ').slice(0, 2).join(' · ')}</div>
-                </div>
-                {i === active && <span className="absolute inset-x-0 top-0 h-0.5 bg-amber-400" />}
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile dots */}
-          <div className="flex justify-center gap-1.5 sm:hidden">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActive(i)}
-                aria-label={`Đến slide ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-8 bg-amber-400' : 'w-2 bg-white/40 hover:bg-white/70'}`}
-              />
-            ))}
-          </div>
-
-          {/* Scroll cue */}
-          <div className="mt-3 flex justify-center sm:mt-4">
-            <button
-              onClick={scrollToCategories}
-              aria-label="Cuộn xuống xem thêm"
-              className="group inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-amber-300/60 hover:bg-white/20 hover:text-white"
-            >
-              <span>Hơn thế nữa</span>
-              <ChevronDown className="h-3.5 w-3.5 animate-bounce" />
-            </button>
-          </div>
-        </div>
+      {/* Compact dots-only navigation */}
+      <div className="absolute inset-x-0 bottom-6 z-20 flex justify-center gap-2">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            aria-label={`Đến slide ${i + 1}`}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              i === active ? 'w-8 bg-amber-400' : 'w-2 bg-white/45 hover:bg-white/75'
+            }`}
+          />
+        ))}
       </div>
     </section>
   );

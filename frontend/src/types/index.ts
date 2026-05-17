@@ -36,6 +36,8 @@ export interface User {
   birth_date: string | null;
   role: UserRole;
   avatar_url: string | null;
+  category_preferences?: EventCategory[] | null;
+  preferred_city?: string | null;
   created_at: string;
 }
 
@@ -45,7 +47,7 @@ export interface AuthData {
 }
 
 // --- Event ---
-export type EventCategory = 'music' | 'stage' | 'sports' | 'workshop' | 'other' | 'arts' | 'tech' | 'food' | 'entertainment';
+export type EventCategory = 'music' | 'arts' | 'sports' | 'food' | 'entertainment' | 'workshop' | 'stage' | 'other';
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
 export type SeatingMode = 'seated' | 'zoned' | 'admission';
 
@@ -67,8 +69,6 @@ export interface Event {
   max_price: number | null;
   available_seats: number | null;
   total_seats: number | null;
-  average_rating?: number | null;
-  review_count?: number;
 }
 
 export interface AdminEvent {
@@ -86,8 +86,6 @@ export interface AdminEvent {
   available_seats: number;
   sold_seats: number;
   revenue: number;
-  average_rating: number | null;
-  review_count: number;
 }
 
 /** Matches backend GET /api/events/:id (includes seat_zones) */
@@ -158,6 +156,11 @@ export interface Seat {
 // --- Booking ---
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 
+export interface BookingRules {
+  ticket_hold_minutes: number;
+  max_tickets_per_booking: number;
+}
+
 export interface BookingListItem {
   id: number;
   event: Pick<EventListItem, 'id' | 'title' | 'event_date' | 'poster_url'>;
@@ -185,8 +188,14 @@ export interface BookingDetail {
   total_amount: number;
   promo_code: string | null;
   status: BookingStatus;
+  created_at: string;
   expires_at: string;
   confirmed_at: string | null;
+  payment: {
+    method: string;
+    status: 'initiated' | 'succeeded' | 'failed' | 'cancelled';
+    paid_at: string | null;
+  } | null;
 }
 
 // --- Ticket ---
@@ -208,24 +217,6 @@ export interface TicketDetail extends TicketListItem {
   price: number;
 }
 
-// --- Review ---
-export interface Review {
-  id: number;
-  user: Pick<User, 'id' | 'full_name'>;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-}
-
-export interface ReviewSummary {
-  items: Review[];
-  summary: {
-    average_rating: number;
-    total: number;
-  };
-  pagination: PaginatedResponse<Review>['pagination'];
-}
-
 // --- Promo Code ---
 export type DiscountType = 'percent' | 'fixed';
 
@@ -243,12 +234,49 @@ export interface PromoCode {
   is_active: boolean;
 }
 
+export interface PublicPromoCode extends PromoCode {
+  event_title: string | null;
+  event_category: EventCategory | null;
+  created_at: string;
+}
+
 export interface PromoValidationResult {
   code: string;
   discount_type: DiscountType;
   discount_value: number;
   discount_amount: number;
   final_amount: number;
+}
+
+// --- Newsroom posts ---
+export type PostStatus = 'draft' | 'published';
+
+export interface Post {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  body: string[];
+  quote: string | null;
+  author_name: string;
+  category: string;
+  cover_url: string;
+  read_time_min: number;
+  featured: boolean;
+  status: PostStatus;
+  view_count: number;
+  published_at: string | null;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PostStats {
+  total: number;
+  published: number;
+  draft: number;
+  categories: number;
+  views: number;
 }
 
 // --- Admin Dashboard ---

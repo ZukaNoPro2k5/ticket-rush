@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AlertCircle } from 'lucide-react';
-import type { ApiResponse, Event, EventDetail } from '@/types';
+import type { ApiResponse, BookingRules, Event, EventDetail } from '@/types';
 import { Navbar } from '@/components/layout/Navbar';
 import EventDetailClient from './EventDetailClient';
 
@@ -35,6 +35,10 @@ async function fetchSimilarEvents(event: EventDetail): Promise<Event[]> {
   });
   const data = await fetchApiData<{ events: Event[] }>(`/events?${params.toString()}`);
   return (data?.events ?? []).filter((item) => item.id !== event.id).slice(0, 4);
+}
+
+async function fetchBookingRules(): Promise<BookingRules | null> {
+  return fetchApiData<BookingRules>('/bookings/rules');
 }
 
 function buildDescription(event: EventDetail): string {
@@ -99,6 +103,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
     );
   }
 
-  const similarEvents = await fetchSimilarEvents(event);
-  return <EventDetailClient event={event} similarEvents={similarEvents} />;
+  const [similarEvents, bookingRules] = await Promise.all([
+    fetchSimilarEvents(event),
+    fetchBookingRules(),
+  ]);
+  return <EventDetailClient event={event} similarEvents={similarEvents} bookingRules={bookingRules} />;
 }

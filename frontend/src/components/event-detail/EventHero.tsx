@@ -13,10 +13,10 @@ export function EventHero({ event }: Props) {
   return (
     <section className="relative h-[360px] w-full overflow-hidden md:h-[480px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={event.poster} alt={event.title} className="h-full w-full object-cover" />
+      <img src={event.poster} alt={event.title} className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/60 to-stone-900/20" />
 
-      <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-8 lg:px-8">
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-8 lg:px-8">
         <nav className="mb-3 flex items-center gap-1.5 text-xs text-white/70">
           <Link href="/" className="hover:text-white">
             Trang chủ

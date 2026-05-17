@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Users as UsersIcon } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { fadeUp } from '@/lib/motion';
 import EmptyState from '@/components/ui/EmptyState';
 import api from '@/lib/api/client';
@@ -11,7 +11,7 @@ interface UserRow {
   id: number;
   email: string;
   full_name: string;
-  role: 'user' | 'admin';
+  role: 'customer' | 'admin';
   created_at: string;
 }
 
@@ -120,41 +120,71 @@ export default function AdminUsersPage() {
             subtext="Thử từ khóa khác."
           />
         ) : (
-          <div className="divide-y divide-stone-100">
-            {/* Table head */}
-            <div className="grid grid-cols-[2fr_2fr_1fr_1fr] items-center px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-stone-400">
-              <span>Họ tên</span>
-              <span>Email</span>
-              <span>Vai trò</span>
-              <span>Ngày đăng ký</span>
-            </div>
-            {users.map(u => (
-              <div
-                key={u.id}
-                className="grid grid-cols-[2fr_2fr_1fr_1fr] items-center gap-2 px-5 py-3.5 hover:bg-stone-50 transition-colors"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${avatarColor(u.full_name)} text-[10px] font-bold text-white`}>
-                    {initials(u.full_name)}
+          <>
+            <div className="divide-y divide-stone-100 md:hidden">
+              {users.map(u => (
+                <div key={u.id} className="space-y-3 px-4 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${avatarColor(u.full_name)} text-xs font-bold text-white`}>
+                      {initials(u.full_name)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-stone-900">{u.full_name}</p>
+                      <p className="truncate text-xs text-stone-500">{u.email}</p>
+                    </div>
                   </div>
-                  <span className="truncate text-sm font-medium text-stone-900">{u.full_name}</span>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {u.role === 'admin' ? (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 font-semibold text-amber-700 ring-1 ring-amber-200/60">
+                        Admin
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 font-medium text-stone-500">
+                        Khách hàng
+                      </span>
+                    )}
+                    <span className="text-stone-400">Đăng ký {formatDate(u.created_at)}</span>
+                  </div>
                 </div>
-                <span className="truncate text-sm text-stone-500">{u.email}</span>
-                <span>
-                  {u.role === 'admin' ? (
-                    <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200/60">
-                      Admin
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-500">
-                      User
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs text-stone-400">{formatDate(u.created_at)}</span>
+              ))}
+            </div>
+
+            <div className="hidden divide-y divide-stone-100 md:block">
+              {/* Table head */}
+              <div className="grid grid-cols-[2fr_2fr_1fr_1fr] items-center px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-stone-400">
+                <span>Họ tên</span>
+                <span>Email</span>
+                <span>Vai trò</span>
+                <span>Ngày đăng ký</span>
               </div>
-            ))}
-          </div>
+              {users.map(u => (
+                <div
+                  key={u.id}
+                  className="grid grid-cols-[2fr_2fr_1fr_1fr] items-center gap-2 px-5 py-3.5 hover:bg-stone-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${avatarColor(u.full_name)} text-[10px] font-bold text-white`}>
+                      {initials(u.full_name)}
+                    </div>
+                    <span className="truncate text-sm font-medium text-stone-900">{u.full_name}</span>
+                  </div>
+                  <span className="truncate text-sm text-stone-500">{u.email}</span>
+                  <span>
+                    {u.role === 'admin' ? (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200/60">
+                        Admin
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-500">
+                        Khách hàng
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-xs text-stone-400">{formatDate(u.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

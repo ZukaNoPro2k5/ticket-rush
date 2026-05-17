@@ -13,7 +13,7 @@ import api from '@/lib/api/client';
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type Severity = 'opportunity' | 'warning' | 'critical' | 'info';
-type Category = 'revenue' | 'events' | 'customers' | 'pricing' | 'reviews' | 'operations';
+type Category = 'revenue' | 'events' | 'customers' | 'pricing' | 'operations';
 
 interface Insight {
   id: string;
@@ -47,7 +47,6 @@ const CATEGORY_LABELS: Record<Category, string> = {
   events:     'Sự kiện',
   customers:  'Khách hàng',
   pricing:    'Giá vé',
-  reviews:    'Đánh giá',
   operations: 'Vận hành',
 };
 

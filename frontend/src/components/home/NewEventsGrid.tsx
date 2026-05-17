@@ -6,11 +6,11 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import type { DisplayEvent } from '@/types';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import { EventCard, EventCardSkeleton } from '@/components/events';
-import { THIS_WEEK_EVENTS } from '@/data/uiConfig';
+import EmptyState from '@/components/ui/EmptyState';
 
 export function NewEventsGrid({ events = [], loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
   const { ref, inView } = useSectionInView();
-  const displayEvents = events.length > 0 ? events : THIS_WEEK_EVENTS.slice(0, 8);
+  const displayEvents = events;
 
   return (
     <section className="bg-stone-50 py-12 lg:py-16">
@@ -28,7 +28,7 @@ export function NewEventsGrid({ events = [], loading = false }: { events?: Displ
             <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Vé mới lên sàn</h2>
             <p className="mt-1 text-sm text-stone-500 md:text-base">Đặt sớm để săn ưu đãi early-bird</p>
           </div>
-          <Link href="/events?sort=new" className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800">
+          <Link href="/events?sort=newest" className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800">
             Xem tất cả <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
@@ -37,6 +37,13 @@ export function NewEventsGrid({ events = [], loading = false }: { events?: Displ
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => <EventCardSkeleton key={i} />)}
           </div>
+        ) : displayEvents.length === 0 ? (
+          <EmptyState
+            variant="events"
+            headline="Chưa có vé mới lên sàn"
+            subtext="Sự kiện mới mở bán sẽ tự xuất hiện ở đây."
+            className="rounded-2xl border border-stone-200 bg-white"
+          />
         ) : (
           <motion.div
             variants={staggerContainer(0.05)}

@@ -56,7 +56,7 @@ export function Navbar({ variant = 'overlay' }: { variant?: NavbarVariant }) {
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 lg:flex">
           <ExploreDropdown isActive={isActive('/events')} scrolled={scrolled} linkCls={linkCls} />
-          <CalendarDropdown linkCls={linkCls} />
+          <CalendarDropdown linkCls={linkCls} scrolled={scrolled} />
 
           <Link
             href="/promotions"

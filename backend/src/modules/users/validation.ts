@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { eventCategoryValues } from '../events/validation';
 
 export const updateProfileSchema = z.object({
   full_name: z.string().min(2).max(100).optional(),
@@ -17,10 +18,15 @@ export const changePasswordSchema = z.object({
 });
 
 export const savePreferencesSchema = z.object({
-  categories:     z.array(z.string()).min(1).max(8),
+  categories:     z.array(z.enum(eventCategoryValues)).min(1).max(eventCategoryValues.length),
   preferred_city: z.string().max(100).optional(),
+});
+
+export const updateAvatarSchema = z.object({
+  data_url: z.string().min(1, 'Thiếu dữ liệu ảnh đại diện'),
 });
 
 export type UpdateProfileInput    = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput   = z.infer<typeof changePasswordSchema>;
 export type SavePreferencesInput  = z.infer<typeof savePreferencesSchema>;
+export type UpdateAvatarInput      = z.infer<typeof updateAvatarSchema>;

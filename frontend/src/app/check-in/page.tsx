@@ -207,7 +207,7 @@ function CheckInWorkspace() {
               await submitTicket(ticketId);
               return;
             }
-            setCameraMessage('QR không chứa ticket id. Backend hiện tạo QR theo booking/seat, hãy nhập ticket id thủ công.');
+            setCameraMessage('QR không chứa mã vé hợp lệ. Hãy thử quét lại hoặc nhập ticket id thủ công.');
             scanningRef.current = false;
           }
         } catch {

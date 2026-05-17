@@ -18,6 +18,11 @@ interface PromoRow extends RowDataPacket {
   created_at: string;
 }
 
+interface PublicPromoRow extends PromoRow {
+  event_title: string | null;
+  event_category: string | null;
+}
+
 export async function listPromoCodes(eventId?: number) {
   const conditions: string[] = [];
   const params: (number | string)[] = [];
@@ -31,6 +36,24 @@ export async function listPromoCodes(eventId?: number) {
   const [rows] = await pool.query<PromoRow[]>(
     `SELECT * FROM promo_codes ${where} ORDER BY created_at DESC`,
     params,
+  );
+  return rows;
+}
+
+export async function listPublicPromoCodes() {
+  const [rows] = await pool.query<PublicPromoRow[]>(
+    `SELECT
+       p.*,
+       e.title AS event_title,
+       e.category AS event_category
+     FROM promo_codes p
+     LEFT JOIN events e ON e.id = p.event_id
+     WHERE p.is_active = TRUE
+       AND p.starts_at <= NOW()
+       AND p.expires_at >= NOW()
+       AND (p.max_uses IS NULL OR p.used_count < p.max_uses)
+       AND (p.event_id IS NULL OR e.status = 'published')
+     ORDER BY p.expires_at ASC, p.created_at DESC`,
   );
   return rows;
 }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ChevronDown, History, LogOut, Settings, Ticket, User as UserIcon,
+  ChevronDown, Heart, History, LogOut, Settings, Ticket, User as UserIcon,
 } from 'lucide-react';
 import { EASE_OUT_EXPO } from '@/lib/motion';
 
@@ -51,6 +51,7 @@ export function UserMenu({ user, scrolled, onLogout }: Props) {
 
   const menuItems = [
     { href: '/profile', icon: UserIcon, label: 'Tài khoản của tôi' },
+    { href: '/saved-events', icon: Heart, label: 'Sự kiện đã lưu' },
     { href: '/my-tickets', icon: Ticket, label: 'Vé của tôi' },
     { href: '/order-history', icon: History, label: 'Lịch sử đặt vé' },
     { href: '/settings', icon: Settings, label: 'Cài đặt' },

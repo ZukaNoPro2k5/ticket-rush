@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils/cn';
 import type { ReactNode } from 'react';
 
-export type EmptyVariant = 'bookings' | 'reviews' | 'events' | 'users' | 'promos' | 'generic';
+export type EmptyVariant = 'bookings' | 'events' | 'users' | 'promos' | 'generic';
 
 interface Props {
   variant?: EmptyVariant;
@@ -30,27 +30,6 @@ function TicketSvg() {
       <rect x="48" y="25" width="2" height="10" rx="1" fill="#d6d3d1" />
       <rect x="52" y="25" width="1.5" height="10" rx="0.75" fill="#d6d3d1" />
       <rect x="55" y="25" width="2.5" height="10" rx="1" fill="#d6d3d1" />
-    </svg>
-  );
-}
-
-function StarSvg() {
-  return (
-    <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden>
-      {/* Speech bubble */}
-      <rect x="8" y="10" width="56" height="40" rx="8" fill="#e7e5e4" />
-      <path d="M20 50 L16 60 L30 54" fill="#e7e5e4" />
-      {/* Star */}
-      <polygon
-        points="36,18 39.5,28 50,28 41.5,34.5 44.5,44.5 36,38 27.5,44.5 30.5,34.5 22,28 32.5,28"
-        fill="#d6d3d1"
-      />
-      {/* Amber top star point accent */}
-      <polygon
-        points="36,18 38.1,24.6 44,24.6"
-        fill="#fbbf24"
-        opacity="0.6"
-      />
     </svg>
   );
 }
@@ -127,7 +106,6 @@ function GenericSvg() {
 
 const SVGS: Record<EmptyVariant, () => JSX.Element> = {
   bookings: TicketSvg,
-  reviews:  StarSvg,
   events:   CalendarSvg,
   users:    UsersSvg,
   promos:   PromoSvg,

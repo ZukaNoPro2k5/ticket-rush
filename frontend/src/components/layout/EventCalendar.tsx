@@ -15,6 +15,7 @@ interface Props {
 export function EventCalendar({ events, onClose }: Props) {
   const [viewDate, setViewDate] = useState(() => new Date());
   const [selected, setSelected] = useState<number | null>(null);
+  const [yearDraft, setYearDraft] = useState(() => String(new Date().getFullYear()));
 
   const eventsByDay = useMemo(() => {
     const year = viewDate.getFullYear();
@@ -47,12 +48,25 @@ export function EventCalendar({ events, onClose }: Props) {
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
   const weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-  const goPrev = () => { setViewDate(new Date(year, month - 1, 1)); setSelected(null); };
-  const goNext = () => { setViewDate(new Date(year, month + 1, 1)); setSelected(null); };
+  const updateViewDate = (nextDate: Date) => {
+    setViewDate(nextDate);
+    setYearDraft(String(nextDate.getFullYear()));
+    setSelected(null);
+  };
+  const goPrev = () => updateViewDate(new Date(year, month - 1, 1));
+  const goNext = () => updateViewDate(new Date(year, month + 1, 1));
   const goToday = () => {
     const now = new Date();
     setViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    setYearDraft(String(now.getFullYear()));
     setSelected(now.getDate());
+  };
+  const setMonth = (nextMonth: number) => {
+    updateViewDate(new Date(year, nextMonth, 1));
+  };
+  const setYear = (nextYear: number) => {
+    if (!Number.isInteger(nextYear) || nextYear < 1900 || nextYear > 2200) return;
+    updateViewDate(new Date(nextYear, month, 1));
   };
 
   const selectedMeta = selected != null ? eventsByDay[selected] : undefined;
@@ -76,6 +90,42 @@ export function EventCalendar({ events, onClose }: Props) {
             <button onClick={goPrev} aria-label="Tháng trước" className="grid h-8 w-8 place-items-center rounded-full text-stone-600 transition-colors hover:bg-white hover:text-stone-900"><ChevronLeft className="h-4 w-4" /></button>
             <button onClick={goNext} aria-label="Tháng sau" className="grid h-8 w-8 place-items-center rounded-full text-stone-600 transition-colors hover:bg-white hover:text-stone-900"><ChevronRight className="h-4 w-4" /></button>
           </div>
+        </div>
+        <div className="mt-4 grid grid-cols-[1fr_108px] gap-2">
+          <label className="sr-only" htmlFor="calendar-month">Tháng</label>
+          <select
+            id="calendar-month"
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+          >
+            {Array.from({ length: 12 }, (_, index) => (
+              <option key={index} value={index}>Tháng {index + 1}</option>
+            ))}
+          </select>
+          <label className="sr-only" htmlFor="calendar-year">Năm</label>
+          <input
+            id="calendar-year"
+            type="number"
+            min={1900}
+            max={2200}
+            value={yearDraft}
+            onChange={(e) => setYearDraft(e.target.value)}
+            onBlur={() => {
+              const nextYear = Number(yearDraft);
+              if (Number.isInteger(nextYear) && nextYear >= 1900 && nextYear <= 2200) {
+                setYear(nextYear);
+              } else {
+                setYearDraft(String(year));
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              }
+            }}
+            className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+          />
         </div>
       </div>
 

@@ -81,7 +81,7 @@ export default function OrderDetailPage() {
           <div>
             <h1 className="font-display text-2xl font-bold text-stone-900">Đơn #{booking.id}</h1>
             <p className="mt-0.5 text-sm text-stone-400">
-              Đặt lúc — <span className="text-stone-500">{formatDate(booking.expires_at)}</span>
+              Đặt lúc — <span className="text-stone-500">{formatDate(booking.created_at)}</span>
             </p>
           </div>
           <StatusBadge status={booking.status} />
@@ -129,7 +129,7 @@ export default function OrderDetailPage() {
 
         {/* Payment summary */}
         <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Thanh toán</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Tổng kết đơn</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-stone-600">
               <span>Tạm tính</span>
@@ -151,6 +151,16 @@ export default function OrderDetailPage() {
             </div>
           </div>
         </div>
+
+        {booking.payment && (
+          <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Thanh toán</h2>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-stone-600">Phương thức</span>
+              <span className="font-semibold text-stone-900">{booking.payment.method.toUpperCase()}</span>
+            </div>
+          </div>
+        )}
 
         {/* Confirmation date */}
         {booking.confirmed_at && (

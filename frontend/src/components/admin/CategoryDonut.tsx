@@ -10,14 +10,17 @@ interface CategoryStat {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  music:    'Âm nhạc',
-  stage:    'Sân khấu',
-  sports:   'Thể thao',
-  workshop: 'Workshop',
-  other:    'Khác',
+  music: 'Âm nhạc',
+  arts: 'Nghệ thuật',
+  sports: 'Thể thao',
+  food: 'Ẩm thực',
+  entertainment: 'Giải trí',
+  workshop: 'Hội thảo',
+  stage: 'Sân khấu',
+  other: 'Khác',
 };
 
-const PALETTE = ['#d97706', '#10b981', '#3b82f6', '#8b5cf6', '#f43f5e'];
+const PALETTE = ['#f43f5e', '#0ea5e9', '#10b981', '#14b8a6', '#8b5cf6', '#d97706', '#f97316', '#78716c'];
 
 function fmt(n: number) {
   if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1) + ' tỷ';

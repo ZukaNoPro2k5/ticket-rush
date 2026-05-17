@@ -219,9 +219,9 @@ export function RegisterForm({ onSuccess }: Props) {
           />
           <span className="text-xs leading-relaxed">
             Tôi đồng ý với{' '}
-            <Link href="#" className="font-semibold text-amber-700 hover:underline">Điều khoản</Link>
+            <Link href="/terms" className="font-semibold text-amber-700 hover:underline">Điều khoản</Link>
             {' '}và{' '}
-            <Link href="#" className="font-semibold text-amber-700 hover:underline">Chính sách bảo mật</Link>
+            <Link href="/privacy" className="font-semibold text-amber-700 hover:underline">Chính sách bảo mật</Link>
             {fieldErrors.agree && <span className="ml-1 text-[11px] text-rose-500">— {fieldErrors.agree}</span>}
           </span>
         </label>

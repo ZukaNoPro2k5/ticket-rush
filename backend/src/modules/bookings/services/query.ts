@@ -33,6 +33,14 @@ export async function getBooking(bookingId: number, userId?: number) {
     [bookingId],
   );
 
+  const [paymentRows] = await pool.execute<RowDataPacket[]>(
+    `SELECT payment_method, status, paid_at
+     FROM payments
+     WHERE booking_id = ?
+     LIMIT 1`,
+    [bookingId],
+  );
+
   let promoCode: string | null = null;
   if (booking.promo_code_id) {
     const [promoRows] = await pool.execute<RowDataPacket[]>(
@@ -54,9 +62,34 @@ export async function getBooking(bookingId: number, userId?: number) {
     total_amount: Number(booking.total_amount),
     promo_code: promoCode,
     status: booking.status,
+    created_at: booking.created_at,
     expires_at: booking.expires_at,
     confirmed_at: booking.confirmed_at,
+    payment: paymentRows[0]
+      ? {
+          method: paymentRows[0].payment_method,
+          status: paymentRows[0].status,
+          paid_at: paymentRows[0].paid_at,
+        }
+      : null,
   };
+}
+
+export async function getPendingBookingForEvent(userId: number, eventId: number) {
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT id
+     FROM bookings
+     WHERE user_id = ?
+       AND event_id = ?
+       AND status = 'pending'
+       AND expires_at > NOW()
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId, eventId],
+  );
+
+  if (rows.length === 0) return null;
+  return getBooking(Number(rows[0].id), userId);
 }
 
 export async function listMyBookings(userId: number, status?: string, page = 1, limit = 10) {

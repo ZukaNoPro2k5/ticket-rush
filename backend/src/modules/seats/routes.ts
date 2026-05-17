@@ -5,7 +5,6 @@ const router = Router({ mergeParams: true });
 
 // A6 — GET /api/events/:eventId/seats
 router.get('/', seatController.list);
-
-// TODO: Dev 2 — additional seat routes
+router.get('/zone/:zoneId', seatController.listZone);
 
 export default router;

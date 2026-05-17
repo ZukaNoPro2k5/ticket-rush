@@ -1,7 +1,7 @@
 -- =============================================
 -- TicketRush — Real Seed Data
 -- Source: ticketbox.vn (as of April 2026)
--- Run order: after all migration files (001–010)
+-- Run order: after all migration files
 -- =============================================
 
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -411,6 +411,11 @@ VALUES
     'published', 1
   );
 
+-- Giữ sẵn một sự kiện high-demand để có thể demo phòng chờ ảo ngay sau khi seed.
+UPDATE events
+SET queue_enabled = 1
+WHERE title = 'EXO PLANET #6 – EXhOrizon in Ho Chi Minh City';
+
 -- =============================================
 -- SEAT ZONES
 -- =============================================
@@ -423,7 +428,7 @@ SELECT id, 'GOLD – Khu A',           2800000, '#FFD700', 5, 30 FROM events WHE
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
 SELECT id, 'SILVER – Khu B',         1500000, '#C0C0C0', 8, 40 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'FAN PIT – Đứng',           900000, '#FF6B6B', 2, 60 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
+SELECT id, 'FAN PIT – Đứng',           900000, '#FF6B6B', 2, 50 FROM events WHERE title LIKE 'EXO PLANET%' LIMIT 1;
 
 -- Mr. Siro Fan Concert (event 2)
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
@@ -451,7 +456,7 @@ SELECT id, 'STANDARD',               900000, '#1ABC9C', 8, 35 FROM events WHERE 
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
 SELECT id, 'VIP ZONE',             1200000, '#FF4757', 3, 25 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
-SELECT id, 'STANDING – General',     500000, '#FFA502', 2, 80 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
+SELECT id, 'STANDING – General',     500000, '#FFA502', 2, 50 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
 INSERT IGNORE INTO seat_zones (event_id, name, price, color, total_rows, total_cols)
 SELECT id, 'BLEACHER – Khán đài',    250000, '#2ED573', 6, 30 FROM events WHERE title LIKE 'BADASS CITY%' LIMIT 1;
 
@@ -521,69 +526,35 @@ FROM tmp_events_no_zones;
 DROP TEMPORARY TABLE IF EXISTS tmp_events_no_zones;
 
 -- =============================================
--- SEATS — auto-generate cho EXO DIAMOND zone
+-- SEATS — auto-generate from every seeded zone matrix
 -- =============================================
-SET @exo_diamond = (
-  SELECT sz.id FROM seat_zones sz
-  JOIN events e ON e.id = sz.event_id
-  WHERE e.title LIKE 'EXO PLANET%' AND sz.name LIKE 'DIAMOND%' LIMIT 1
-);
+DROP TEMPORARY TABLE IF EXISTS tmp_row_seq;
+CREATE TEMPORARY TABLE tmp_row_seq (n INT PRIMARY KEY);
+INSERT INTO tmp_row_seq (n) VALUES
+  (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),
+  (11),(12),(13),(14),(15),(16),(17),(18),(19),(20),
+  (21),(22),(23),(24),(25),(26);
 
-INSERT IGNORE INTO seats (zone_id, row_label, col_number) VALUES
-  (@exo_diamond,'A',1),(@exo_diamond,'A',2),(@exo_diamond,'A',3),(@exo_diamond,'A',4),(@exo_diamond,'A',5),
-  (@exo_diamond,'A',6),(@exo_diamond,'A',7),(@exo_diamond,'A',8),(@exo_diamond,'A',9),(@exo_diamond,'A',10),
-  (@exo_diamond,'A',11),(@exo_diamond,'A',12),(@exo_diamond,'A',13),(@exo_diamond,'A',14),(@exo_diamond,'A',15),
-  (@exo_diamond,'A',16),(@exo_diamond,'A',17),(@exo_diamond,'A',18),(@exo_diamond,'A',19),(@exo_diamond,'A',20),
-  (@exo_diamond,'B',1),(@exo_diamond,'B',2),(@exo_diamond,'B',3),(@exo_diamond,'B',4),(@exo_diamond,'B',5),
-  (@exo_diamond,'B',6),(@exo_diamond,'B',7),(@exo_diamond,'B',8),(@exo_diamond,'B',9),(@exo_diamond,'B',10),
-  (@exo_diamond,'B',11),(@exo_diamond,'B',12),(@exo_diamond,'B',13),(@exo_diamond,'B',14),(@exo_diamond,'B',15),
-  (@exo_diamond,'B',16),(@exo_diamond,'B',17),(@exo_diamond,'B',18),(@exo_diamond,'B',19),(@exo_diamond,'B',20),
-  (@exo_diamond,'C',1),(@exo_diamond,'C',2),(@exo_diamond,'C',3),(@exo_diamond,'C',4),(@exo_diamond,'C',5),
-  (@exo_diamond,'C',6),(@exo_diamond,'C',7),(@exo_diamond,'C',8),(@exo_diamond,'C',9),(@exo_diamond,'C',10),
-  (@exo_diamond,'C',11),(@exo_diamond,'C',12),(@exo_diamond,'C',13),(@exo_diamond,'C',14),(@exo_diamond,'C',15),
-  (@exo_diamond,'C',16),(@exo_diamond,'C',17),(@exo_diamond,'C',18),(@exo_diamond,'C',19),(@exo_diamond,'C',20);
+DROP TEMPORARY TABLE IF EXISTS tmp_col_seq;
+CREATE TEMPORARY TABLE tmp_col_seq (n INT PRIMARY KEY);
+INSERT INTO tmp_col_seq (n) VALUES
+  (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),
+  (11),(12),(13),(14),(15),(16),(17),(18),(19),(20),
+  (21),(22),(23),(24),(25),(26),(27),(28),(29),(30),
+  (31),(32),(33),(34),(35),(36),(37),(38),(39),(40),
+  (41),(42),(43),(44),(45),(46),(47),(48),(49),(50);
 
--- EXO GOLD zone
-SET @exo_gold = (
-  SELECT sz.id FROM seat_zones sz
-  JOIN events e ON e.id = sz.event_id
-  WHERE e.title LIKE 'EXO PLANET%' AND sz.name LIKE 'GOLD%' LIMIT 1
-);
+INSERT IGNORE INTO seats (zone_id, row_label, col_number)
+SELECT
+  sz.id,
+  CHAR(64 + r.n) AS row_label,
+  c.n AS col_number
+FROM seat_zones sz
+JOIN tmp_row_seq r ON r.n <= sz.total_rows
+JOIN tmp_col_seq c ON c.n <= sz.total_cols;
 
-INSERT IGNORE INTO seats (zone_id, row_label, col_number) VALUES
-  (@exo_gold,'A',1),(@exo_gold,'A',2),(@exo_gold,'A',3),(@exo_gold,'A',4),(@exo_gold,'A',5),
-  (@exo_gold,'A',6),(@exo_gold,'A',7),(@exo_gold,'A',8),(@exo_gold,'A',9),(@exo_gold,'A',10),
-  (@exo_gold,'A',11),(@exo_gold,'A',12),(@exo_gold,'A',13),(@exo_gold,'A',14),(@exo_gold,'A',15),
-  (@exo_gold,'A',16),(@exo_gold,'A',17),(@exo_gold,'A',18),(@exo_gold,'A',19),(@exo_gold,'A',20),
-  (@exo_gold,'A',21),(@exo_gold,'A',22),(@exo_gold,'A',23),(@exo_gold,'A',24),(@exo_gold,'A',25),
-  (@exo_gold,'A',26),(@exo_gold,'A',27),(@exo_gold,'A',28),(@exo_gold,'A',29),(@exo_gold,'A',30),
-  (@exo_gold,'B',1),(@exo_gold,'B',2),(@exo_gold,'B',3),(@exo_gold,'B',4),(@exo_gold,'B',5),
-  (@exo_gold,'B',6),(@exo_gold,'B',7),(@exo_gold,'B',8),(@exo_gold,'B',9),(@exo_gold,'B',10),
-  (@exo_gold,'B',11),(@exo_gold,'B',12),(@exo_gold,'B',13),(@exo_gold,'B',14),(@exo_gold,'B',15),
-  (@exo_gold,'B',16),(@exo_gold,'B',17),(@exo_gold,'B',18),(@exo_gold,'B',19),(@exo_gold,'B',20),
-  (@exo_gold,'B',21),(@exo_gold,'B',22),(@exo_gold,'B',23),(@exo_gold,'B',24),(@exo_gold,'B',25),
-  (@exo_gold,'B',26),(@exo_gold,'B',27),(@exo_gold,'B',28),(@exo_gold,'B',29),(@exo_gold,'B',30);
-
--- IDECAF VIP zone
-SET @idecaf_vip = (
-  SELECT sz.id FROM seat_zones sz
-  JOIN events e ON e.id = sz.event_id
-  WHERE e.title LIKE '%IDECAF%Tấm Cám%' AND sz.name LIKE 'VIP%' LIMIT 1
-);
-
-INSERT IGNORE INTO seats (zone_id, row_label, col_number) VALUES
-  (@idecaf_vip,'A',1),(@idecaf_vip,'A',2),(@idecaf_vip,'A',3),(@idecaf_vip,'A',4),(@idecaf_vip,'A',5),
-  (@idecaf_vip,'A',6),(@idecaf_vip,'A',7),(@idecaf_vip,'A',8),(@idecaf_vip,'A',9),(@idecaf_vip,'A',10),
-  (@idecaf_vip,'A',11),(@idecaf_vip,'A',12),(@idecaf_vip,'A',13),(@idecaf_vip,'A',14),(@idecaf_vip,'A',15),
-  (@idecaf_vip,'A',16),(@idecaf_vip,'A',17),(@idecaf_vip,'A',18),
-  (@idecaf_vip,'B',1),(@idecaf_vip,'B',2),(@idecaf_vip,'B',3),(@idecaf_vip,'B',4),(@idecaf_vip,'B',5),
-  (@idecaf_vip,'B',6),(@idecaf_vip,'B',7),(@idecaf_vip,'B',8),(@idecaf_vip,'B',9),(@idecaf_vip,'B',10),
-  (@idecaf_vip,'B',11),(@idecaf_vip,'B',12),(@idecaf_vip,'B',13),(@idecaf_vip,'B',14),(@idecaf_vip,'B',15),
-  (@idecaf_vip,'B',16),(@idecaf_vip,'B',17),(@idecaf_vip,'B',18),
-  (@idecaf_vip,'C',1),(@idecaf_vip,'C',2),(@idecaf_vip,'C',3),(@idecaf_vip,'C',4),(@idecaf_vip,'C',5),
-  (@idecaf_vip,'C',6),(@idecaf_vip,'C',7),(@idecaf_vip,'C',8),(@idecaf_vip,'C',9),(@idecaf_vip,'C',10),
-  (@idecaf_vip,'C',11),(@idecaf_vip,'C',12),(@idecaf_vip,'C',13),(@idecaf_vip,'C',14),(@idecaf_vip,'C',15),
-  (@idecaf_vip,'C',16),(@idecaf_vip,'C',17),(@idecaf_vip,'C',18);
+DROP TEMPORARY TABLE IF EXISTS tmp_row_seq;
+DROP TEMPORARY TABLE IF EXISTS tmp_col_seq;
 
 -- =============================================
 -- PROMO CODES
@@ -604,21 +575,35 @@ VALUES
   -- Hip-hop fans
   ('HIPHOP50K',   'fixed',    50000,  400, NULL,    250000, '2026-04-15 00:00:00', '2026-05-03 23:59:59', TRUE);
 
+
 -- =============================================
--- REVIEWS (sample — user 2, 3, 4 on early events)
+-- POSTS / NEWSROOM
 -- =============================================
-INSERT IGNORE INTO reviews (user_id, event_id, rating, comment)
-SELECT 2, e.id, 5, 'Đêm nhạc tuyệt vời! EXO biểu diễn hết mình, âm thanh ánh sáng hoàn hảo. Chắc chắn sẽ mua vé lần sau nếu họ quay lại.'
-FROM events e WHERE e.title LIKE 'EXO PLANET%' LIMIT 1;
-
-INSERT IGNORE INTO reviews (user_id, event_id, rating, comment)
-SELECT 3, e.id, 5, 'Bùi Công Nam hát live cực hay, không cần auto-tune vẫn cực kỳ cảm xúc. Không khí buổi diễn rất ấm áp và chân thành.'
-FROM events e WHERE e.title LIKE 'Bùi Công Nam%Hà Nội%' LIMIT 1;
-
-INSERT IGNORE INTO reviews (user_id, event_id, rating, comment)
-SELECT 4, e.id, 4, 'IDECAF dàn dựng rất sáng tạo, hài mà không nhạt. Dàn diễn viên chuyên nghiệp, trang phục bắt mắt. Chỉ tiếc ghế hơi chật.'
-FROM events e WHERE e.title LIKE '%IDECAF%Tấm Cám%' LIMIT 1;
-
-INSERT IGNORE INTO reviews (user_id, event_id, rating, comment)
-SELECT 2, e.id, 5, 'BADASS CITY đỉnh cao! Wowy và Suboi biểu diễn liên tục không nghỉ, MCK rap live không cần beat. Festival hip-hop chất lượng quốc tế!'
-FROM events e WHERE e.title LIKE 'BADASS CITY%' LIMIT 1;
+INSERT INTO posts (
+  slug, title, excerpt, body, quote, author_name, category, cover_url,
+  read_time_min, featured, status, view_count, published_at, created_by
+)
+VALUES
+  ('n1', 'EXO PLANET #6 "EXhOrizon" — đêm diễn lịch sử tại TP.HCM sau 7 năm vắng bóng', 'EXO chính thức trở lại Việt Nam với tour "EXhOrizon" — vòng lưu diễn thế giới đầu tiên kể từ 2019. Đêm 26/04 tại Sân vận động Phú Thọ hứa hẹn là sự kiện K-pop lớn nhất năm với setlist 25 ca khúc và sân khấu LED 800m².', CAST('["Được công bố bất ngờ vào đêm 14 tháng 3 qua một tweet ngắn từ SM Entertainment, thông tin về đêm diễn tại TP.HCM lập tức khiến cộng đồng EXO-L Việt Nam \\"đứng tim\\". Chỉ trong 6 giờ đầu, hashtag #EXOVIETNAM đã trending tại 12 tỉnh thành và lượt đăng ký theo dõi sự kiện trên TicketRush vượt mốc 80.000 — con số chưa từng có trong lịch sử nền tảng.","Setlist dự kiến bao gồm 25 ca khúc trải dài suốt 12 năm sự nghiệp, từ những bản hit kinh điển MAMA, Growl, Call Me Baby cho đến Wolf, Monster, Ko Ko Bop. Đặc biệt, đây là lần đầu tiên Lay Zhang (thành viên người Trung Quốc) tái hợp cùng nhóm trên sân khấu ngoài Trung Quốc sau hơn 8 năm, xác nhận được đại diện SM Entertainment vào chiều 20/04.","Về sân khấu, ekip Dream Maker Entertainment tiết lộ hệ thống LED cong ôm toàn sân với hơn 800m² màn hình, kết hợp công nghệ hologram và laser đồng bộ theo từng nhịp bài — được lắp đặt bởi đội ngũ đã thực hiện concert BTS \\"Map of the Soul: ON:E\\" và Coldplay \\"Music of the Spheres\\". Toàn bộ thiết bị vận chuyển từ Seoul bằng 3 chuyến bay chở hàng.","Vé chia thành 4 phân khu: FAN PIT (900.000đ), SILVER – Khu B (1.500.000đ), GOLD – Khu A (2.800.000đ) và DIAMOND – Sân khấu (4.500.000đ). Theo ghi nhận của TicketRush, hạng DIAMOND đã sold out trong 11 phút sau khi mở bán, GOLD trong 34 phút. Hiện chỉ còn một số ghế SILVER và FAN PIT.","Nhìn rộng ra, sự kiện lần này đánh dấu bước ngoặt lớn cho thị trường concert quốc tế tại Việt Nam: đây là lần đầu tiên một nhóm nhạc K-pop hạng A chọn TP.HCM làm điểm dừng duy nhất tại Đông Nam Á, thay vì Bangkok hay Singapore như thông lệ. Tín hiệu này cho thấy Việt Nam đang dần được công nhận như một thị trường âm nhạc trực tiếp đáng đầu tư."]' AS JSON), 'Đây là lần đầu tiên chúng tôi chọn Việt Nam làm điểm dừng duy nhất tại Đông Nam Á. EXO-L Việt Nam — chúng tôi không quên các bạn.', 'Minh Thư', 'Showbiz', 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200&q=80', 5, TRUE, 'published', 18420, '2026-04-25 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n6', 'Sơn Tùng M-TP công bố "SKY TOUR" World Tour 2026 — lần đầu tiên ra nước ngoài', 'Đêm 20/04, Sơn Tùng M-TP bất ngờ công bố world tour đầu tiên trong sự nghiệp: "SKY TOUR 2026" với các điểm dừng tại Hà Nội, Seoul, Tokyo và London. Đêm mở màn tại Sân vận động Mỹ Đình ngày 22/08 với 40.000 chỗ ngồi.', CAST('["Đúng nửa đêm 20/04, trang Instagram @sontungmtp đăng một video teaser 30 giây với hình ảnh bầu trời mở ra, kèm dòng chú thích duy nhất: \\"SKY TOUR 2026. WORLD. 22.08 — Hanoi. See you there.\\" Trong 30 phút, video đạt hơn 2 triệu lượt xem — phá kỷ lục cá nhân của chính anh.","Theo thông tin từ nhãn hàng M-TP Entertainment, tour diễn gồm 5 điểm dừng: Hà Nội (22/08), TP.HCM (30/08), Seoul (15/09), Tokyo (28/09) và London (12/10). Đây là lần đầu tiên trong lịch sử âm nhạc Việt Nam, một nghệ sĩ solo Việt tổ chức concert tại các trung tâm âm nhạc lớn của thế giới.","\\"SKY TOUR\\" được biết là chủ đề của album phòng thu thứ 6 của Sơn Tùng, dự kiến phát hành trước ngày khai tour 1 tháng. Concept âm nhạc theo đội ngũ sản xuất mô tả là \\"sự pha trộn giữa pop Á, R&B hiện đại và âm thanh điện tử — hướng ra thế giới nhưng giữ hồn Việt\\".","Tại Hà Nội, concert diễn ra tại Sân vận động Mỹ Đình với 40.000 chỗ ngồi — quy mô lớn nhất một nghệ sĩ Việt từng thực hiện tại đây. Vé mở bán từ ngày 01/05 theo 5 phân khu, từ 600.000đ đến 3.500.000đ. Đặc biệt 500 vé \\"SKY PASS\\" kèm meet & greet sẽ bán đấu giá 100% lợi nhuận cho quỹ học bổng trẻ em.","Sự công bố của Sơn Tùng không chỉ là tin vui với fan mà còn là tín hiệu quan trọng: V-pop đang vươn ra thế giới theo con đường khác K-pop — không qua hệ thống idol factory, mà qua cá nhân hóa nghệ sĩ và câu chuyện âm nhạc chân thực."]' AS JSON), 'Tôi muốn chứng minh rằng âm nhạc Việt Nam có chỗ đứng trên bất kỳ sân khấu nào trên thế giới.', 'Thanh Long', 'Showbiz', 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&q=80', 6, TRUE, 'published', 15380, '2026-04-21 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n8', 'Phỏng vấn Đen Vâu: "Rap không phải để nổi tiếng — đó là cách tôi đặt câu hỏi với thế giới"', 'Trước thềm concert "Cháy Cùng" tại Hà Nội (12/07), TicketRush Newsroom gặp Nguyễn Đức Cường — nghệ sĩ đứng sau biệt danh Đen Vâu — để nói về nhạc, xã hội và lý do anh không bao giờ viết nhạc "để bán".', CAST('["Chúng tôi gặp Đen Vâu tại quán cà phê quen thuộc của anh ở Hoàng Mai — nơi anh nói anh thường viết nhạc và quan sát người qua đường. Không ekip, không PR, không máy quay. Chỉ một chiếc máy ghi âm và hai ly cà phê. \\"Tôi thích nói chuyện thế này hơn\\" — anh nói, rót thêm đường vào ly.","\\"Nhiều người nghĩ rap là thể loại của giới trẻ, của đường phố, của sự nổi loạn. Nhưng với tôi, rap chỉ đơn giản là cách tôi đặt câu hỏi lớn hơn thể xác mình\\" — anh bắt đầu khi tôi hỏi về album mới. Album thứ 5 của anh, chưa có tên chính thức, được mô tả là \\"đen hơn, chậm hơn, và ít dễ nghe hơn\\". Đó là chủ ý.","\\"Tôi không muốn mọi người stream nhạc tôi khi tập gym hay lúc rửa chén. Tôi muốn họ ngồi xuống, đeo tai nghe, và nghĩ. Nếu không ai nghĩ gì sau khi nghe — tôi đã thất bại, dù bài đó có 50 triệu views.\\" Anh nói điều này không có vẻ kiêu ngạo, chỉ như một tuyên ngôn đã được nung nấu từ lâu.","Về concert \\"Cháy Cùng\\", anh tiết lộ đây sẽ là đêm diễn khác nhất trong sự nghiệp: không màn hình LED lớn, không laser, không hype man. \\"Chỉ có âm nhạc, ánh đèn nhỏ và khoảng 3.000 người nghe thật sự. Tôi muốn thấy mặt người ta khi họ nghe nhạc của mình — không phải thấy màn hình điện thoại họ giơ lên.\\"","Câu hỏi cuối: anh sợ gì nhất trong sự nghiệp? Anh dừng lại khá lâu. \\"Sợ một ngày mình viết một bài hay nhưng không còn gì để nói nữa. Sợ nhạc của mình trở nên an toàn.\\" Rồi anh cười. \\"Chưa xảy ra. Đời còn nhiều thứ cần hỏi lắm.\\""]' AS JSON), 'Tôi không muốn mọi người stream nhạc tôi khi tập gym. Tôi muốn họ ngồi xuống và nghĩ.', 'Phương Anh', 'Phỏng vấn', 'https://images.unsplash.com/photo-1571266028243-d220bc562f7c?w=1200&q=80', 7, FALSE, 'published', 11240, '2026-04-19 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n3', 'BADASS CITY 2026 — khi Sài Gòn thật sự là thủ đô hip-hop Đông Nam Á', 'Lễ hội hip-hop lớn nhất miền Nam trở lại lần thứ 4 với quy mô nâng cấp hoàn toàn: 3 sân khấu, 30+ nghệ sĩ và lần đầu tiên có headliner quốc tế. Ngày 02/05, Công viên bờ sông Sài Gòn sẽ là tâm chấn.', CAST('["BADASS CITY 2026 đánh dấu lần thứ 4 lễ hội hip-hop này được tổ chức tại TP.HCM, nhưng lần này quy mô được nâng cấp toàn diện: 3 sân khấu hoạt động song song từ 16:00 đến 24:00, thay vì 1 sân khấu duy nhất như những năm trước. Tổng diện tích khu vực sự kiện hơn 15.000m² — tương đương 2 sân bóng đá.","Lineup năm nay quy tụ gần như đầy đủ \\"pantheon\\" hip-hop Việt: Wowy đảm nhận vai trò closing act sau gần 20 năm cầm mic, Suboi mở màn với bộ set electronic hip-hop mới hoàn toàn, MCK và Tlinh xuất hiện cùng nhau sau 2 năm ít hoạt động. Obito, Hứa Kim Tuyền, Yuk Trax, Lil Wuyn, Wxrdie, Andiez cũng có mặt trong lineup xác nhận.","Điểm mới đáng chú ý nhất: năm nay BADASS CITY lần đầu tiên có headliner nước ngoài. Nhóm rapper/producer người Hàn Quốc Balming Tiger (đã cộng tác với RM của BTS) và DJ/producer Mndsgn từ Los Angeles sẽ mang đến màn giao thoa văn hóa đặc biệt. Đây là minh chứng cho việc BADASS CITY đang vươn tầm quốc tế.","Ngoài âm nhạc, lễ hội năm nay còn có BAZAAR — khu mua sắm chuyên biệt với hơn 60 gian hàng sneaker, streetwear và thủ công nghệ sĩ. UNDERGROUND STAGE dành riêng cho các pha battle freestyle và showcase của các nghệ sĩ chưa được biết đến rộng rãi — đây là nơi nhiều ngôi sao hip-hop Việt hiện tại từng bước đầu xuất hiện.","Vé theo 3 tier: BLEACHER 250.000đ, STANDING General 500.000đ và VIP ZONE 1.200.000đ (khu riêng có bàn, đồ uống free-flow). Lưu ý đây là sự kiện ngoài trời — ban tổ chức khuyến khích giày vải, áo mưa mỏng và tránh đồ da lộn."]' AS JSON), 'Hip-hop không còn là underground ở Việt Nam nữa. Đây không phải tiến bộ — đây là điều đương nhiên phải xảy ra.', 'Hoàng Việt', 'Sự kiện', 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=1200&q=80', 5, FALSE, 'published', 9860, '2026-04-22 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n4', 'IDECAF "Tấm Cám Đại Chiến" — cổ tích được kể lại đúng thời đại, theo cách đau nhất', 'NSND Thành Lộc dàn dựng phiên bản "Tấm Cám" năm 2026 với Cám là influencer triệu followers và Bụt là AI assistant. Hài kịch, nhưng chạm thật sự vào những câu hỏi không dễ trả lời của thế hệ mạng xã hội.', CAST('["NSND Thành Lộc kể rằng ý tưởng về \\"Tấm Cám Đại Chiến\\" đến từ một câu hỏi đùa của con trai ông: \\"Ba ơi, nếu hôm nay Tấm và Cám có điện thoại thì chuyện gì xảy ra?\\" Câu hỏi đó ám ảnh ông suốt 3 tháng trước khi ông quyết định biến nó thành vở kịch. \\"Câu trả lời thú vị hơn tôi tưởng nhiều\\" — ông nói trong buổi họp báo ra mắt.","Phiên bản 2026 giữ nguyên xương sống cốt truyện nhưng cài cắm những chi tiết hiện đại một cách thông minh: Cám trở thành influencer với 5 triệu followers, livestream bán hàng mỗi ngày. Hoàng tử là CEO startup công nghệ đang IPO. Mẹ Cám — đương nhiên do NSND Thành Lộc đóng — là bà mẹ điển hình của thế hệ \\"helicopter parent\\" thời 4.0. Và Bụt xuất hiện dưới dạng AI assistant, giọng do Trấn Thành dubbing, hiện thị qua hologram.","Điều làm vở kịch không chỉ là hài kịch là lớp ý nghĩa thứ hai: khi Cám trở thành kẻ phản diện được thuật toán trao quyền, và Tấm là người tốt bị shadowban vì không chịu drama — vở diễn đang nói về một vấn đề rất thật của 2026. \\"Chúng tôi không cố gắng dạy đạo đức. Chúng tôi chỉ đặt gương trước mặt người xem\\" — NSND Thành Lộc giải thích.","Dàn diễn viên gồm 3 thế hệ nghệ sĩ IDECAF, với Kiều Trinh vai Tấm và Nhật Hào vai Cám. Vũ đạo do choreographer Quang Đăng thiết kế — 4 màn múa bùng nổ xen kẽ kịch nói mang lại nhịp điệu không cho phép khán giả ngồi yên. Vở diễn dài 2 giờ 20 phút với 1 intermission.","Vé 3 hạng: VIP 600.000đ (hàng A–C), Hạng Nhất 400.000đ (hàng D–H), Phổ thông 250.000đ. Suất diễn từ Thứ Năm đến Chủ Nhật, 19:30. Suất Chủ Nhật đặc biệt có Q&A với ekip sau vở diễn. Vé hạng VIP các suất cuối tuần đã gần kín."]' AS JSON), 'Tấm Cám không chỉ là cổ tích. Đó là câu chuyện về việc người tốt phải chịu thiệt bao lâu trước khi được đền đáp — và liệu thuật toán có thay đổi điều đó không.', 'Thu Hà', 'Sân khấu', 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=1200&q=80', 6, FALSE, 'published', 8740, '2026-04-20 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n7', 'Mỹ Tâm "Tâm 9": 25 năm và vẫn hát như lần đầu tiên', 'Kỷ niệm 25 năm sự nghiệp, Mỹ Tâm không tổ chức gala lộng lẫy. Cô chọn Đà Nẵng — thành phố quê hương — và một setlist hoàn toàn không có hit mới. Đây là câu chuyện về tại sao.', CAST('["Khi đội ngũ ekip đề xuất tổ chức concert kỷ niệm 25 năm tại Hà Nội hoặc TP.HCM với 15.000 chỗ ngồi, Mỹ Tâm từ chối. Cô chọn Nhà thi đấu Tiên Sơn tại Đà Nẵng — thành phố nơi cô sinh ra và lớn lên — với sức chứa 5.000 người. \\"Tôi không muốn kỷ niệm 25 năm bằng một sự kiện. Tôi muốn kỷ niệm nó bằng một đêm hát thật sự\\" — cô chia sẻ trong video công bố.","\\"Tâm 9\\" là tên album thứ 9 trong sự nghiệp của Mỹ Tâm, nhưng tên concert lại mang thêm ý nghĩa khác: \\"9\\" trong tiếng Quảng Nam quê cô có nghĩa là \\"cửu\\" — chín năm, chín lần trở đi trở lại. Setlist concert gồm 24 bài hát được chính fan bình chọn qua khảo sát trực tuyến — không phải ekip quyết định, không phải ban tổ chức. Fan quyết định.","Điều đặc biệt: toàn bộ setlist là những bài đã ra đời trước năm 2020. \\"Nhiều người nói tôi nên hát nhạc mới để ''trẻ hóa hình ảnh''. Nhưng tôi nghĩ ngược lại — những bài hát cũ mới thật sự là di sản. Đó là những gì còn lại sau 25 năm.\\" Các bài như Đừng Nói Xa Nhau, Đừng Hỏi Em, Hãy Đến Với Em, Ước Gì vẫn gây ra những phản ứng cảm xúc mà không bài hit mới nào có thể thay thế.","Ban nhạc sẽ gồm 12 nhạc công, trong đó có violinist Hoàng Rob — người đã cộng tác với Mỹ Tâm từ những ngày đầu sự nghiệp. Không DJ, không backing track điện tử. \\"Tôi muốn người nghe thấy nhạc thở. Thấy từng nốt được tạo ra ngay lúc đó, không phải phát lại.\\" Concert không có quảng cáo tài trợ, không có MC mở màn.","Vé đang bán trên TicketRush với 3 hạng: Platinum (2.000.000đ), VIP Gold (1.200.000đ) và Standard (600.000đ). Đây là một trong những concert hiếm hoi giá vé cao nhất không phải của nghệ sĩ nước ngoài tại Đà Nẵng — và vẫn sold out trong 3 ngày đầu mở bán."]' AS JSON), 'Những bài hát cũ mới thật sự là di sản. Đó là những gì còn lại sau 25 năm — không phải TikTok views, không phải chart position.', 'Lan Anh', 'Showbiz', 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&q=80', 6, FALSE, 'published', 8350, '2026-04-17 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n9', 'Hậu trường EXO "EXhOrizon": 3 đêm, 120 nhân công, 2,5 tấn thiết bị bay từ Seoul', 'Trước khi 25.000 khán giả bước vào Sân vận động Phú Thọ tối 26/04, một đội ngũ 120 người đã làm việc 72 giờ liên tục để dựng sân khấu. Đây là câu chuyện của họ.', CAST('["Lúc 3 giờ sáng ngày 23/04, chiếc xe tải đầu tiên trong chuỗi 14 xe tải lăn vào cổng Sân vận động Phú Thọ. Bên trong: 2,5 tấn thiết bị gồm khung sân khấu, hệ thống LED, dàn âm thanh L-Acoustics K1 và toàn bộ phụ kiện kỹ thuật đặt cọc tại Seoul 3 tuần trước. Từ khoảnh khắc đó, đồng hồ đếm ngược bắt đầu.","Kỹ thuật trưởng Kim Hyun-soo, người đã thực hiện sân khấu cho 6 tour diễn quốc tế của EXO, nói qua phiên dịch: \\"Mỗi sân vận động có cấu trúc riêng — sàn, hệ thống treo, tải trọng trần đều khác nhau. Sân Phú Thọ có những điểm thú vị cần giải quyết, nhưng đội ngũ Việt Nam làm việc nhanh hơn tôi mong đợi.\\"","Ekip gồm 120 người, trong đó 40 kỹ sư từ Seoul và 80 nhân công từ Việt Nam — phần lớn được thuê từ các công ty tổ chức sự kiện địa phương đã có kinh nghiệm với concert quốc tế. Ngôn ngữ chính là... màu sắc và ký hiệu trên bản vẽ kỹ thuật. \\"Không cần nói cùng ngôn ngữ khi mọi người đều biết công việc của mình\\" — một nhân công Việt Nam nói.","Phần phức tạp nhất là hệ thống LED cong 800m² — không phải màn hình phẳng thông thường mà là các module uốn cong theo hình parabol để ôm sát khán giả theo góc 270 độ. Mỗi module có trọng lượng 45kg và cần 2 người lắp, căn chỉnh góc độ với sai số không quá 0,5 độ. Tổng cộng hơn 180 module.","Đến chiều 25/04, sân khấu đã thành hình. Sound check đầu tiên lúc 18:00 với toàn bộ dàn âm thanh — tiếng nhạc vang ra khỏi sân vận động khiến hàng trăm fan đang chờ bên ngoài bắt đầu... khóc. Đó là khoảnh khắc mà ekip 120 người nhìn nhau, không nói gì. Họ biết mình đã làm được."]' AS JSON), 'Không cần nói cùng ngôn ngữ khi mọi người đều biết công việc của mình. Đó là ngôn ngữ của những người làm show.', 'Tuấn Khoa', 'Hậu trường', 'https://images.unsplash.com/photo-1540039155733-5bb30b4f8a61?w=1200&q=80', 7, FALSE, 'published', 6920, '2026-04-24 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n10', 'Bình luận Vũ. "Vũ-Verse 2026" tại Hà Nội: âm nhạc như một cuộc hành hương', 'Cung Thể thao Quần Ngựa tối 13/06 không phải là một venue concert thông thường — nó trở thành một không gian thánh đường của những người đã lớn lên cùng âm nhạc Vũ. Đây là bài viết đầy đủ.', CAST('["Vũ. bước ra sân khấu lúc 20:07 — không có hype video, không có màn ra mắt rầm rộ. Chỉ có đèn vàng ấm, một cây guitar và 2.000 người im lặng hoàn toàn. Bài đầu tiên là \\"Về Nghe Nhạc Đi\\" — bản nhạc 6 năm tuổi mà đến hôm nay nghe vẫn thấy mới như lần đầu.","Concert được thiết kế theo dạng thrust stage — sân khấu ăn sâu vào giữa khán giả, không có khoảng cách rõ ràng giữa nghệ sĩ và người nghe. Quyết định đó không phải ngẫu nhiên: \\"Tôi không muốn mọi người nhìn tôi. Tôi muốn chúng ta cùng nhìn vào một thứ gì đó\\" — Vũ. nói sau bài thứ ba.","Setlist gồm 21 bài, không theo thứ tự album mà được sắp xếp theo cung bậc cảm xúc — từ buồn nhẹ đến nặng nề đến giải thoát. Phần giữa concert, anh hát liên tục 4 bài slow không nghỉ, không nói chuyện với khán giả. Không ai nói chuyện. Không ai quay TikTok. 2.000 người ngồi với nhạc.","Những bài mới từ Vũ-Verse — chưa được phát hành chính thức — được tiếp nhận với sự chú ý kỳ lạ của người lần đầu nghe. Không có màn \\"hát theo\\" quen thuộc, chỉ có những cái đầu nghiêng nhẹ, những người nhắm mắt. \\"Tôi thích khi khán giả không biết bài — lúc đó họ thực sự nghe, không phải hát theo\\" — anh giải thích sau concert.","Điểm trừ duy nhất: âm thanh ở vài khu vực phía sau có sự phản xạ không tốt từ mái nhà thi đấu, khiến phần mid-treble hơi mờ. Đây là vấn đề cố hữu của Cung Quần Ngựa và khó tránh khỏi. Nhưng với một concert dựa nhiều vào acoustic guitar và giọng hát — nó không phá hỏng trải nghiệm tổng thể. Điểm tổng: 9.2/10."]' AS JSON), 'Tôi không muốn mọi người nhìn tôi. Tôi muốn chúng ta cùng nhìn vào một thứ gì đó.', 'Minh Thư', 'Bình luận', 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&q=80', 8, FALSE, 'published', 6480, '2026-06-14 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n2', 'Bùi Công Nam "The Story" Livetour — hành trình kể chuyện bằng âm nhạc đầu tiên', 'Khác với hầu hết nghệ sĩ chọn TP.HCM làm điểm xuất phát, BCN mở tour từ Hà Nội. Sân khấu thrust stage, không backdrop lớn, không laser. Chỉ có anh và những câu chuyện chưa bao giờ kể thành lời.', CAST('["\\"The Story\\" không phải tên album — đó là lời hứa. Trong 4 năm, Bùi Công Nam tích lũy hơn 300 bài hát chưa phát hành. \\"The Story Livetour\\" là cách anh chọn để kể một phần trong số đó ra thế giới — không qua streaming platform, không qua MV, mà qua đêm nhạc trực tiếp. \\"Một số bài sẽ không bao giờ được phát hành chính thức. Đêm diễn là lần duy nhất người ta nghe được\\" — anh nói trong buổi họp báo.","Quyết định mở tour từ Hà Nội mang màu sắc cá nhân rõ ràng: \\"Hà Nội là nơi tôi bắt đầu làm nhạc. Không gian đó — những con phố cũ, những quán cà phê nơi tôi viết bài — nó vẫn còn trong mỗi ca khúc tôi viết. Tôi muốn kể câu chuyện đầu tiên ở nơi nó được sinh ra.\\"","Thiết kế sân khấu theo dạng thrust — ăn sâu vào khán giả, không có hàng rào ngăn cách. Ban nhạc gồm 6 nhạc công tất cả đều là bạn bè đã chơi cùng anh từ những năm đầu sự nghiệp. \\"Tôi không muốn thuê người. Tôi muốn những người ngồi sau mic đó hiểu tại sao những bài hát đó tồn tại.\\"","Setlist 22 bài, phần lớn từ các album \\"Ký Ức Trong Lành\\" và \\"Nhìn Về Nhau\\" — nhưng 4 bài mới hoàn toàn chưa phát hành sẽ xuất hiện lần đầu tại Hà Nội. Thông tin này không được công bố chính thức; khán giả sẽ phát hiện tại đêm diễn.","Vé hạng PLATINUM tại Hà Nội đã sold out trong ngày đầu mở bán. STANDARD còn một số lượng hạn chế. Concert tại TP.HCM (20/06) đang mở đăng ký ưu tiên."]' AS JSON), 'Một số bài sẽ không bao giờ được phát hành chính thức. Đêm diễn là lần duy nhất người ta nghe được.', 'Thanh Long', 'Showbiz', 'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=1200&q=80', 5, FALSE, 'published', 5940, '2026-04-24 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1)),
+  ('n5', '7 mẹo săn vé concert không bị "cháy" trong mùa show bùng nổ 2026', 'Mùa concert 2026 đang đặt ra những thách thức mới cho người mua vé: tốc độ bán nhanh hơn, bot ngày càng tinh vi hơn. Đây là những chiến thuật từ các "fan cứng" và insider của ngành.', CAST('["Mùa concert 2026 đang tạo ra áp lực mua vé chưa từng có: vé EXO sold out trong 11 phút, BADASS CITY City VIP hết trong 2 giờ, Sơn Tùng SKY TOUR Hà Nội dự kiến bán xong trong buổi sáng đầu tiên. Không chuẩn bị kỹ, bạn sẽ trắng tay dù online đúng giờ.","Mẹo 1 — Bật thông báo đúng cách: Trong TicketRush, bấm \\"Theo dõi\\" sự kiện và bật cả push notification lẫn email reminder. Push notification tới tay bạn nhanh hơn email 2–5 phút — và trong cuộc đua mua vé, 5 phút là tất cả. Đặt thêm báo thức trước giờ mở bán 10 phút để sẵn sàng.\\n\\nMẹo 2 — Ví điện tử pre-loaded: Nạp sẵn tiền vào MoMo, VNPay hoặc ZaloPay trước ngày mở bán ít nhất 1 ngày. Tránh dùng thẻ quốc tế nếu có thể — bước xác thực OTP tốn thêm 30–45 giây, đủ để mất ghế trong trường hợp căng thẳng.","Mẹo 3 — Chiến lược ghế khôn ngoan: Với concert seated, đừng chỉ nhắm VIP. Hàng cuối của GOLD hoặc đầu SILVER thường cho góc nhìn tốt hơn VIP hàng A vì sân khấu thường cao. Với concert standing, vị trí bên trái/phải sân khấu ít chen hơn center nhưng vẫn gần nghệ sĩ — và có không gian di chuyển khi cần.\\n\\nMẹo 4 — Chiếc tab dự phòng: Mở song song 2 tab hoặc dùng 2 thiết bị khác nhau (điện thoại + máy tính). Nếu một tab bị lỗi hoặc session hết hạn, bạn có tab dự phòng.","Mẹo 5 — Đăng nhập trước 30 phút: Đừng đợi đến giờ mở bán mới đăng nhập. Server TicketRush có thể chậm nếu hàng trăm nghìn người cùng đăng nhập một lúc. Đăng nhập sẵn, điền thông tin thanh toán, chọn số ghế muốn mua — để khi vé mở bán chỉ cần nhấn \\"Thêm vào giỏ\\" và confirm.\\n\\nMẹo 6 — Group fan là nguồn thông tin tốt nhất: Các group Facebook như \\"Concert HN 2026\\", \\"Fan Concert Vietnam\\" thường có thông báo về flash sale, pre-sale link và cảnh báo vé giả sớm nhất. Join và bật thông báo.","Mẹo 7 — Nếu trắng tay vẫn còn cơ hội: TicketRush có tính năng \\"Hàng chờ\\" — khi người mua không thanh toán trong 10 phút, ghế tự động trả về hàng đợi. Những slot này xuất hiện không báo trước, thường vào buổi chiều ngày mở bán. Cài thông báo \\"Ghế vừa mở\\" và kiểm tra app thường xuyên trong 24 giờ đầu."]' AS JSON), 'Fan cứng không chờ vé. Fan cứng chuẩn bị từ 30 phút trước khi mở bán.', 'Phương Anh', 'Mẹo hay', 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&q=80', 5, FALSE, 'published', 5210, '2026-04-18 09:00:00', (SELECT id FROM users WHERE email = 'admin@ticketrush.vn' LIMIT 1))
+ON DUPLICATE KEY UPDATE
+  title = VALUES(title),
+  excerpt = VALUES(excerpt),
+  body = VALUES(body),
+  quote = VALUES(quote),
+  author_name = VALUES(author_name),
+  category = VALUES(category),
+  cover_url = VALUES(cover_url),
+  read_time_min = VALUES(read_time_min),
+  featured = VALUES(featured),
+  status = VALUES(status),
+  view_count = VALUES(view_count),
+  published_at = VALUES(published_at);

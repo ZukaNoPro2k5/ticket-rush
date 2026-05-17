@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  Compass, History, LogOut, Newspaper, Search, Tag, Ticket,
+  Compass, Heart, History, LogOut, Newspaper, Search, Tag, Ticket,
   User as UserIcon, X,
 } from 'lucide-react';
 import { CATEGORIES } from '@/data/uiConfig';
@@ -31,6 +33,7 @@ const MAIN_LINKS = [
 
 const USER_LINKS = [
   { href: '/profile', icon: UserIcon, label: 'Tài khoản của tôi' },
+  { href: '/saved-events', icon: Heart, label: 'Sự kiện đã lưu' },
   { href: '/my-tickets', icon: Ticket, label: 'Vé của tôi' },
   { href: '/order-history', icon: History, label: 'Lịch sử đặt vé' },
 ];
@@ -38,6 +41,16 @@ const USER_LINKS = [
 export function MobileDrawer({
   open, onClose, isAuthenticated, user, onLogin, onLogout,
 }: Props) {
+  const router = useRouter();
+  const [query, setQuery] = useState('');
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = query.trim();
+    router.push(trimmed ? `/events?search=${encodeURIComponent(trimmed)}` : '/events');
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -67,10 +80,15 @@ export function MobileDrawer({
               </button>
             </div>
 
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-100 px-3 py-2">
+            <form onSubmit={submitSearch} className="mb-4 flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-100 px-3 py-2">
               <Search className="h-4 w-4 text-stone-400" />
-              <input placeholder="Tìm sự kiện…" className="flex-1 bg-transparent text-sm outline-none" />
-            </div>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Tìm sự kiện…"
+                className="flex-1 bg-transparent text-sm outline-none"
+              />
+            </form>
 
             <nav className="space-y-1 text-sm font-medium">
               {MAIN_LINKS.map((l) => (

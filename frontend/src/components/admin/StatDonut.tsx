@@ -37,7 +37,7 @@ export default function StatDonut({ data, valueFormatter }: Props) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(v: number, name: string) => [fmtV(v), name]}
+            formatter={(v, name) => [fmtV(Number(v ?? 0)), String(name ?? '')]}
             contentStyle={{
               borderRadius: '12px',
               border: '1px solid #e7e5e4',

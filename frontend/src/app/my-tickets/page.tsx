@@ -13,20 +13,20 @@ interface MyTicket {
   id: number;
   event: { id: number; title: string; venue: string; event_date: string };
   seat: { zone_name: string; row_label: string; col_number: number };
-  status: 'valid' | 'used' | 'cancelled';
+  status: 'active' | 'used' | 'cancelled';
   checked_in_at: string | null;
   created_at: string;
 }
 
 const STATUS_TABS = [
   { key: '',          label: 'Tất cả' },
-  { key: 'valid',     label: 'Còn hiệu lực' },
+  { key: 'active',    label: 'Còn hiệu lực' },
   { key: 'used',      label: 'Đã dùng' },
   { key: 'cancelled', label: 'Đã hủy' },
 ];
 
 function StatusBadge({ status }: { status: MyTicket['status'] }) {
-  if (status === 'valid')
+  if (status === 'active')
     return (
       <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
         <CheckCircle2 className="h-3 w-3" /> Còn hiệu lực

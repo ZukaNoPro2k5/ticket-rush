@@ -5,9 +5,14 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { CATEGORIES } from '@/data/uiConfig';
 import { cardVariant, fadeIn, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
+import type { DisplayEvent } from '@/types';
 
-export function CategoriesGrid() {
+export function CategoriesGrid({ events = [] }: { events?: DisplayEvent[] }) {
   const { ref, inView } = useSectionInView();
+  const counts = events.reduce<Record<string, number>>((acc, event) => {
+    acc[event.categoryKey] = (acc[event.categoryKey] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <section id="home-categories" className="scroll-mt-20 bg-stone-50 py-12 lg:py-16">
@@ -45,7 +50,7 @@ export function CategoriesGrid() {
                   <i className={`${c.icon} text-xl`} aria-hidden />
                 </div>
                 <div className="mt-3 font-semibold text-stone-900">{c.label}</div>
-                <div className="mt-0.5 text-xs text-stone-500">{c.count} sự kiện</div>
+                <div className="mt-0.5 text-xs text-stone-500">{counts[c.key] ?? 0} sự kiện</div>
               </Link>
             </motion.div>
           ))}

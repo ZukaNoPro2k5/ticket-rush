@@ -7,8 +7,8 @@ import { EASE_OUT_EXPO } from '@/lib/motion';
 
 const BENEFITS = [
   { icon: Zap,         title: 'Đặt vé trong 30 giây',    desc: 'Checkout nhanh, không lag, giữ ghế tức thì.' },
-  { icon: ShieldCheck, title: 'Thanh toán an toàn',      desc: 'Bảo mật PCI-DSS, hoàn tiền nếu sự kiện hủy.' },
-  { icon: Sparkles,    title: 'Gợi ý theo sở thích',     desc: 'AI học từ bạn — concert, workshop đều trúng gu.' },
+  { icon: ShieldCheck, title: 'Đặt vé an toàn',          desc: 'Không bán trùng ghế, QR sinh ngay sau xác nhận.' },
+  { icon: Sparkles,    title: 'Gợi ý theo sở thích',     desc: 'Ưu tiên sự kiện hợp gu từ dữ liệu bạn chọn.' },
 ];
 
 /**
@@ -83,8 +83,7 @@ export function AuthLayout({
           </h2>
 
           <p className="mt-4 max-w-md text-[15px] leading-relaxed text-stone-600">
-            Tham gia cộng đồng <span className="font-semibold text-stone-900">2.5M+ người dùng</span> đang săn vé concert,
-            workshop và trận đấu hot mỗi ngày trên TicketRush.
+            Khám phá concert, workshop và trận đấu hot trong một luồng đặt vé gọn, rõ và cập nhật theo thời gian thực.
           </p>
 
           {/* Benefits */}

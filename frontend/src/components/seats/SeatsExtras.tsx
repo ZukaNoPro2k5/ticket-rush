@@ -1,10 +1,10 @@
-export function SeatsInfoBox() {
+export function SeatsInfoBox({ holdMinutes, maxTickets }: { holdMinutes: number; maxTickets: number }) {
   return (
-    <div className="space-y-1 rounded-xl border border-blue-100 bg-blue-50 p-4 text-xs text-blue-700">
-      <p className="mb-1 font-semibold">Lưu ý quan trọng</p>
-      <p>• Ghế giữ tối đa 10 phút, hãy xác nhận thanh toán đúng hạn.</p>
-      <p>• Nếu hết hạn, ghế sẽ tự động trả lại cho người khác đặt.</p>
-      <p>• Trạng thái ghế được cập nhật realtime giữa các thiết bị.</p>
+    <div className="space-y-1.5 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs leading-5 text-amber-800">
+      <p className="font-semibold">Lưu ý</p>
+      <p>• Ghế được giữ ngay khi bạn chọn, tối đa {holdMinutes} phút.</p>
+      <p>• Mỗi giao dịch tối đa {maxTickets} vé.</p>
+      <p>• Nếu hết hạn, ghế tự động trả lại cho người khác đặt.</p>
     </div>
   );
 }

@@ -3,12 +3,15 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 
 import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { metricsMiddleware } from './middleware/metrics';
 import { registry } from './config/metrics';
 import { AppError } from './shared/AppError';
+import { optionalAuthenticate } from './middleware/auth';
+import { maintenanceGuard } from './middleware/maintenance';
 
 const app = express();
 
@@ -30,19 +33,20 @@ const skipFn = (_req: express.Request) => isLoadTest;
 
 const globalLimiter  = rateLimit({ windowMs: 60_000, max: 200,  standardHeaders: true, legacyHeaders: false, skip: skipFn });
 const authLimiter    = rateLimit({ windowMs: 60_000, max: 20,   standardHeaders: true, legacyHeaders: false, skip: skipFn, message: { success: false, error: { code: 'RATE_LIMIT', message: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' } } });
-const bookingLimiter = rateLimit({ windowMs: 60_000, max: 10,   standardHeaders: true, legacyHeaders: false, skip: skipFn, message: { success: false, error: { code: 'RATE_LIMIT', message: 'Quá nhiều yêu cầu đặt vé, vui lòng thử lại sau.' } } });
-
 app.use(globalLimiter);
 
 // --- Request Logging ---
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 
 // --- Body Parsers ---
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // --- Metrics (must come after body parser, before routes) ---
 app.use(metricsMiddleware);
+app.use(optionalAuthenticate);
+app.use(maintenanceGuard);
 
 // --- Health Check ---
 app.get('/api/health', (_req, res) => {
@@ -69,7 +73,7 @@ import seatRoutes from './modules/seats/routes';
 
 app.use('/api/auth',     authLimiter, authRoutes);
 app.use('/api/users',    userRoutes);
-app.use('/api/bookings', bookingLimiter, bookingRoutes);
+app.use('/api/bookings', bookingRoutes);
 app.use('/api/tickets',  ticketRoutes);
 app.use('/api/events/:eventId/seats', seatRoutes); // A6
 
@@ -82,13 +86,16 @@ app.use('/api/events/:eventId/seat-zones', seatZoneRoutes);
 
 // Dev 3 routes
 import promoRoutes from './modules/promo-codes/routes';
-import reviewRoutes, { reviewDeleteRouter } from './modules/reviews/routes';
 import adminRoutes from './modules/admin/routes';
 import queueRoutes from './modules/queue/routes';
+import postRoutes from './modules/posts/routes';
+import engagementRoutes from './modules/engagement/routes';
+import paymentRoutes from './modules/payments/routes';
 app.use('/api/promo-codes',             promoRoutes);
-app.use('/api/events/:eventId/reviews', reviewRoutes);
-app.use('/api/reviews',                 reviewDeleteRouter);
 app.use('/api/events/:eventId/queue',   queueRoutes);
+app.use('/api/posts',                   postRoutes);
+app.use('/api/engagement',              engagementRoutes);
+app.use('/api/payments',                paymentRoutes);
 app.use('/api/admin',                   adminRoutes);
 
 // --- 404 Handler ---
