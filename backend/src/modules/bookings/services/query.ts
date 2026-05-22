@@ -1,139 +1,82 @@
-import { RowDataPacket } from 'mysql2';
-import pool from '../../../config/database';
+import prisma from '../../../config/prisma';
 import { AppError } from '../../../shared/AppError';
-import type { BookingRow } from './types';
 
 export async function getBooking(bookingId: number, userId?: number) {
-  const [rows] = await pool.execute<BookingRow[]>(
-    `SELECT id, user_id, event_id, promo_code_id, discount_amount, total_amount,
-            status, expires_at, confirmed_at, created_at
-     FROM bookings WHERE id = ?`,
-    [bookingId],
-  );
-  if (rows.length === 0) {
-    throw AppError.notFound('Không tìm thấy đơn đặt vé', 'BOOKING_NOT_FOUND');
-  }
-  const booking = rows[0];
+  const booking = await prisma.bookings.findUnique({
+    where: { id: bookingId },
+    include: {
+      events: { select: { id: true, title: true, venue: true, event_date: true } },
+      users: { select: { email: true, full_name: true } },
+      booking_seats: {
+        include: { seats: { include: { seat_zones: { select: { name: true } } } } },
+      },
+      promo_codes: { select: { code: true } },
+      payments: { select: { payment_method: true, status: true, paid_at: true } },
+    },
+  });
+  if (!booking) throw AppError.notFound('Không tìm thấy đơn đặt vé', 'BOOKING_NOT_FOUND');
+  if (userId && booking.user_id !== userId) throw AppError.forbidden('Bạn không có quyền xem đơn này');
 
-  if (userId && booking.user_id !== userId) {
-    throw AppError.forbidden('Bạn không có quyền xem đơn này');
-  }
-
-  const [eventRows] = await pool.execute<RowDataPacket[]>(
-    'SELECT id, title, venue, event_date FROM events WHERE id = ?',
-    [booking.event_id],
-  );
-
-  const [seatRows] = await pool.execute<RowDataPacket[]>(
-    `SELECT bs.seat_id AS id, sz.name AS zone_name, s.row_label, s.col_number, bs.price
-     FROM booking_seats bs
-     JOIN seats s ON s.id = bs.seat_id
-     JOIN seat_zones sz ON sz.id = s.zone_id
-     WHERE bs.booking_id = ?`,
-    [bookingId],
-  );
-
-  const [paymentRows] = await pool.execute<RowDataPacket[]>(
-    `SELECT payment_method, status, paid_at
-     FROM payments
-     WHERE booking_id = ?
-     LIMIT 1`,
-    [bookingId],
-  );
-
-  let promoCode: string | null = null;
-  if (booking.promo_code_id) {
-    const [promoRows] = await pool.execute<RowDataPacket[]>(
-      'SELECT code FROM promo_codes WHERE id = ?',
-      [booking.promo_code_id],
-    );
-    if (promoRows.length > 0) promoCode = promoRows[0].code;
-  }
-
-  const subtotal = seatRows.reduce((sum, s) => sum + Number(s.price), 0);
-
+  const seats = booking.booking_seats.map((item) => ({
+    id: item.seat_id,
+    zone_name: item.seats.seat_zones.name,
+    row_label: item.seats.row_label,
+    col_number: item.seats.col_number,
+    price: Number(item.price),
+  }));
   return {
     id: booking.id,
     user_id: booking.user_id,
-    event: eventRows[0],
-    seats: seatRows,
-    subtotal,
+    user: { email: booking.users.email, full_name: booking.users.full_name },
+    event: booking.events,
+    seats,
+    subtotal: seats.reduce((sum, seat) => sum + seat.price, 0),
     discount_amount: Number(booking.discount_amount),
     total_amount: Number(booking.total_amount),
-    promo_code: promoCode,
+    promo_code: booking.promo_codes?.code ?? null,
     status: booking.status,
     created_at: booking.created_at,
     expires_at: booking.expires_at,
     confirmed_at: booking.confirmed_at,
-    payment: paymentRows[0]
-      ? {
-          method: paymentRows[0].payment_method,
-          status: paymentRows[0].status,
-          paid_at: paymentRows[0].paid_at,
-        }
+    payment: booking.payments
+      ? { method: booking.payments.payment_method, status: booking.payments.status, paid_at: booking.payments.paid_at }
       : null,
   };
 }
 
 export async function getPendingBookingForEvent(userId: number, eventId: number) {
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT id
-     FROM bookings
-     WHERE user_id = ?
-       AND event_id = ?
-       AND status = 'pending'
-       AND expires_at > NOW()
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [userId, eventId],
-  );
-
-  if (rows.length === 0) return null;
-  return getBooking(Number(rows[0].id), userId);
+  const booking = await prisma.bookings.findFirst({
+    where: { user_id: userId, event_id: eventId, status: 'pending', expires_at: { gt: new Date() } },
+    orderBy: { created_at: 'desc' },
+    select: { id: true },
+  });
+  return booking ? getBooking(booking.id, userId) : null;
 }
 
 export async function listMyBookings(userId: number, status?: string, page = 1, limit = 10) {
-  const conditions = ['b.user_id = ?'];
-  const params: (string | number)[] = [userId];
-
-  if (status) {
-    conditions.push('b.status = ?');
-    params.push(status);
-  }
-
-  const where = `WHERE ${conditions.join(' AND ')}`;
-
-  const [countRows] = await pool.execute<RowDataPacket[]>(
-    `SELECT COUNT(*) AS total FROM bookings b ${where}`,
-    params,
-  );
-  const total = countRows[0].total as number;
-
-  const offset = (page - 1) * limit;
-  // Use pool.query (not execute) for LIMIT/OFFSET binding compatibility
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT b.id, b.total_amount, b.status, b.confirmed_at,
-            e.id AS event_id, e.title AS event_title, e.event_date, e.poster_url,
-            (SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.id) AS seat_count
-     FROM bookings b
-     JOIN events e ON e.id = b.event_id
-     ${where}
-     ORDER BY b.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [...params, Number(limit), Number(offset)],
-  );
-
-  const items = rows.map((r) => ({
-    id: r.id,
-    event: { id: r.event_id, title: r.event_title, event_date: r.event_date, poster_url: r.poster_url },
-    total_amount: Number(r.total_amount),
-    status: r.status,
-    seat_count: r.seat_count,
-    confirmed_at: r.confirmed_at,
-  }));
-
+  const where = { user_id: userId, ...(status ? { status: status as 'pending' | 'confirmed' | 'cancelled' } : {}) };
+  const [rows, total] = await prisma.$transaction([
+    prisma.bookings.findMany({
+      where,
+      include: {
+        events: { select: { id: true, title: true, event_date: true, poster_url: true } },
+        _count: { select: { booking_seats: true } },
+      },
+      orderBy: { created_at: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.bookings.count({ where }),
+  ]);
   return {
-    items,
+    items: rows.map((row) => ({
+      id: row.id,
+      event: row.events,
+      total_amount: Number(row.total_amount),
+      status: row.status,
+      seat_count: row._count.booking_seats,
+      confirmed_at: row.confirmed_at,
+    })),
     pagination: { page, limit, total, total_pages: Math.ceil(total / limit) },
   };
 }

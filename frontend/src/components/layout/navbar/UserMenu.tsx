@@ -8,6 +8,7 @@ import {
   ChevronDown, Heart, History, LogOut, Settings, Ticket, User as UserIcon,
 } from 'lucide-react';
 import { EASE_OUT_EXPO } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface UserLike {
   full_name: string;
@@ -48,13 +49,14 @@ function Avatar({ user, size, ring }: { user: UserLike; size: number; ring: stri
 
 export function UserMenu({ user, scrolled, onLogout }: Props) {
   const [open, setOpen] = useState(false);
+  const { messages } = useLocale();
 
   const menuItems = [
-    { href: '/profile', icon: UserIcon, label: 'Tài khoản của tôi' },
-    { href: '/saved-events', icon: Heart, label: 'Sự kiện đã lưu' },
-    { href: '/my-tickets', icon: Ticket, label: 'Vé của tôi' },
-    { href: '/order-history', icon: History, label: 'Lịch sử đặt vé' },
-    { href: '/settings', icon: Settings, label: 'Cài đặt' },
+    { href: '/profile', icon: UserIcon, label: messages.nav.account },
+    { href: '/saved-events', icon: Heart, label: messages.nav.savedEvents },
+    { href: '/my-tickets', icon: Ticket, label: messages.nav.myTickets },
+    { href: '/order-history', icon: History, label: messages.nav.orderHistory },
+    { href: '/settings', icon: Settings, label: messages.nav.settings },
   ];
 
   return (
@@ -107,7 +109,7 @@ export function UserMenu({ user, scrolled, onLogout }: Props) {
                 onClick={() => { setOpen(false); onLogout(); }}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-rose-600 hover:bg-rose-50"
               >
-                <LogOut className="h-4 w-4" /> Đăng xuất
+                <LogOut className="h-4 w-4" /> {messages.nav.logout}
               </button>
             </div>
           </motion.div>

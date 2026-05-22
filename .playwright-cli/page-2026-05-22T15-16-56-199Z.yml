@@ -1,0 +1,272 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e4]:
+      - link "TicketRush" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img [ref=e7]
+        - generic [ref=e9]: TicketRush
+      - navigation [ref=e10]:
+        - button "Explore" [ref=e507] [cursor=pointer]:
+          - img [ref=e13]
+          - text: Explore
+          - img [ref=e16]
+        - button "Event calendar" [ref=e508] [cursor=pointer]:
+          - img [ref=e20]
+          - text: Event calendar
+          - img [ref=e22]
+        - link "Promotions" [ref=e509] [cursor=pointer]:
+          - /url: /promotions
+          - img [ref=e25]
+          - text: Promotions
+        - link "News" [ref=e510] [cursor=pointer]:
+          - /url: /news
+          - img [ref=e29]
+          - text: News
+      - generic [ref=e32]:
+        - button "Change language" [ref=e511] [cursor=pointer]:
+          - img [ref=e35]
+          - generic [ref=e38]: en
+          - img [ref=e39]
+        - button "Sign in" [ref=e512] [cursor=pointer]
+    - generic [ref=e44]:
+      - generic [ref=e419]:
+        - img [ref=e420]
+        - text: Waiting for sale
+      - heading "No events are on sale yet" [level=1] [ref=e513]
+      - paragraph [ref=e423]: Published events will be shown here as soon as admins release them.
+      - link "View all events" [ref=e514] [cursor=pointer]:
+        - /url: /events
+        - text: View all events
+        - img [ref=e425]
+    - generic [ref=e60]:
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - heading "Explore by category" [level=2] [ref=e515]
+          - paragraph [ref=e64]: Pick a category to find the right event faster
+        - link "View all" [ref=e516] [cursor=pointer]:
+          - /url: /events
+          - text: View all
+          - img [ref=e67]
+      - generic [ref=e69]:
+        - link "Music 0 events" [ref=e517] [cursor=pointer]:
+          - /url: /events?category=music
+          - generic [ref=e73]: 
+          - generic [ref=e74]: Music
+          - generic [ref=e75]: 0 events
+        - link "Arts 0 events" [ref=e518] [cursor=pointer]:
+          - /url: /events?category=arts
+          - generic [ref=e79]: 
+          - generic [ref=e80]: Arts
+          - generic [ref=e81]: 0 events
+        - link "Sports 0 events" [ref=e519] [cursor=pointer]:
+          - /url: /events?category=sports
+          - generic [ref=e85]: 
+          - generic [ref=e86]: Sports
+          - generic [ref=e87]: 0 events
+        - link "Food 0 events" [ref=e520] [cursor=pointer]:
+          - /url: /events?category=food
+          - generic [ref=e91]: 
+          - generic [ref=e92]: Food
+          - generic [ref=e93]: 0 events
+        - link "Entertainment 0 events" [ref=e521] [cursor=pointer]:
+          - /url: /events?category=entertainment
+          - generic [ref=e97]: 
+          - generic [ref=e98]: Entertainment
+          - generic [ref=e99]: 0 events
+        - link "Workshops 0 events" [ref=e522] [cursor=pointer]:
+          - /url: /events?category=workshop
+          - generic [ref=e103]: 
+          - generic [ref=e104]: Workshops
+          - generic [ref=e105]: 0 events
+        - link "Stage 0 events" [ref=e523] [cursor=pointer]:
+          - /url: /events?category=stage
+          - generic [ref=e109]: 
+          - generic [ref=e110]: Stage
+          - generic [ref=e111]: 0 events
+        - link "Other 0 events" [ref=e524] [cursor=pointer]:
+          - /url: /events?category=other
+          - generic [ref=e115]: 
+          - generic [ref=e116]: Other
+          - generic [ref=e117]: 0 events
+    - generic [ref=e119]:
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - img [ref=e123]
+            - text: Upcoming
+          - heading "Upcoming events" [level=2] [ref=e525]
+          - paragraph [ref=e126]: Book early for better prices and better seats
+        - link "View all" [ref=e526] [cursor=pointer]:
+          - /url: /events
+          - text: View all
+          - img [ref=e128]
+      - generic [ref=e130]:
+        - button "Today" [ref=e527] [cursor=pointer]
+        - button "Weekend" [ref=e528] [cursor=pointer]
+        - button "This week" [ref=e529] [cursor=pointer]
+        - button "This month" [ref=e530] [cursor=pointer]
+      - generic [ref=e427]:
+        - img [ref=e428]
+        - generic [ref=e439]:
+          - paragraph [ref=e440]: No upcoming events yet
+          - paragraph [ref=e441]: New events appear here as soon as they go on sale.
+    - generic [ref=e169]:
+      - generic [ref=e170]:
+        - generic [ref=e171]:
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - img [ref=e174]
+              - text: Leaderboard
+            - generic [ref=e176]: Live
+          - heading "Most wanted" [level=2] [ref=e531]
+          - paragraph [ref=e181]: Ranked by sell-through from events currently on sale
+        - link "View ranking" [ref=e532] [cursor=pointer]:
+          - /url: /events?sort=trending
+          - text: View ranking
+          - img [ref=e183]
+      - generic [ref=e442]:
+        - img [ref=e443]
+        - generic [ref=e454]:
+          - paragraph [ref=e455]: No ranking data yet
+          - paragraph [ref=e456]: The leaderboard updates after ticket sales start.
+    - generic [ref=e187]:
+      - generic [ref=e188]:
+        - generic [ref=e189]:
+          - generic [ref=e190]:
+            - img [ref=e191]
+            - text: For you
+          - heading "Personalized for you" [level=2] [ref=e533]
+          - paragraph [ref=e195]: Sign in to get recommendations matched to your interests
+        - link "View all" [ref=e534] [cursor=pointer]:
+          - /url: /events
+          - text: View all
+          - img [ref=e197]
+      - generic [ref=e200]:
+        - generic [ref=e201]:
+          - img [ref=e203]
+          - generic [ref=e206]:
+            - generic [ref=e207]: Unlock recommendations for you
+            - generic [ref=e208]: Sign in to save favorite categories and get more relevant picks
+        - link "Sign in" [ref=e535] [cursor=pointer]:
+          - /url: /login
+          - text: Sign in
+          - img [ref=e210]
+      - generic [ref=e457]:
+        - img [ref=e458]
+        - generic [ref=e469]:
+          - paragraph [ref=e470]: Not enough data to recommend yet
+          - paragraph [ref=e471]: This section updates when events are on sale.
+    - generic [ref=e246]:
+      - generic [ref=e247]:
+        - generic [ref=e248]:
+          - generic [ref=e249]:
+            - img [ref=e250]
+            - text: New on sale
+          - heading "Fresh tickets" [level=2] [ref=e536]
+          - paragraph [ref=e254]: Book early to catch early-bird offers
+        - link "View all" [ref=e537] [cursor=pointer]:
+          - /url: /events?sort=newest
+          - text: View all
+          - img [ref=e256]
+      - generic [ref=e472]:
+        - img [ref=e473]
+        - generic [ref=e484]:
+          - paragraph [ref=e485]: No fresh tickets yet
+          - paragraph [ref=e486]: Newly published events will appear here.
+    - generic [ref=e324]:
+      - generic [ref=e325]:
+        - generic [ref=e326]:
+          - generic [ref=e327]:
+            - img [ref=e328]
+            - text: Latest news
+          - heading "Updates from TicketRush" [level=2] [ref=e538]
+          - paragraph [ref=e332]: View all posts
+        - link "View all" [ref=e539] [cursor=pointer]:
+          - /url: /news
+          - text: View all
+          - img [ref=e334]
+      - generic [ref=e336]: No posts have been published yet.
+    - generic [ref=e341]:
+      - generic [ref=e540]:
+        - img [ref=e542]
+        - generic [ref=e545]:
+          - generic [ref=e546]: Safe booking
+          - generic [ref=e547]: Clear holds, no double-selling, QR after confirmation
+      - generic [ref=e548]:
+        - img [ref=e550]
+        - generic [ref=e553]:
+          - generic [ref=e554]: Transparent lifecycle
+          - generic [ref=e555]: Expired holds release automatically and states update in realtime
+      - generic [ref=e556]:
+        - img [ref=e558]
+        - generic [ref=e560]:
+          - generic [ref=e561]: 24/7 support
+          - generic [ref=e562]: Customer support replies within five minutes
+    - generic [ref=e366]:
+      - generic [ref=e367]:
+        - generic [ref=e368]:
+          - generic [ref=e369]:
+            - img [ref=e371]
+            - text: TicketRush
+          - paragraph [ref=e373]: Online event ticketing with realtime seat holds, quick confirmation, and clear QR tickets.
+          - generic [ref=e374]:
+            - generic [ref=e375]:
+              - img [ref=e376]
+              - text: Transparent seat holds
+            - generic [ref=e379]:
+              - img [ref=e380]
+              - text: Clear support
+        - generic [ref=e382]:
+          - heading "Company" [level=4] [ref=e563]
+          - list [ref=e384]:
+            - listitem [ref=e564]:
+              - link "About TicketRush" [ref=e565] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e566]:
+              - link "News" [ref=e567] [cursor=pointer]:
+                - /url: /news
+            - listitem [ref=e568]:
+              - link "Contact" [ref=e569] [cursor=pointer]:
+                - /url: /help
+        - generic [ref=e391]:
+          - heading "Discover" [level=4] [ref=e570]
+          - list [ref=e393]:
+            - listitem [ref=e571]:
+              - link "All events" [ref=e572] [cursor=pointer]:
+                - /url: /events
+            - listitem [ref=e573]:
+              - link "Trending events" [ref=e574] [cursor=pointer]:
+                - /url: /events?sort=trending
+            - listitem [ref=e575]:
+              - link "Upcoming" [ref=e576] [cursor=pointer]:
+                - /url: /events?sort=upcoming
+            - listitem [ref=e577]:
+              - link "Budget tickets" [ref=e578] [cursor=pointer]:
+                - /url: /events?sort=priceAsc
+        - generic [ref=e402]:
+          - heading "Support" [level=4] [ref=e579]
+          - list [ref=e404]:
+            - listitem [ref=e580]:
+              - link "Help center" [ref=e581] [cursor=pointer]:
+                - /url: /help
+            - listitem [ref=e582]:
+              - link "Buying guide" [ref=e583] [cursor=pointer]:
+                - /url: /help#buying
+            - listitem [ref=e584]:
+              - link "Refund policy" [ref=e585] [cursor=pointer]:
+                - /url: /refund-policy
+            - listitem [ref=e586]:
+              - link "Terms of service" [ref=e587] [cursor=pointer]:
+                - /url: /terms
+      - generic [ref=e413]:
+        - generic [ref=e414]: © 2026 TicketRush. INT3306 project, UET, VNU
+        - generic [ref=e415]:
+          - generic [ref=e416]: Realtime seat hold
+          - generic [ref=e417]: Digital QR
+          - generic [ref=e418]: Virtual queue
+  - alert [ref=e487]
+  - generic [ref=e490] [cursor=pointer]:
+    - img [ref=e491]
+    - generic [ref=e493]: 1 error
+    - button "Hide Errors" [ref=e494]:
+      - img [ref=e495]

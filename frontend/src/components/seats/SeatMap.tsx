@@ -1,11 +1,14 @@
 'use client';
 
-import type { Seat } from '@/types';
+import { useState } from 'react';
+import { Minus, Plus, RotateCcw } from 'lucide-react';
+import type { EventLayoutConfig, Seat } from '@/types';
 import { getSeatBg, type PendingBooking, type ZoneData } from '@/lib/utils/seatUtils';
 import { SeatLegend } from './SeatLegend';
 
 interface Props {
   zones: ZoneData[];
+  layoutConfig?: EventLayoutConfig | null;
   selectedIds: Set<number>;
   booking: PendingBooking | null;
   onToggleSeat: (seat: Seat) => void;
@@ -74,15 +77,17 @@ function ZoneGrid({
   selectedIds,
   booking,
   onToggleSeat,
+  fillWidth = true,
 }: {
   zone: ZoneData;
   selectedIds: Set<number>;
   booking: PendingBooking | null;
   onToggleSeat: (seat: Seat) => void;
+  fillWidth?: boolean;
 }) {
   return (
     <div
-      className="w-max min-w-full rounded-[2rem] border border-black/5 p-6 shadow-sm md:p-8"
+      className={`${fillWidth ? 'min-w-full' : ''} w-max rounded-[2rem] border border-black/5 p-6 shadow-sm md:p-8`}
       style={{ backgroundColor: `${zone.color}10` }}
     >
       <div className="mb-8 border-b border-black/10 pb-4">
@@ -123,14 +128,198 @@ function ZoneGrid({
   );
 }
 
-export function SeatMap({ zones, selectedIds, booking, onToggleSeat }: Props) {
+function estimateZoneSize(zone: ZoneData) {
+  const rows = [...zone.rows.values()];
+  const rowCount = rows.length;
+  const maxCols = Math.max(0, ...rows.map((row) => row.length));
+  return {
+    width: Math.max(420, maxCols * 38 + 160),
+    height: Math.max(220, rowCount * 44 + 150),
+  };
+}
+
+function getAuthoredCanvasSize(zones: ZoneData[], layoutConfig: EventLayoutConfig) {
+  const positions = layoutConfig.positions;
+  const requiredWidths = zones.map((zone, index) => {
+    const pos = positions[index];
+    if (!pos?.w) return 0;
+    return (estimateZoneSize(zone).width * 100) / pos.w;
+  });
+  const requiredHeights = zones.map((zone, index) => {
+    const pos = positions[index];
+    if (!pos?.h) return 0;
+    return (estimateZoneSize(zone).height * 100) / pos.h;
+  });
+  return {
+    width: Math.min(2800, Math.max(1200, ...requiredWidths)),
+    height: Math.min(1900, Math.max(820, ...requiredHeights)),
+  };
+}
+
+function AuthoredSeatLayout({
+  zones,
+  layoutConfig,
+  selectedIds,
+  booking,
+  onToggleSeat,
+  zoom,
+}: {
+  zones: ZoneData[];
+  layoutConfig: EventLayoutConfig;
+  selectedIds: Set<number>;
+  booking: PendingBooking | null;
+  onToggleSeat: (seat: Seat) => void;
+  zoom: number;
+}) {
+  const canvas = getAuthoredCanvasSize(zones, layoutConfig);
+  const hasFixtures = layoutConfig.fixtures.length > 0;
+  const positionIndexByZoneId = new Map(
+    (layoutConfig.zone_ids ?? []).map((zoneId, index) => [zoneId, index]),
+  );
+
   return (
-    <div className="relative flex h-[calc(100vh-7rem)] min-h-[760px] min-w-0 flex-1 flex-col overflow-hidden rounded-[2rem] border border-stone-200 bg-[#f4f5f6] shadow-sm">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col items-center bg-gradient-to-b from-[#f4f5f6] via-[#f4f5f6]/90 to-transparent p-4 pb-10">
-        <div className="rounded-b-[2.5rem] bg-[#1c1c1c] px-32 py-4 text-sm font-bold tracking-[0.4em] text-white shadow-xl border-b-4 border-stone-900">
-          SÂN KHẤU CHÍNH
+    <div className="min-h-0 flex-1 overflow-auto overscroll-contain [scrollbar-gutter:stable_both-edges]">
+      <div
+        className="mx-auto my-6"
+        style={{ width: canvas.width * zoom, height: canvas.height * zoom }}
+      >
+        <div
+          className="relative origin-top-left rounded-[2rem] border border-stone-200 bg-white/65 shadow-inner transition-transform duration-200 ease-out"
+          style={{ width: canvas.width, height: canvas.height, transform: `scale(${zoom})` }}
+        >
+          {hasFixtures ? layoutConfig.fixtures.map((fixture) => (
+            <div
+              key={fixture.id}
+              className="absolute flex items-center justify-center rounded-3xl px-4 text-center text-sm font-bold tracking-[0.28em] shadow-sm"
+              style={{
+                left: `${fixture.pos.x}%`,
+                top: `${fixture.pos.y}%`,
+                width: `${fixture.pos.w}%`,
+                height: `${fixture.pos.h}%`,
+                backgroundColor: fixture.color,
+                color: fixture.textColor,
+              }}
+            >
+              {fixture.label}
+            </div>
+          )) : (
+            <div className="absolute left-1/2 top-6 flex -translate-x-1/2 items-center justify-center rounded-b-[2.5rem] bg-[#1c1c1c] px-32 py-4 text-sm font-bold tracking-[0.4em] text-white shadow-xl">
+              SÂN KHẤU CHÍNH
+            </div>
+          )}
+
+          {zones.map((zone, index) => {
+            const positionIndex = positionIndexByZoneId.get(zone.id) ?? index;
+            const pos = layoutConfig.positions[positionIndex];
+            if (!pos) return null;
+            const natural = estimateZoneSize(zone);
+            const boxWidth = (canvas.width * pos.w) / 100;
+            const boxHeight = (canvas.height * pos.h) / 100;
+            const scale = Math.min(1, boxWidth / natural.width, boxHeight / natural.height);
+
+            return (
+              <div
+                key={zone.id}
+                className="absolute"
+                style={{
+                  left: `${pos.x}%`,
+                  top: `${pos.y}%`,
+                  width: `${pos.w}%`,
+                  height: `${pos.h}%`,
+                }}
+              >
+                <div
+                  className="origin-top-left"
+                  style={{ transform: `scale(${Math.max(scale, 0.55)})` }}
+                >
+                  <ZoneGrid
+                    zone={zone}
+                    selectedIds={selectedIds}
+                    booking={booking}
+                    onToggleSeat={onToggleSeat}
+                    fillWidth={false}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ZoomControls({
+  zoom,
+  onZoomIn,
+  onZoomOut,
+  onReset,
+}: {
+  zoom: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="absolute right-4 top-4 z-20 flex items-center gap-1 rounded-2xl border border-stone-200 bg-white/95 p-1 shadow-soft backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={onZoomOut}
+        disabled={zoom <= 0.7}
+        aria-label="Thu nhỏ sơ đồ"
+        className="grid h-9 w-9 place-items-center rounded-xl text-stone-600 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300"
+      >
+        <Minus className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onReset}
+        aria-label="Đưa sơ đồ về 100 phần trăm"
+        className="min-w-[64px] rounded-xl px-2 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-100"
+      >
+        {Math.round(zoom * 100)}%
+      </button>
+      <button
+        type="button"
+        onClick={onZoomIn}
+        disabled={zoom >= 1.5}
+        aria-label="Phóng to sơ đồ"
+        className="grid h-9 w-9 place-items-center rounded-xl text-stone-600 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+      {zoom !== 1 && (
+        <button
+          type="button"
+          onClick={onReset}
+          aria-label="Đặt lại độ phóng"
+          className="grid h-9 w-9 place-items-center rounded-xl text-stone-500 transition hover:bg-stone-100"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function SeatMap({ zones, layoutConfig, selectedIds, booking, onToggleSeat }: Props) {
+  const [zoom, setZoom] = useState(1);
+  const useAuthoredLayout = Boolean(
+    layoutConfig
+    && layoutConfig.positions.length >= zones.length
+    && zones.length > 0,
+  );
+
+  return (
+    <div className="relative flex h-[calc(100vh-7rem)] min-h-[760px] min-w-0 flex-1 flex-col overflow-hidden rounded-[2rem] border border-stone-200 bg-[#f4f5f6] shadow-sm">
+      {useAuthoredLayout && (
+        <ZoomControls
+          zoom={zoom}
+          onZoomOut={() => setZoom((value) => Math.max(0.7, Number((value - 0.1).toFixed(1))))}
+          onZoomIn={() => setZoom((value) => Math.min(1.5, Number((value + 0.1).toFixed(1))))}
+          onReset={() => setZoom(1)}
+        />
+      )}
 
       {zones.length === 0 ? (
           <div className="flex w-full h-full flex-col items-center justify-center gap-4 py-16 text-center">
@@ -144,19 +333,35 @@ export function SeatMap({ zones, selectedIds, booking, onToggleSeat }: Props) {
           </div>
       ) : (
         <>
-          <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain [scrollbar-gutter:stable_both-edges]">
-            <div className="flex min-w-max flex-col items-center gap-10 px-6 pb-10 pt-32 md:px-10">
-              {zones.map((zone) => (
-                <ZoneGrid
-                  key={zone.id}
-                  zone={zone}
-                  selectedIds={selectedIds}
-                  booking={booking}
-                  onToggleSeat={onToggleSeat}
-                />
-              ))}
+          {useAuthoredLayout ? (
+            <AuthoredSeatLayout
+              zones={zones}
+              layoutConfig={layoutConfig!}
+              selectedIds={selectedIds}
+              booking={booking}
+              onToggleSeat={onToggleSeat}
+              zoom={zoom}
+            />
+          ) : (
+            <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain [scrollbar-gutter:stable_both-edges]">
+              <div className="flex min-w-max flex-col items-center gap-10 px-6 pb-10 md:px-10">
+                <div className="pointer-events-none flex w-full max-w-4xl flex-col items-center pb-6 pt-0">
+                  <div className="mt-0 rounded-b-[2.5rem] border-b-4 border-stone-900 bg-[#1c1c1c] px-32 py-4 text-sm font-bold tracking-[0.4em] text-white shadow-xl">
+                    SÂN KHẤU CHÍNH
+                  </div>
+                </div>
+                {zones.map((zone) => (
+                  <ZoneGrid
+                    key={zone.id}
+                    zone={zone}
+                    selectedIds={selectedIds}
+                    booking={booking}
+                    onToggleSeat={onToggleSeat}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <div className="hidden border-t border-stone-200 bg-white/90 px-5 py-3 md:block">
             <SeatLegend zones={zones} />
           </div>

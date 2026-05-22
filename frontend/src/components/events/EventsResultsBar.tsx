@@ -2,14 +2,7 @@
 
 import { ArrowUpDown, ChevronDown, Grid3x3, List } from 'lucide-react';
 import type { SortKey, ViewMode } from '@/lib/utils/eventsFilters';
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'trending', label: 'Phổ biến nhất' },
-  { key: 'newest', label: 'Mới nhất' },
-  { key: 'upcoming', label: 'Sắp diễn ra' },
-  { key: 'priceAsc', label: 'Giá: Thấp đến cao' },
-  { key: 'priceDesc', label: 'Giá: Cao đến thấp' },
-];
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   loading: boolean;
@@ -28,6 +21,15 @@ export function EventsResultsBar({
   onSortChange,
   onViewChange,
 }: Props) {
+  const { messages, formatNumber } = useLocale();
+  const sortOptions: { key: SortKey; label: string }[] = [
+    { key: 'trending', label: messages.events.sortTrending },
+    { key: 'newest', label: messages.events.sortNewest },
+    { key: 'upcoming', label: messages.events.sortUpcoming },
+    { key: 'priceAsc', label: messages.events.sortPriceAsc },
+    { key: 'priceDesc', label: messages.events.sortPriceDesc },
+  ];
+
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <div className="text-sm text-stone-600">
@@ -35,7 +37,7 @@ export function EventsResultsBar({
           <span className="inline-block h-4 w-32 animate-pulse rounded bg-stone-200" />
         ) : (
           <>
-            Tìm thấy <span className="font-bold text-stone-900">{totalCount}</span> sự kiện
+            {messages.events.found} <span className="font-bold text-stone-900">{formatNumber(totalCount)}</span> {messages.common.events}
           </>
         )}
       </div>
@@ -47,7 +49,7 @@ export function EventsResultsBar({
             onChange={(e) => onSortChange(e.target.value as SortKey)}
             className="h-10 appearance-none rounded-full border border-stone-200 bg-white pl-9 pr-8 text-sm font-medium text-stone-700 focus:border-amber-500 focus:outline-none"
           >
-            {SORT_OPTIONS.map((s) => (
+            {sortOptions.map((s) => (
               <option key={s.key} value={s.key}>
                 {s.label}
               </option>
@@ -58,7 +60,7 @@ export function EventsResultsBar({
         <div className="flex h-10 items-center gap-0.5 rounded-full border border-stone-200 bg-white p-0.5">
           <button
             onClick={() => onViewChange('grid')}
-            aria-label="Xem dạng lưới"
+            aria-label={messages.events.gridView}
             className={`grid h-9 w-9 place-items-center rounded-full transition-colors ${
               view === 'grid' ? 'bg-stone-900 text-white' : 'text-stone-500 hover:text-stone-900'
             }`}
@@ -67,7 +69,7 @@ export function EventsResultsBar({
           </button>
           <button
             onClick={() => onViewChange('list')}
-            aria-label="Xem dạng danh sách"
+            aria-label={messages.events.listView}
             className={`grid h-9 w-9 place-items-center rounded-full transition-colors ${
               view === 'list' ? 'bg-stone-900 text-white' : 'text-stone-500 hover:text-stone-900'
             }`}

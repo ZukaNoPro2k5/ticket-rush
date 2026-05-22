@@ -427,12 +427,12 @@ export default function AdminAnalyticsPage() {
     <motion.div variants={staggerContainer()} initial="hidden" animate="visible" className="space-y-6">
 
       {/* ── Header + Controls ── */}
-      <motion.div variants={fadeUp} className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <div className="min-h-10">
+      <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-end gap-3">
+        <div>
 
           {/* Navigator — hidden in 'years' mode */}
           {period !== 'years' && (
-            <div ref={navRef} className="relative flex items-center gap-0.5 rounded-xl border border-stone-200 bg-white px-1.5 py-1 shadow-sm">
+            <div ref={navRef} className="relative inline-flex items-center gap-0.5 rounded-xl border border-stone-200 bg-white px-1.5 py-1 shadow-sm">
               <button
                 onClick={handlePrev}
                 disabled={atMin}
@@ -555,8 +555,8 @@ export default function AdminAnalyticsPage() {
         </div>
       </motion.div>
 
-      {/* ── Main Revenue Chart ── */}
-      <motion.div variants={fadeUp}>
+      {/* ── Main Revenue Chart + compact distribution rail ── */}
+      <motion.div variants={fadeUp} className="flex flex-col gap-4">
         <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
           <div className="mb-5">
             <h2 className="section-title">{chartConfig.title}</h2>
@@ -567,16 +567,44 @@ export default function AdminAnalyticsPage() {
             </p>
           </div>
           {isRevLoading
-            ? <div className="h-[300px] animate-pulse rounded-xl bg-stone-50" />
+            ? <div className="h-[260px] animate-pulse rounded-xl bg-stone-50" />
             : <RevenueChart
                 data={chartConfig.data}
                 monthLabels={chartConfig.labels}
                 activeIndex={chartConfig.activeIndex}
                 compData={chartConfig.compData}
                 compLabel={chartConfig.compLabel}
-                chartHeight={300}
+                chartHeight={260}
               />
           }
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <CompactDonutCard
+            title="Danh mục"
+            subtitle="Tỷ trọng doanh thu"
+            icon={LayoutGrid}
+            loading={catLoading}
+            empty={catDonutData.length === 0}
+            data={catDonutData}
+            valueFormatter={fmt}
+          />
+          <CompactDonutCard
+            title="Giới tính"
+            subtitle="Phân bố khách hàng"
+            icon={Users}
+            loading={audLoading}
+            empty={genderDonutData.every(d => d.value === 0)}
+            data={genderDonutData}
+          />
+          <CompactDonutCard
+            title="Độ tuổi"
+            subtitle="Nhóm khách hàng"
+            icon={BarChart2}
+            loading={audLoading}
+            empty={ageDonutData.every(d => d.value === 0)}
+            data={ageDonutData}
+          />
         </div>
       </motion.div>
 
@@ -601,58 +629,42 @@ export default function AdminAnalyticsPage() {
         </div>
       </motion.div>
 
-      {/* ── 3 Donut Charts — equal grid ── */}
-      <motion.div variants={fadeUp}>
-        <div className="grid gap-4 lg:grid-cols-3">
-
-          {/* Category */}
-          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
-            <div className="mb-1 flex items-center gap-2">
-              <LayoutGrid className="h-4 w-4 text-stone-400" />
-              <h2 className="section-title">Danh mục</h2>
-            </div>
-            <p className="mb-4 meta-text">Tỷ trọng doanh thu theo danh mục</p>
-            {catLoading
-              ? <div className="h-[180px] animate-pulse rounded-xl bg-stone-50" />
-              : catDonutData.length === 0
-                ? <p className="py-12 text-center text-sm text-stone-400">Chua co du lieu</p>
-                : <StatDonut data={catDonutData} valueFormatter={fmt} />
-            }
-          </div>
-
-          {/* Gender */}
-          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
-            <div className="mb-1 flex items-center gap-2">
-              <Users className="h-4 w-4 text-stone-400" />
-              <h2 className="section-title">Giới tính</h2>
-            </div>
-            <p className="mb-4 meta-text">Phân bố khách hàng theo giới tính</p>
-            {audLoading
-              ? <div className="h-[180px] animate-pulse rounded-xl bg-stone-50" />
-              : genderDonutData.every(d => d.value === 0)
-                ? <p className="py-12 text-center text-sm text-stone-400">Chua co du lieu</p>
-                : <StatDonut data={genderDonutData} />
-            }
-          </div>
-
-          {/* Age */}
-          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
-            <div className="mb-1 flex items-center gap-2">
-              <BarChart2 className="h-4 w-4 text-stone-400" />
-              <h2 className="section-title">Độ tuổi</h2>
-            </div>
-            <p className="mb-4 meta-text">Phân bố khách hàng theo nhóm tuổi</p>
-            {audLoading
-              ? <div className="h-[180px] animate-pulse rounded-xl bg-stone-50" />
-              : ageDonutData.every(d => d.value === 0)
-                ? <p className="py-12 text-center text-sm text-stone-400">Chua co du lieu</p>
-                : <StatDonut data={ageDonutData} />
-            }
-          </div>
-
-        </div>
-      </motion.div>
-
     </motion.div>
+  );
+}
+
+function CompactDonutCard({
+  title,
+  subtitle,
+  icon: Icon,
+  loading,
+  empty,
+  data,
+  valueFormatter,
+}: {
+  title: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  loading: boolean;
+  empty: boolean;
+  data: { label: string; value: number; color: string }[];
+  valueFormatter?: (v: number) => string;
+}) {
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
+      <div className="mb-3 flex items-center gap-2">
+        <Icon className="h-4 w-4 text-stone-400" />
+        <div>
+          <h2 className="section-title">{title}</h2>
+          <p className="meta-text">{subtitle}</p>
+        </div>
+      </div>
+      {loading
+        ? <div className="h-[132px] animate-pulse rounded-xl bg-stone-50" />
+        : empty
+          ? <p className="py-10 text-center text-sm text-stone-400">Chưa có dữ liệu</p>
+          : <StatDonut data={data} valueFormatter={valueFormatter} compact />
+      }
+    </div>
   );
 }

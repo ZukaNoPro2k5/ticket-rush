@@ -1,17 +1,20 @@
+'use client';
+
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { EVENT_CATEGORY_OPTIONS } from './EventsCategoryBar';
-
-const BADGE_MAP: Record<NonNullable<DisplayEvent['badge']>, { label: string; cls: string }> = {
-  hot: { label: 'HOT', cls: 'bg-rose-500 text-white' },
-  new: { label: 'MỚI', cls: 'bg-amber-500 text-white' },
-  'almost-sold': { label: 'SẮP CHÁY VÉ', cls: 'bg-orange-600 text-white' },
-  special: { label: 'ĐẶC BIỆT', cls: 'bg-purple-600 text-white' },
-};
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export function EventCard({ event }: { event: DisplayEvent }) {
-  const badge = event.badge ? BADGE_MAP[event.badge] : null;
+  const { messages } = useLocale();
+  const badgeMap: Record<NonNullable<DisplayEvent['badge']>, { label: string; cls: string }> = {
+    hot: { label: 'HOT', cls: 'bg-rose-500 text-white' },
+    new: { label: messages.events.new, cls: 'bg-amber-500 text-white' },
+    'almost-sold': { label: messages.events.almostSold, cls: 'bg-orange-600 text-white' },
+    special: { label: messages.events.special, cls: 'bg-purple-600 text-white' },
+  };
+  const badge = event.badge ? badgeMap[event.badge] : null;
   const categoryIcon = EVENT_CATEGORY_OPTIONS.find((c) => c.key === event.categoryKey)?.icon ?? 'fa-solid fa-tag';
 
   return (
@@ -38,7 +41,7 @@ export function EventCard({ event }: { event: DisplayEvent }) {
 
           <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-stone-700 backdrop-blur-md">
             <i className={`${categoryIcon} text-amber-600`} aria-hidden />
-            {event.category}
+            {messages.categories[event.categoryKey]}
           </span>
 
           <div className="absolute inset-x-3 bottom-3 flex items-center justify-between text-xs text-white">
@@ -61,8 +64,8 @@ export function EventCard({ event }: { event: DisplayEvent }) {
 
           <div className="mt-auto pt-3">
             <div className="mb-1 flex items-center justify-between text-[11px] text-stone-500">
-              <span>Đã bán {event.soldPercent}%</span>
-              {event.soldPercent >= 80 && <span className="font-semibold text-orange-600">Sắp cháy vé</span>}
+              <span>{messages.common.sold} {event.soldPercent}%</span>
+              {event.soldPercent >= 80 && <span className="font-semibold text-orange-600">{messages.events.almostSold}</span>}
             </div>
             <div className="h-1 overflow-hidden rounded-full bg-stone-100">
               <div

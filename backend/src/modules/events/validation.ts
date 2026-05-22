@@ -14,6 +14,25 @@ export const eventCategoryValues = [
 const categoryEnum = z.enum(eventCategoryValues);
 const statusEnum = z.enum(['draft', 'published', 'cancelled', 'completed']);
 const seatingModeEnum = z.enum(['seated', 'zoned', 'admission']);
+const zonePositionSchema = z.object({
+  x: z.number().finite().min(0).max(100),
+  y: z.number().finite().min(0).max(100),
+  w: z.number().finite().positive().max(100),
+  h: z.number().finite().positive().max(100),
+});
+const fixtureSchema = z.object({
+  id: z.string().trim().min(1).max(120),
+  label: z.string().trim().min(1).max(120),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  textColor: z.string().trim().min(1).max(30),
+  pos: zonePositionSchema,
+});
+export const eventLayoutConfigSchema = z.object({
+  pattern_id: z.string().trim().min(1).max(120).nullable().optional(),
+  zone_ids: z.array(z.number().int().positive()).max(100).optional(),
+  positions: z.array(zonePositionSchema).max(100).default([]),
+  fixtures: z.array(fixtureSchema).max(100).default([]),
+});
 
 export const createEventSchema = z.object({
   title: z.string().min(3, 'Tiêu đề tối thiểu 3 ký tự').max(255),
@@ -23,6 +42,7 @@ export const createEventSchema = z.object({
   venue: z.string().min(3, 'Địa điểm tối thiểu 3 ký tự').max(255),
   event_date: z.string().refine((v) => !isNaN(Date.parse(v)), 'Ngày không hợp lệ'),
   poster_url: z.string().url('URL poster không hợp lệ').max(500).optional(),
+  layout_config: eventLayoutConfigSchema.optional(),
 });
 
 export const updateEventSchema = z.object({
@@ -34,6 +54,7 @@ export const updateEventSchema = z.object({
   event_date: z.string().refine((v) => !isNaN(Date.parse(v)), 'Ngày không hợp lệ').optional(),
   poster_url: z.string().url().max(500).optional(),
   queue_enabled: z.boolean().optional(),
+  layout_config: eventLayoutConfigSchema.nullable().optional(),
 });
 
 export const changeStatusSchema = z.object({

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import {
@@ -26,7 +27,14 @@ export default function HomePage() {
   const [recommendedEvents, setRecommendedEvents] = useState<DisplayEvent[]>([]);
   const [hasPersonalization, setHasPersonalization] = useState(false);
   const [eventsReady, setEventsReady] = useState(false);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (_hasHydrated && isAuthenticated && user?.role === 'admin') {
+      router.replace('/admin');
+    }
+  }, [_hasHydrated, isAuthenticated, user, router]);
 
   useEffect(() => {
     Promise.all([

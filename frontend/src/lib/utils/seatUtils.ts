@@ -18,7 +18,7 @@ export interface ZoneData {
   rows: Map<string, Seat[]>;
 }
 
-export function groupSeatsByZone(seats: Seat[]): ZoneData[] {
+export function groupSeatsByZone(seats: Seat[], preferredZoneOrder: number[] = []): ZoneData[] {
   const map = new Map<number, ZoneData>();
 
   for (const seat of seats) {
@@ -45,7 +45,15 @@ export function groupSeatsByZone(seats: Seat[]): ZoneData[] {
     }
   }
 
-  return [...map.values()];
+  const zoneRank = new Map(preferredZoneOrder.map((id, index) => [id, index]));
+  return [...map.values()].sort((a, b) => {
+    const aRank = zoneRank.get(a.id);
+    const bRank = zoneRank.get(b.id);
+    if (aRank !== undefined || bRank !== undefined) {
+      return (aRank ?? Number.MAX_SAFE_INTEGER) - (bRank ?? Number.MAX_SAFE_INTEGER);
+    }
+    return a.id - b.id;
+  });
 }
 
 export function getSeatBg(

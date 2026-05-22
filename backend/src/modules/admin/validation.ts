@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { eventLayoutConfigSchema } from '../events/validation';
 
 export const updateSystemSettingsSchema = z.object({
   company_name: z.string().trim().min(1).max(120),
@@ -38,8 +39,26 @@ export const updateEmailTemplateSchema = z.object({
   status: z.enum(['active', 'inactive']),
 });
 
+const patternZoneSchema = z.object({
+  name: z.string().trim().max(50),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  total_rows: z.string().trim().optional(),
+  total_cols: z.string().trim().optional(),
+  capacity: z.string().trim().optional(),
+});
+
+export const createLayoutPatternSchema = z.object({
+  label: z.string().trim().min(1).max(120),
+  seating_mode: z.enum(['seated', 'zoned']),
+  diagram: z.enum(['rows', 'bands', 'concert', 'quadrant']),
+  zones: z.array(patternZoneSchema).min(1).max(100),
+  positions: eventLayoutConfigSchema.shape.positions,
+  fixtures: eventLayoutConfigSchema.shape.fixtures,
+});
+
 export type UpdateSystemSettingsInput = z.infer<typeof updateSystemSettingsSchema>;
 export type UpdatePaymentSandboxInput = z.infer<typeof updatePaymentSandboxSchema>;
 export type UpdatePaymentGatewayInput = z.infer<typeof updatePaymentGatewaySchema>;
 export type UpdateSmtpSettingsInput = z.infer<typeof updateSmtpSettingsSchema>;
 export type UpdateEmailTemplateInput = z.infer<typeof updateEmailTemplateSchema>;
+export type CreateLayoutPatternInput = z.infer<typeof createLayoutPatternSchema>;

@@ -5,13 +5,16 @@ import { useState, useEffect } from 'react';
  * Returns 0 when expired or expiresAt is null.
  */
 export function useCountdown(expiresAt: string | null): number {
-  const [seconds, setSeconds] = useState(0);
+  const calculate = (expireString: string | null) => {
+    if (!expireString) return 0;
+    return Math.max(0, Math.floor((new Date(expireString).getTime() - Date.now()) / 1000));
+  };
+
+  const [seconds, setSeconds] = useState(() => calculate(expiresAt));
 
   useEffect(() => {
-    if (!expiresAt) {
-      setSeconds(0);
-      return;
-    }
+    setSeconds(calculate(expiresAt)); // Cập nhật ngay khi expiresAt đổi
+    if (!expiresAt) return;
 
     const calc = () => {
       const remaining = Math.max(

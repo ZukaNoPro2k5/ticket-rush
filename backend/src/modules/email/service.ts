@@ -1,44 +1,25 @@
 import { createTransport } from 'nodemailer';
-import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import pool from '../../config/database';
+import prisma from '../../config/prisma';
 
 type TemplateId = 'booking_confirmation' | 'booking_reminder' | 'account_welcome' | 'password_reset';
 type TemplateValues = Record<string, string | number | null | undefined>;
-
-interface TemplateRow extends RowDataPacket {
-  id: TemplateId;
-  subject: string;
-  body: string;
-  status: 'active' | 'inactive';
-}
-
-interface SmtpRow extends RowDataPacket {
-  host: string;
-  port: number;
-  from_name: string;
-  from_email: string;
-  username: string;
-  password: string | null;
-  encryption: 'tls' | 'ssl' | 'none';
-}
 
 function render(text: string, values: TemplateValues) {
   return text.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(values[key] ?? ''));
 }
 
 async function getTemplate(id: TemplateId) {
-  const [rows] = await pool.execute<TemplateRow[]>(
-    'SELECT id, subject, body, status FROM email_templates WHERE id = ? LIMIT 1',
-    [id],
-  );
-  return rows[0] ?? null;
+  return prisma.email_templates.findUnique({
+    where: { id },
+    select: { id: true, subject: true, body: true, status: true },
+  });
 }
 
 async function getSmtp() {
-  const [rows] = await pool.execute<SmtpRow[]>(
-    'SELECT host, port, from_name, from_email, username, password, encryption FROM smtp_settings WHERE id = 1 LIMIT 1',
-  );
-  return rows[0] ?? null;
+  return prisma.smtp_settings.findUnique({
+    where: { id: 1 },
+    select: { host: true, port: true, from_name: true, from_email: true, username: true, password: true, encryption: true },
+  });
 }
 
 export async function sendTemplatedEmail(
@@ -51,52 +32,52 @@ export async function sendTemplatedEmail(
 
   const subject = render(template.subject, values);
   const body = render(template.body, values);
-  const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO email_outbox (template_id, recipient, subject, body, status)
-     VALUES (?, ?, ?, ?, 'queued')`,
-    [templateId, recipient, subject, body],
-  );
-  const outboxId = result.insertId;
+  const outbox = await prisma.email_outbox.create({
+    data: { template_id: templateId, recipient, subject, body, status: 'queued' },
+  });
+  const outboxId = outbox.id;
 
-  if (!smtp?.password) {
-    await pool.execute(
-      `UPDATE email_outbox
-       SET status = 'skipped', error_message = ?
-       WHERE id = ?`,
-      ['SMTP chưa có mật khẩu; email đã ghi vào outbox nhưng chưa gửi.', outboxId],
-    );
+  const user = process.env.SMTP_USER || smtp?.username;
+  const pass = process.env.SMTP_PASS || smtp?.password;
+  const isGmail = !!process.env.SMTP_PASS;
+
+  if (!pass) {
+    await prisma.email_outbox.update({
+      where: { id: outboxId },
+      data: { status: 'skipped', error_message: 'SMTP chưa có mật khẩu; email đã ghi vào outbox nhưng chưa gửi.' },
+    });
     return { outboxId, status: 'skipped' as const };
   }
 
   try {
-    const transport = createTransport({
-      host: smtp.host,
-      port: Number(smtp.port),
-      secure: smtp.encryption === 'ssl',
-      auth: smtp.username ? { user: smtp.username, pass: smtp.password } : undefined,
-      requireTLS: smtp.encryption === 'tls',
-    });
+    const transport = createTransport(
+      isGmail
+        ? {
+            service: 'gmail',
+            auth: { user, pass },
+          }
+        : {
+            host: smtp?.host,
+            port: Number(smtp?.port),
+            secure: smtp?.encryption === 'ssl',
+            auth: user ? { user, pass } : undefined,
+            requireTLS: smtp?.encryption === 'tls',
+          }
+    );
     await transport.sendMail({
-      from: `"${smtp.from_name}" <${smtp.from_email}>`,
+      from: `"${smtp?.from_name || 'TicketRush'}" <${user}>`,
       to: recipient,
       subject,
       text: body,
     });
-    await pool.execute(
-      `UPDATE email_outbox
-       SET status = 'sent', sent_at = NOW(), error_message = NULL
-       WHERE id = ?`,
-      [outboxId],
-    );
+    await prisma.email_outbox.update({
+      where: { id: outboxId },
+      data: { status: 'sent', sent_at: new Date(), error_message: null },
+    });
     return { outboxId, status: 'sent' as const };
   } catch (err) {
     const message = err instanceof Error ? err.message.slice(0, 500) : 'Không gửi được email';
-    await pool.execute(
-      `UPDATE email_outbox
-       SET status = 'failed', error_message = ?
-       WHERE id = ?`,
-      [message, outboxId],
-    );
+    await prisma.email_outbox.update({ where: { id: outboxId }, data: { status: 'failed', error_message: message } });
     return { outboxId, status: 'failed' as const };
   }
 }

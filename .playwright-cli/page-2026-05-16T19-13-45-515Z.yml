@@ -1,0 +1,63 @@
+- main [ref=e2]:
+  - complementary [ref=e3]:
+    - link "TicketRush" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - img [ref=e7]
+      - text: TicketRush
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - img [ref=e11]
+        - text: "Nền tảng vé sự kiện #1 Việt Nam"
+      - heading "Mọi sự kiện đỉnh nhất, trong tầm tay bạn." [level=2] [ref=e14]:
+        - text: Mọi sự kiện đỉnh nhất,
+        - text: trong tầm tay bạn.
+      - paragraph [ref=e15]: Khám phá concert, workshop và trận đấu hot trong một luồng đặt vé gọn, rõ và cập nhật theo thời gian thực.
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - img [ref=e19]
+          - generic [ref=e21]:
+            - generic [ref=e22]: Đặt vé trong 30 giây
+            - generic [ref=e23]: Checkout nhanh, không lag, giữ ghế tức thì.
+        - generic [ref=e24]:
+          - img [ref=e26]
+          - generic [ref=e29]:
+            - generic [ref=e30]: Đặt vé an toàn
+            - generic [ref=e31]: Không bán trùng ghế, QR sinh ngay sau xác nhận.
+        - generic [ref=e32]:
+          - img [ref=e34]
+          - generic [ref=e37]:
+            - generic [ref=e38]: Gợi ý theo sở thích
+            - generic [ref=e39]: Ưu tiên sự kiện hợp gu từ dữ liệu bạn chọn.
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]: T
+        - generic [ref=e43]: M
+        - generic [ref=e44]: L
+        - generic [ref=e45]: H
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - img [ref=e48]
+          - img [ref=e50]
+          - img [ref=e52]
+          - img [ref=e54]
+          - img [ref=e56]
+          - text: "4.9"
+        - text: +1,200 sự kiện đang mở bán
+  - generic [ref=e58]:
+    - generic [ref=e59]:
+      - link "TicketRush" [ref=e60] [cursor=pointer]:
+        - /url: /
+        - img [ref=e62]
+        - text: TicketRush
+      - link "← Về trang chủ" [ref=e64] [cursor=pointer]:
+        - /url: /
+    - generic [ref=e66]:
+      - generic [ref=e67]:
+        - heading "Đặt lại mật khẩu" [level=1] [ref=e68]
+        - paragraph [ref=e69]: Mật khẩu mới cần ít nhất 8 ký tự, có chữ hoa và chữ số.
+      - generic [ref=e70]:
+        - textbox "Mật khẩu mới" [ref=e71]
+        - textbox "Nhập lại mật khẩu" [ref=e72]
+        - button "Cập nhật mật khẩu" [ref=e73]
+      - link "Về đăng nhập" [ref=e75] [cursor=pointer]:
+        - /url: /login

@@ -112,6 +112,11 @@ export const insights = asyncHandler(async (_req: Request, res: Response) => {
   sendSuccess(res, data);
 });
 
+export const businessReport = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await adminService.generateBusinessReport();
+  sendSuccess(res, data);
+});
+
 export const systemSettings = asyncHandler(async (_req: Request, res: Response) => {
   const data = await adminService.getSystemSettings();
   sendSuccess(res, data);
@@ -156,4 +161,14 @@ export const updateSmtpSettings = asyncHandler(async (req: Request, res: Respons
 export const updateEmailTemplate = asyncHandler(async (req: Request, res: Response) => {
   const data = await adminService.updateEmailTemplate(req.params.id, req.body);
   sendSuccess(res, data, 'Đã cập nhật mẫu email');
+});
+
+export const layoutPatterns = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await adminService.listLayoutPatterns();
+  sendSuccess(res, data);
+});
+
+export const createLayoutPattern = asyncHandler(async (req: Request, res: Response) => {
+  const data = await adminService.createLayoutPattern(req.body);
+  sendSuccess(res, data, 'Đã lưu mẫu sơ đồ');
 });

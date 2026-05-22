@@ -1,0 +1,29 @@
+[   14490ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:38559
+[   15174ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/posts?limit=5' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15176ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/posts?limit=5:0
+[   15206ms] AxiosError: Network Error
+    at XMLHttpRequest.handleError (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/adapters/xhr.js:133:21)
+    at Axios.request (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/core/Axios.js:56:41)
+    at async listPosts (webpack-internal:///(app-pages-browser)/./src/lib/api/posts.ts:16:17)
+[   15248ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=100&sort=event_date&order=asc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15249ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=100&sort=event_date&order=asc:0
+[   15249ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/posts?limit=5' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15250ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/posts?limit=5:0
+[   15265ms] AxiosError: Network Error
+    at XMLHttpRequest.handleError (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/adapters/xhr.js:133:21)
+    at Axios.request (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/core/Axios.js:56:41)
+    at async listPosts (webpack-internal:///(app-pages-browser)/./src/lib/api/posts.ts:16:17)
+[   15262ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=100&sort=event_date&order=asc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15262ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=100&sort=event_date&order=asc:0
+[   15263ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=200&sort=event_date&order=asc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15263ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=200&sort=event_date&order=asc:0
+[   15264ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=8&sort=created_at&order=desc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15264ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=8&sort=created_at&order=desc:0
+[   15345ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=200&sort=event_date&order=asc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15349ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=200&sort=event_date&order=asc:0
+[   15350ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=8&sort=created_at&order=desc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15351ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=8&sort=created_at&order=desc:0
+[   15351ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=10&sort=sold&order=desc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15353ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=10&sort=sold&order=desc:0
+[   15386ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=10&sort=sold&order=desc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/:0
+[   15387ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=10&sort=sold&order=desc:0

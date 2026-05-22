@@ -9,10 +9,18 @@ import type { DisplayEvent } from '@/types';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import { EventCard, EventCardSkeleton } from '@/components/events';
 import EmptyState from '@/components/ui/EmptyState';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export function ThisWeekSection({ allEvents = [], loading = false }: { allEvents?: DisplayEvent[]; loading?: boolean }) {
   const [tab, setTab] = useState<TimeTabKey>('week');
   const { ref, inView } = useSectionInView();
+  const { messages } = useLocale();
+  const timeLabels: Record<TimeTabKey, string> = {
+    today: messages.home.today,
+    weekend: messages.home.weekend,
+    week: messages.home.week,
+    month: messages.home.month,
+  };
 
   const events = useMemo(() => {
     const sourceData = allEvents;
@@ -70,13 +78,13 @@ export function ThisWeekSection({ allEvents = [], loading = false }: { allEvents
         >
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-700">
-              <Calendar className="h-3.5 w-3.5" /> Sẽ diễn ra
+              <Calendar className="h-3.5 w-3.5" /> {messages.home.scheduled}
             </span>
-            <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Sự kiện sắp diễn ra</h2>
-            <p className="mt-1 text-sm text-stone-500 md:text-base">Đặt vé sớm — giá tốt nhất, chỗ đẹp nhất</p>
+            <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">{messages.home.upcomingTitle}</h2>
+            <p className="mt-1 text-sm text-stone-500 md:text-base">{messages.home.upcomingDesc}</p>
           </div>
           <Link href="/events" className="hidden items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800 md:inline-flex">
-            Xem tất cả <ArrowRight className="h-4 w-4" />
+            {messages.common.viewAll} <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
 
@@ -91,7 +99,7 @@ export function ThisWeekSection({ allEvents = [], loading = false }: { allEvents
                   : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
               }`}
             >
-              {t.label}
+              {timeLabels[t.key]}
             </button>
           ))}
         </div>
@@ -103,8 +111,8 @@ export function ThisWeekSection({ allEvents = [], loading = false }: { allEvents
         ) : events.length === 0 ? (
           <EmptyState
             variant="events"
-            headline="Chưa có sự kiện sắp diễn ra"
-            subtext="Khi admin mở bán sự kiện mới, chúng sẽ xuất hiện ở đây ngay."
+            headline={messages.home.noUpcoming}
+            subtext={messages.home.noUpcomingDesc}
             className="rounded-2xl border border-stone-200 bg-stone-50"
           />
         ) : (

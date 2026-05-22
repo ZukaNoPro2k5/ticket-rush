@@ -8,6 +8,7 @@ import {
   updatePaymentSandboxSchema,
   updateSmtpSettingsSchema,
   updateSystemSettingsSchema,
+  createLayoutPatternSchema,
 } from './validation';
 
 const router = Router();
@@ -30,6 +31,7 @@ router.get('/bookings',         adminController.listBookings);
 router.get('/advanced-stats',   adminController.advancedStats);
 router.get('/today-stats',      adminController.todayStats);
 router.get('/insights',         adminController.insights);
+router.get('/business-report',  adminController.businessReport);
 router.get('/settings/system',  adminController.systemSettings);
 router.put('/settings/system',  validateBody(updateSystemSettingsSchema), adminController.updateSystemSettings);
 router.get('/settings/payments', adminController.paymentSettings);
@@ -38,5 +40,7 @@ router.put('/settings/payments/:id', validateBody(updatePaymentGatewaySchema), a
 router.get('/settings/mail', adminController.mailSettings);
 router.put('/settings/mail/smtp', validateBody(updateSmtpSettingsSchema), adminController.updateSmtpSettings);
 router.put('/settings/mail/templates/:id', validateBody(updateEmailTemplateSchema), adminController.updateEmailTemplate);
+router.get('/layout-patterns', adminController.layoutPatterns);
+router.post('/layout-patterns', validateBody(createLayoutPatternSchema), adminController.createLayoutPattern);
 
 export default router;

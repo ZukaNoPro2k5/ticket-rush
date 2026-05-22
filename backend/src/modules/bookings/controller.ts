@@ -6,6 +6,7 @@ import * as bookingsService from './service';
 import * as ticketsService from '../tickets/service';
 import * as queueService from '../queue/service';
 import { getBookingRules } from '../../config/runtimeSettings';
+import { sendTemplatedEmail } from '../email/service';
 import type {
   ApplyBookingPromoInput,
   ConfirmBookingInput,
@@ -115,6 +116,22 @@ export const confirm = asyncHandler(async (req: Request, res: Response) => {
   io.to(`event:${booking.event.id}`).emit('seat:status_changed',
     seatIds.map((id) => ({ seat_id: id, status: 'sold' })),
   );
+
+  // Gửi email xác nhận đặt vé (fire-and-forget, không block response)
+  const seatList = tickets.map((t) => t.seat).join(', ');
+  const eventDate = new Date(booking.event.event_date).toLocaleString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+  sendTemplatedEmail('booking_confirmation', booking.user.email, {
+    user_name:   booking.user.full_name,
+    event_name:  booking.event.title,
+    event_date:  eventDate,
+    venue:        booking.event.venue,
+    seat_list:   seatList,
+    total_amount: Number(booking.total_amount).toLocaleString('vi-VN') + 'đ',
+    booking_id:  String(bookingId),
+  }).catch(() => { /* Không gửi được email thì bỏ qua, không fail request */ });
 
   sendSuccess(res, { booking_id: bookingId, tickets }, 'Thanh toán thành công! Vé đã được tạo');
 });

@@ -8,8 +8,11 @@ import { useAuthStore } from '@/stores/authStore';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import { EventCard, EventCardSkeleton } from '@/components/events';
 import EmptyState from '@/components/ui/EmptyState';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 function GuestCallout() {
+  const { messages } = useLocale();
+
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
       <div className="flex items-center gap-3">
@@ -17,15 +20,15 @@ function GuestCallout() {
           <Sparkles className="h-5 w-5 text-amber-600" />
         </div>
         <div>
-          <div className="font-semibold text-stone-900">Mở khóa đề xuất riêng cho bạn</div>
-          <div className="text-sm text-stone-500">Đăng nhập để lưu chủ đề yêu thích và nhận gợi ý sát gu hơn</div>
+          <div className="font-semibold text-stone-900">{messages.home.unlockRecommendations}</div>
+          <div className="text-sm text-stone-500">{messages.home.unlockDesc}</div>
         </div>
       </div>
       <Link
         href="/login"
         className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-amber-600"
       >
-        Đăng nhập <ArrowRight className="h-4 w-4" />
+        {messages.nav.login} <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
   );
@@ -42,16 +45,17 @@ export function ForYouSection({
 }) {
   const { isAuthenticated, user } = useAuthStore();
   const { ref, inView } = useSectionInView();
+  const { messages } = useLocale();
   const displayEvents = events;
 
   const heading = isAuthenticated && user
-    ? `${user.full_name.split(' ').pop()}, có thể bạn sẽ thích`
-    : 'Cá nhân hóa cho bạn';
+    ? `${user.full_name.split(' ').pop()}, ${messages.home.personalizedName}`
+    : messages.home.personalized;
   const description = isAuthenticated
     ? personalized
-      ? 'Gợi ý dựa trên chủ đề và thành phố bạn đã chọn'
-      : 'Gợi ý từ các sự kiện đang mở bán'
-    : 'Đăng nhập để nhận gợi ý phù hợp gu của bạn';
+      ? messages.home.personalizedByPrefs
+      : messages.home.personalizedFallback
+    : messages.home.personalizePrompt;
 
   return (
     <section className="bg-stone-50 py-12 lg:py-16">
@@ -64,13 +68,13 @@ export function ForYouSection({
         >
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-700">
-              <Sparkles className="h-3.5 w-3.5" /> Dành cho bạn
+              <Sparkles className="h-3.5 w-3.5" /> {messages.home.forYou}
             </span>
             <h2 className="mt-3 font-display text-2xl font-bold text-stone-900 md:text-3xl">{heading}</h2>
             <p className="mt-1 text-sm text-stone-500 md:text-base">{description}</p>
           </div>
           <Link href="/events" className="hidden items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800 md:inline-flex">
-            Xem tất cả <ArrowRight className="h-4 w-4" />
+            {messages.common.viewAll} <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
 
@@ -87,8 +91,8 @@ export function ForYouSection({
         ) : displayEvents.length === 0 ? (
           <EmptyState
             variant="events"
-            headline="Chưa đủ dữ liệu để gợi ý"
-            subtext="Khi có sự kiện đang mở bán, khu này sẽ tự cập nhật."
+            headline={messages.home.noRecommendations}
+            subtext={messages.home.noRecommendationsDesc}
             className="rounded-2xl border border-stone-200 bg-white"
           />
         ) : (

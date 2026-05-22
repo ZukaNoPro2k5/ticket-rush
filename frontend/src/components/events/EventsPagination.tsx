@@ -1,5 +1,7 @@
 'use client';
 
+import { useLocale } from '@/components/providers/LocaleProvider';
+
 interface Props {
   currentPage: number;
   totalPages: number;
@@ -7,6 +9,8 @@ interface Props {
 }
 
 export function EventsPagination({ currentPage, totalPages, onPageChange }: Props) {
+  const { messages } = useLocale();
+
   if (totalPages <= 1) return null;
 
   const visiblePages = Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1);
@@ -17,7 +21,7 @@ export function EventsPagination({ currentPage, totalPages, onPageChange }: Prop
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        aria-label="Trang trước"
+        aria-label={messages.events.pagePrevious}
         className="grid h-10 w-10 place-items-center rounded-full border border-stone-200 bg-white text-stone-500 hover:border-stone-400 hover:text-stone-900 disabled:opacity-40"
       >
         ‹
@@ -54,7 +58,7 @@ export function EventsPagination({ currentPage, totalPages, onPageChange }: Prop
       <button
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        aria-label="Trang sau"
+        aria-label={messages.events.pageNext}
         className="grid h-10 w-10 place-items-center rounded-full border border-stone-200 bg-white text-stone-500 hover:border-stone-400 hover:text-stone-900 disabled:opacity-40"
       >
         ›

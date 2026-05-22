@@ -1,14 +1,4 @@
-import { RowDataPacket } from 'mysql2';
-import pool from './database';
-
-interface BookingRulesRow extends RowDataPacket {
-  ticket_hold_minutes: number;
-  max_tickets_per_booking: number;
-}
-
-interface RuntimeSystemSettingsRow extends BookingRulesRow {
-  maintenance_mode: number | boolean;
-}
+import prisma from './prisma';
 
 const FALLBACK_RULES = {
   ticketHoldMinutes: 10,
@@ -27,16 +17,15 @@ let runtimeSettingsCache: {
 
 export async function getBookingRules() {
   try {
-    const [rows] = await pool.query<BookingRulesRow[]>(
-      `SELECT ticket_hold_minutes, max_tickets_per_booking
-       FROM admin_system_settings
-       WHERE id = 1`,
-    );
-    if (rows.length === 0) return FALLBACK_RULES;
+    const row = await prisma.admin_system_settings.findUnique({
+      where: { id: 1 },
+      select: { ticket_hold_minutes: true, max_tickets_per_booking: true },
+    });
+    if (!row) return FALLBACK_RULES;
 
     return {
-      ticketHoldMinutes: Number(rows[0].ticket_hold_minutes) || FALLBACK_RULES.ticketHoldMinutes,
-      maxTicketsPerBooking: Number(rows[0].max_tickets_per_booking) || FALLBACK_RULES.maxTicketsPerBooking,
+      ticketHoldMinutes: Number(row.ticket_hold_minutes) || FALLBACK_RULES.ticketHoldMinutes,
+      maxTicketsPerBooking: Number(row.max_tickets_per_booking) || FALLBACK_RULES.maxTicketsPerBooking,
     };
   } catch {
     // Existing environments may not have applied migration 012 yet.
@@ -51,12 +40,10 @@ export async function getRuntimeSystemSettings() {
   }
 
   try {
-    const [rows] = await pool.query<RuntimeSystemSettingsRow[]>(
-      `SELECT ticket_hold_minutes, max_tickets_per_booking, maintenance_mode
-       FROM admin_system_settings
-       WHERE id = 1`,
-    );
-    const row = rows[0];
+    const row = await prisma.admin_system_settings.findUnique({
+      where: { id: 1 },
+      select: { ticket_hold_minutes: true, max_tickets_per_booking: true, maintenance_mode: true },
+    });
     const value = row
       ? {
           ticketHoldMinutes: Number(row.ticket_hold_minutes) || FALLBACK_RULES.ticketHoldMinutes,

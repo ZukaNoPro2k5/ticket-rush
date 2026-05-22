@@ -10,19 +10,20 @@ import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils/cn';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-
-const NAV = [
-  { href: '/profile',       icon: User,    label: 'Tài khoản của tôi' },
-  { href: '/saved-events',  icon: Heart,   label: 'Sự kiện đã lưu' },
-  { href: '/my-tickets',    icon: Ticket,  label: 'Vé của tôi' },
-  { href: '/order-history', icon: History, label: 'Lịch sử đặt vé' },
-  { href: '/settings',      icon: Settings, label: 'Cài đặt' },
-];
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export function AccountLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const { messages } = useLocale();
+  const nav = [
+    { href: '/profile', icon: User, label: messages.account.profile },
+    { href: '/saved-events', icon: Heart, label: messages.account.savedEvents },
+    { href: '/my-tickets', icon: Ticket, label: messages.account.tickets },
+    { href: '/order-history', icon: History, label: messages.account.orders },
+    { href: '/settings', icon: Settings, label: messages.account.settings },
+  ];
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -41,9 +42,9 @@ export function AccountLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto max-w-6xl px-4 lg:px-8">
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-1.5 text-xs text-stone-400">
-          <Link href="/" className="hover:text-stone-600">Trang chủ</Link>
+          <Link href="/" className="hover:text-stone-600">{messages.common.home}</Link>
           <ChevronRight className="h-3 w-3" />
-          <span className="text-stone-600">{NAV.find(n => n.href === pathname)?.label ?? 'Tài khoản'}</span>
+          <span className="text-stone-600">{nav.find(n => n.href === pathname)?.label ?? messages.account.account}</span>
         </nav>
 
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -74,7 +75,7 @@ export function AccountLayout({ children }: { children: React.ReactNode }) {
 
             {/* Nav links */}
             <nav className="rounded-2xl border border-stone-200 bg-white shadow-soft overflow-hidden">
-              {NAV.map((item) => {
+              {nav.map((item) => {
                 const active = pathname === item.href;
                 return (
                   <Link

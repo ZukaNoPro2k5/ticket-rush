@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Check, Loader2 } from 'lucide-react';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export const fieldClass = (err?: boolean) =>
   `h-11 w-full rounded-xl border bg-stone-50 text-sm text-stone-900 placeholder:text-stone-400
@@ -55,6 +56,8 @@ interface SubmitBtnProps {
 }
 
 export function SubmitBtn({ submitting, succeeded, label }: SubmitBtnProps) {
+  const { messages } = useLocale();
+
   return (
     <motion.button
       type="submit"
@@ -65,11 +68,11 @@ export function SubmitBtn({ submitting, succeeded, label }: SubmitBtnProps) {
       <AnimatePresence mode="wait" initial={false}>
         {succeeded ? (
           <motion.span key="ok" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-2">
-            <Check className="h-4 w-4" /> Thành công!
+            <Check className="h-4 w-4" /> {messages.auth.success}
           </motion.span>
         ) : submitting ? (
           <motion.span key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" /> Đang xử lý…
+            <Loader2 className="h-4 w-4 animate-spin" /> {messages.auth.processing}
           </motion.span>
         ) : (
           <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

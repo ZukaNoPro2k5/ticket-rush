@@ -7,10 +7,12 @@ import type { DisplayEvent } from '@/types';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import { EventCard, EventCardSkeleton } from '@/components/events';
 import EmptyState from '@/components/ui/EmptyState';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export function NewEventsGrid({ events = [], loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
   const { ref, inView } = useSectionInView();
   const displayEvents = events;
+  const { messages } = useLocale();
 
   return (
     <section className="bg-stone-50 py-12 lg:py-16">
@@ -23,13 +25,13 @@ export function NewEventsGrid({ events = [], loading = false }: { events?: Displ
         >
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-700">
-              <Sparkles className="h-3.5 w-3.5" /> Mới mở bán
+              <Sparkles className="h-3.5 w-3.5" /> {messages.home.newlyOnSale}
             </span>
-            <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Vé mới lên sàn</h2>
-            <p className="mt-1 text-sm text-stone-500 md:text-base">Đặt sớm để săn ưu đãi early-bird</p>
+            <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">{messages.home.newTickets}</h2>
+            <p className="mt-1 text-sm text-stone-500 md:text-base">{messages.home.newTicketsDesc}</p>
           </div>
           <Link href="/events?sort=newest" className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800">
-            Xem tất cả <ArrowRight className="h-4 w-4" />
+            {messages.common.viewAll} <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
 
@@ -40,8 +42,8 @@ export function NewEventsGrid({ events = [], loading = false }: { events?: Displ
         ) : displayEvents.length === 0 ? (
           <EmptyState
             variant="events"
-            headline="Chưa có vé mới lên sàn"
-            subtext="Sự kiện mới mở bán sẽ tự xuất hiện ở đây."
+            headline={messages.home.noNewTickets}
+            subtext={messages.home.noNewTicketsDesc}
             className="rounded-2xl border border-stone-200 bg-white"
           />
         ) : (

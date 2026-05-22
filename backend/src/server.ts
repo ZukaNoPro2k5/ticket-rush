@@ -1,7 +1,7 @@
 import http from 'http';
 import app from './app';
 import { config } from './config/env';
-import pool, { testConnection } from './config/database';
+import prisma, { testConnection } from './config/prisma';
 import { initSocket } from './config/socket';
 import redis from './config/redis';
 import { startCronJobs } from './cron';
@@ -26,7 +26,7 @@ async function bootstrap() {
   const shutdown = async (signal: string) => {
     console.log(`\n${signal} received. Shutting down gracefully...`);
     server.close(async () => {
-      await pool.end();
+      await prisma.$disconnect();
       await redis.quit();
       console.log('All connections closed. Goodbye.');
       process.exit(0);

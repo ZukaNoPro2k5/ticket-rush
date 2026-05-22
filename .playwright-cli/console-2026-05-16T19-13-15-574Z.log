@@ -1,0 +1,53 @@
+[    4449ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/events/14:0
+[    5046ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:29889
+[    5121ms] Error: Cannot find module './8948.js'
+Require stack:
+- /home/zukanopro/workspace/ticket-rush/frontend/.next/server/webpack-runtime.js
+- /home/zukanopro/workspace/ticket-rush/frontend/.next/server/app/events/[id]/seats/page.js
+- /home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/require.js
+- /home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/load-components.js
+- /home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/build/utils.js
+- /home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/dev/hot-middleware.js
+- /home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/lib/router-server.js
+- /home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/lib/start-server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/require-hook.js:55:36)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at mod.require (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:177:18)
+    at __webpack_require__.f.require (file:///home/zukanopro/workspace/ticket-rush/frontend/.next/server/webpack-runtime.js:198:28)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (file:///home/zukanopro/workspace/ticket-rush/frontend/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (file:///home/zukanopro/workspace/ticket-rush/frontend/.next/server/webpack-runtime.js:162:22)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/.next/server/app/events/[id]/page.js:1:32818)
+    at Object.<anonymous> (file:///home/zukanopro/workspace/ticket-rush/frontend/.next/server/app/events/[id]/page.js:1:32886)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at mod.require (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:177:18)
+    at requirePage (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/require.js:109:84)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/load-components.js:103:84)
+    at async loadComponentsImpl (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/load-components.js:103:26)
+    at async DevServer.findPageComponentsImpl (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/next-server.js:714:36)
+    at async DevServer.findPageComponents (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/dev/next-dev-server.js:577:20)
+    at async DevServer.renderPageComponent (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/base-server.js:1910:24)
+    at async DevServer.renderToResponseImpl (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/base-server.js:818:17)
+    at async (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/dev/next-dev-server.js:339:20)
+    at async Span.traceAsyncFn (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/server/lib/start-server.js:141:13)
+[    5107ms] [LOG] [HMR] connected @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:38

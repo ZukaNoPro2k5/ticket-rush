@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { Be_Vietnam_Pro, Plus_Jakarta_Sans } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 import { Providers } from '@/components/providers/Providers';
+import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from '@/lib/i18n';
 import './globals.css';
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -26,8 +28,11 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const localeCookie = cookies().get(LOCALE_COOKIE)?.value;
+  const initialLocale = isLocale(localeCookie) ? localeCookie : DEFAULT_LOCALE;
+
   return (
-    <html lang="vi">
+    <html lang={initialLocale}>
       <head>
         <link
           rel="stylesheet"
@@ -49,7 +54,7 @@ export default function RootLayout({
           speed={200}
           shadow="0 0 10px #f59e0b,0 0 5px #f59e0b"
         />
-        <Providers>{children}</Providers>
+        <Providers initialLocale={initialLocale}>{children}</Providers>
       </body>
     </html>
   );

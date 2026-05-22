@@ -25,6 +25,7 @@ import {
   EventsPagination,
   EventsListSkeleton,
 } from '@/components/events';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 const VALID_CATEGORIES: EventCategory[] = [
   'music',
@@ -155,6 +156,7 @@ export default function EventsListingPage() {
 
   const [sort, setSort] = useState<SortKey>('trending');
   const [view, setView] = useState<ViewMode>('grid');
+  const { messages } = useLocale();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -235,11 +237,11 @@ export default function EventsListingPage() {
       setApiEvents([]);
       setTotalPages(1);
       setTotalCount(0);
-      setError('Không thể tải danh sách sự kiện. Vui lòng thử lại sau.');
+      setError(messages.events.loadError);
     } finally {
       setLoading(false);
     }
-  }, [query, activeCat, city, timeRange, priceMax, sort, currentPage]);
+  }, [query, activeCat, city, timeRange, priceMax, sort, currentPage, messages.events.loadError]);
 
   useEffect(() => {
     if (!urlReady) return;
@@ -382,36 +384,40 @@ export default function EventsListingPage() {
 }
 
 function EmptyState({ onReset }: { onReset: () => void }) {
+  const { messages } = useLocale();
+
   return (
     <div className="rounded-3xl border border-dashed border-stone-300 bg-white py-20 text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-stone-100">
         <Search className="h-7 w-7 text-stone-400" />
       </div>
-      <h3 className="mt-4 font-display text-lg font-bold">Không tìm thấy sự kiện phù hợp</h3>
-      <p className="mt-1 text-sm text-stone-500">Thử bỏ bớt bộ lọc hoặc đổi từ khóa khác.</p>
+      <h3 className="mt-4 font-display text-lg font-bold">{messages.events.noMatch}</h3>
+      <p className="mt-1 text-sm text-stone-500">{messages.events.noMatchDesc}</p>
       <button
         onClick={onReset}
         className="mt-4 rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white hover:bg-amber-600"
       >
-        Xóa bộ lọc
+        {messages.events.resetFilters}
       </button>
     </div>
   );
 }
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { messages } = useLocale();
+
   return (
     <div className="rounded-3xl border border-red-100 bg-white py-20 text-center shadow-soft">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-red-50">
         <AlertCircle className="h-7 w-7 text-red-500" />
       </div>
-      <h3 className="mt-4 font-display text-lg font-bold">Danh sách sự kiện chưa tải được</h3>
+      <h3 className="mt-4 font-display text-lg font-bold">{messages.events.loadErrorTitle}</h3>
       <p className="mt-1 text-sm text-stone-500">{message}</p>
       <button
         onClick={onRetry}
         className="mt-4 rounded-full bg-stone-900 px-5 py-2 text-sm font-semibold text-white hover:bg-stone-800"
       >
-        Thử lại
+        {messages.common.retry}
       </button>
     </div>
   );

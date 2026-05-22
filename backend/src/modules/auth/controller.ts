@@ -12,14 +12,14 @@ import type {
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const input = req.body as RegisterInput;
-  const { token, user } = await authService.register(input);
-  sendCreated(res, { token, user }, 'Đăng ký thành công');
+  const { token, user, maintenance_mode } = await authService.register(input);
+  sendCreated(res, { token, user, maintenance_mode }, 'Đăng ký thành công');
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const input = req.body as LoginInput;
-  const { token, user } = await authService.login(input);
-  sendSuccess(res, { token, user });
+  const { token, user, maintenance_mode } = await authService.login(input);
+  sendSuccess(res, { token, user, maintenance_mode });
 });
 
 export const me = asyncHandler(async (req: Request, res: Response) => {

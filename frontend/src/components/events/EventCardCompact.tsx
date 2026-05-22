@@ -1,12 +1,13 @@
+'use client';
+
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar, Clock, Flame, MapPin } from 'lucide-react';
-
-function formatVnd(value: number): string {
-  return `${value.toLocaleString('vi-VN')}đ`;
-}
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export function EventCardCompact({ event }: { event: DisplayEvent }) {
+  const { messages, formatCurrency } = useLocale();
+
   return (
     <Link
       href={`/events/${event.id}`}
@@ -29,18 +30,18 @@ export function EventCardCompact({ event }: { event: DisplayEvent }) {
         )}
         {event.badge === 'almost-sold' && (
           <span className="absolute left-3 top-3 rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lift">
-            Sắp cháy vé
+            {messages.events.almostSold}
           </span>
         )}
         {event.badge === 'new' && (
           <span className="absolute left-3 top-3 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lift">
-            MỚI
+            {messages.events.new}
           </span>
         )}
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">{event.category}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">{messages.categories[event.categoryKey]}</span>
         <h3 className="mt-1 line-clamp-2 font-semibold text-stone-900 group-hover:text-amber-700">{event.title}</h3>
 
         <div className="mt-1.5 flex items-center gap-3 text-xs text-stone-500">
@@ -57,11 +58,11 @@ export function EventCardCompact({ event }: { event: DisplayEvent }) {
 
         <div className="mt-auto flex items-end justify-between pt-3">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-stone-400">Từ</div>
-            <div className="font-display text-base font-bold text-amber-700">{formatVnd(event.priceFrom)}</div>
+            <div className="text-[10px] uppercase tracking-wider text-stone-400">{messages.common.from}</div>
+            <div className="font-display text-base font-bold text-amber-700">{formatCurrency(event.priceFrom)}</div>
           </div>
           <span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-700 transition-colors group-hover:bg-amber-500 group-hover:text-white">
-            Xem vé
+            {messages.common.viewTickets}
           </span>
         </div>
       </div>

@@ -1,6 +1,4 @@
-import { RowDataPacket } from 'mysql2';
-
-export interface BookingRow extends RowDataPacket {
+export interface BookingRow {
   id: number;
   user_id: number;
   event_id: number;
@@ -13,13 +11,13 @@ export interface BookingRow extends RowDataPacket {
   created_at: string;
 }
 
-export interface SeatPriceRow extends RowDataPacket {
+export interface SeatPriceRow {
   id: number;
   zone_id: number;
   price: number;
 }
 
-export interface PromoRow extends RowDataPacket {
+export interface PromoRow {
   id: number;
   code: string;
   discount_type: string;
@@ -33,6 +31,6 @@ export interface PromoRow extends RowDataPacket {
   is_active: boolean;
 }
 
-export interface BookingSeatRow extends RowDataPacket {
+export interface BookingSeatRow {
   seat_id: number;
 }

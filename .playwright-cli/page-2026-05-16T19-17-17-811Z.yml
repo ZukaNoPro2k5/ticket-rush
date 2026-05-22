@@ -1,0 +1,130 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "TicketRush" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+        - generic [ref=e8]: TicketRush
+      - navigation [ref=e9]:
+        - button "Khám phá" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - text: Khám phá
+          - img [ref=e15]
+        - button "Lịch sự kiện" [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+          - text: Lịch sự kiện
+          - img [ref=e21]
+        - link "Ưu đãi" [ref=e23] [cursor=pointer]:
+          - /url: /promotions
+          - img [ref=e24]
+          - text: Ưu đãi
+        - link "Tin tức" [ref=e27] [cursor=pointer]:
+          - /url: /news
+          - img [ref=e28]
+          - text: Tin tức
+      - generic [ref=e31]:
+        - button "Đổi ngôn ngữ" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+          - generic [ref=e37]: vi
+          - img [ref=e38]
+        - button "Đăng nhập" [ref=e40] [cursor=pointer]
+  - banner [ref=e41]:
+    - generic [ref=e42]:
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - img [ref=e45]
+          - text: TicketRush · Newsroom
+        - heading "Đằng sau những đêm bùng nổ." [level=1] [ref=e47]
+        - paragraph [ref=e48]: Tin tức, phỏng vấn, bình luận thẳng thắn và hậu trường sự kiện, viết cho những người xem show không chỉ để giải trí.
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - img
+          - searchbox "Tìm bài viết, nghệ sĩ, sự kiện…" [ref=e51]
+        - button "Tìm" [ref=e52] [cursor=pointer]
+    - generic [ref=e54]:
+      - button "Tất cả" [ref=e55] [cursor=pointer]
+      - button "Showbiz" [ref=e56] [cursor=pointer]
+      - button "Sự kiện" [ref=e57] [cursor=pointer]
+      - button "Phỏng vấn" [ref=e58] [cursor=pointer]
+      - button "Bình luận" [ref=e59] [cursor=pointer]
+      - button "Hậu trường" [ref=e60] [cursor=pointer]
+      - button "Sân khấu" [ref=e61] [cursor=pointer]
+      - button "Mẹo hay" [ref=e62] [cursor=pointer]
+  - main [ref=e63]:
+    - generic [ref=e64]:
+      - img [ref=e65]
+      - generic [ref=e67]: Đang tải newsroom…
+  - contentinfo [ref=e68]:
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - generic [ref=e72]:
+            - img [ref=e74]
+            - text: TicketRush
+          - paragraph [ref=e76]: Nền tảng đặt vé sự kiện trực tuyến — giữ ghế realtime, xác nhận gọn, vé QR rõ ràng.
+          - generic [ref=e77]:
+            - link [ref=e78] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e79]: 
+            - link [ref=e80] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e81]: 
+            - link [ref=e82] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e83]: 
+            - link [ref=e84] [cursor=pointer]:
+              - /url: "#"
+            - link [ref=e85] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e86]: 
+        - generic [ref=e87]:
+          - heading "Về chúng tôi" [level=4] [ref=e88]
+          - list [ref=e89]:
+            - listitem [ref=e90]:
+              - link "Về TicketRush" [ref=e91] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e92]:
+              - link "Tuyển dụng" [ref=e93] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e94]:
+              - link "Tin tức" [ref=e95] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e96]:
+              - link "Liên hệ" [ref=e97] [cursor=pointer]:
+                - /url: "#"
+        - generic [ref=e98]:
+          - heading "Khám phá" [level=4] [ref=e99]
+          - list [ref=e100]:
+            - listitem [ref=e101]:
+              - link "Tất cả sự kiện" [ref=e102] [cursor=pointer]:
+                - /url: /events
+            - listitem [ref=e103]:
+              - link "Sự kiện hot" [ref=e104] [cursor=pointer]:
+                - /url: /events?sort=trending
+            - listitem [ref=e105]:
+              - link "Sắp diễn ra" [ref=e106] [cursor=pointer]:
+                - /url: /events?sort=upcoming
+            - listitem [ref=e107]:
+              - link "Vé giá rẻ" [ref=e108] [cursor=pointer]:
+                - /url: /events?sort=priceAsc
+        - generic [ref=e109]:
+          - heading "Hỗ trợ" [level=4] [ref=e110]
+          - list [ref=e111]:
+            - listitem [ref=e112]:
+              - link "Trung tâm trợ giúp" [ref=e113] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e114]:
+              - link "Hướng dẫn mua vé" [ref=e115] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e116]:
+              - link "Chính sách hoàn vé" [ref=e117] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e118]:
+              - link "Điều khoản dịch vụ" [ref=e119] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=e120]:
+        - generic [ref=e121]: © 2026 TicketRush · Đồ án môn INT3306 · UET, ĐHQGHN
+        - generic [ref=e122]:
+          - generic [ref=e123]: Giữ ghế realtime
+          - generic [ref=e124]: QR điện tử
+          - generic [ref=e125]: Hàng chờ ảo

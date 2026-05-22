@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -12,21 +11,25 @@ import {
   FieldError, FormError, SubmitBtn, fieldClass, AuthDivider,
 } from './AuthFormAtoms';
 import { OAuthButtons } from './OAuthButtons';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface LoginResponse {
   success: boolean;
   data: {
     token: string;
     user: { id: number; email: string; full_name: string; role: string };
+    maintenance_mode: boolean;
   };
 }
 
 interface Props {
-  onSuccess: () => void;
+  onSuccess: (result?: LoginResponse['data']) => void;
+  onForgotPassword?: () => void;
 }
 
-export function LoginForm({ onSuccess }: Props) {
+export function LoginForm({ onSuccess, onForgotPassword }: Props) {
   const { setAuth } = useAuthStore();
+  const { messages } = useLocale();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,9 +46,9 @@ export function LoginForm({ onSuccess }: Props) {
 
   const validate = (): Record<string, string> => {
     const errs: Record<string, string> = {};
-    if (!email) errs.email = 'Vui lòng nhập email';
-    else if (!isValidEmail(email)) errs.email = 'Email không hợp lệ';
-    if (!password) errs.password = 'Vui lòng nhập mật khẩu';
+    if (!email) errs.email = messages.auth.emailRequired;
+    else if (!isValidEmail(email)) errs.email = messages.auth.emailInvalid;
+    if (!password) errs.password = messages.auth.passwordRequired;
     return errs;
   };
 
@@ -69,10 +72,10 @@ export function LoginForm({ onSuccess }: Props) {
         role: data.data.user.role as 'customer' | 'admin',
       });
       setSucceeded(true);
-      toast.success(`Chào mừng trở lại, ${data.data.user.full_name.split(' ').pop()}!`);
-      setTimeout(onSuccess, 600);
+      toast.success(`${messages.auth.welcomeBack}, ${data.data.user.full_name.split(' ').pop()}!`);
+      onSuccess(data.data);
     } catch (err) {
-      setFormError(extractApiError(err, 'Email hoặc mật khẩu không chính xác'));
+      setFormError(extractApiError(err, messages.auth.invalidCredentials));
       setShakeKey((k) => k + 1);
     } finally {
       setSubmitting(false);
@@ -83,7 +86,7 @@ export function LoginForm({ onSuccess }: Props) {
     <div>
       <OAuthButtons mode="login" onSuccess={onSuccess} />
 
-      <AuthDivider label="hoặc đăng nhập bằng email" />
+      <AuthDivider label={messages.auth.orLoginEmail} />
 
       <motion.form
         key={shakeKey}
@@ -116,7 +119,7 @@ export function LoginForm({ onSuccess }: Props) {
             <input
               type={showPw ? 'text' : 'password'}
               autoComplete="current-password"
-              placeholder="Mật khẩu"
+              placeholder={messages.auth.password}
               value={password}
               onChange={(e) => { setPassword(e.target.value); clearFieldError('password'); }}
               className={`${fieldClass(!!fieldErrors.password)} pl-10 pr-12`}
@@ -124,7 +127,7 @@ export function LoginForm({ onSuccess }: Props) {
             <button
               type="button"
               onClick={() => setShowPw((v) => !v)}
-              aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-label={showPw ? messages.auth.hidePassword : messages.auth.showPassword}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 transition-colors hover:text-stone-600"
             >
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -134,16 +137,16 @@ export function LoginForm({ onSuccess }: Props) {
         </div>
 
         <div className="flex justify-end">
-          <Link
-            href="/forgot-password"
-            onClick={onSuccess}
+          <button
+            type="button"
+            onClick={onForgotPassword}
             className="text-xs font-medium text-amber-700 hover:text-amber-800"
           >
-            Quên mật khẩu?
-          </Link>
+            {messages.auth.forgotPassword}?
+          </button>
         </div>
 
-        <SubmitBtn submitting={submitting} succeeded={succeeded} label="Đăng nhập" />
+        <SubmitBtn submitting={submitting} succeeded={succeeded} label={messages.auth.login} />
       </motion.form>
     </div>
   );

@@ -7,16 +7,22 @@ import toast from 'react-hot-toast';
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api/client';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface ProfileData { has_password: boolean; }
 
 function PasswordStrength({ password }: { password: string }) {
+  const { messages } = useLocale();
   const hasLen  = password.length >= 8;
   const hasCap  = /[A-Z]/.test(password);
   const hasNum  = /[0-9]/.test(password);
   const score   = [hasLen, hasCap, hasNum].filter(Boolean).length;
   if (!password) return null;
-  const labels  = ['Yếu', 'Trung bình', 'Mạnh'];
+  const labels  = [
+    messages.auth.passwordStrengthWeak,
+    messages.auth.passwordStrengthMedium,
+    messages.auth.passwordStrengthStrong,
+  ];
   const colors  = ['bg-rose-400', 'bg-amber-400', 'bg-emerald-500'];
   return (
     <div className="mt-1.5 space-y-1">
@@ -72,6 +78,7 @@ function PasswordInput({
 
 export default function SettingsPage() {
   useAuthStore();
+  const { messages } = useLocale();
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
 
   const [form, setForm] = useState({ current: '', next: '', confirm: '' });
@@ -86,11 +93,11 @@ export default function SettingsPage() {
 
   const validate = () => {
     const e: typeof errors = {};
-    if (!form.current) e.current = 'Vui lòng nhập mật khẩu hiện tại';
-    if (form.next.length < 8) e.next = 'Mật khẩu tối thiểu 8 ký tự';
-    else if (!/[A-Z]/.test(form.next)) e.next = 'Cần ít nhất 1 chữ hoa';
-    else if (!/[0-9]/.test(form.next)) e.next = 'Cần ít nhất 1 chữ số';
-    if (form.confirm !== form.next) e.confirm = 'Mật khẩu xác nhận không khớp';
+    if (!form.current) e.current = messages.account.currentPasswordRequired;
+    if (form.next.length < 8) e.next = messages.auth.passwordMin;
+    else if (!/[A-Z]/.test(form.next)) e.next = messages.auth.passwordUpper;
+    else if (!/[0-9]/.test(form.next)) e.next = messages.auth.passwordNumber;
+    if (form.confirm !== form.next) e.confirm = messages.auth.passwordMismatch;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -104,15 +111,15 @@ export default function SettingsPage() {
         current_password: form.current,
         new_password: form.next,
       });
-      toast.success('Đã đổi mật khẩu thành công');
+      toast.success(messages.account.passwordUpdated);
       setForm({ current: '', next: '', confirm: '' });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { code?: string } } } })
         ?.response?.data?.error?.code;
       if (msg === 'WRONG_PASSWORD') {
-        setErrors({ current: 'Sai mật khẩu hiện tại' });
+        setErrors({ current: messages.account.currentPasswordWrong });
       } else {
-        toast.error('Đổi mật khẩu thất bại, thử lại sau');
+        toast.error(messages.account.passwordUpdateFailed);
       }
     } finally {
       setLoading(false);
@@ -124,15 +131,15 @@ export default function SettingsPage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-display text-2xl font-bold text-stone-900">Cài đặt</h1>
-          <p className="mt-1 text-sm text-stone-500">Bảo mật tài khoản của bạn</p>
+          <h1 className="font-display text-2xl font-bold text-stone-900">{messages.account.settings}</h1>
+          <p className="mt-1 text-sm text-stone-500">{messages.account.securityIntro}</p>
         </div>
 
         {/* Change password */}
         <div className="rounded-2xl border border-stone-200 bg-white shadow-soft">
           <div className="flex items-center gap-2.5 border-b border-stone-100 px-6 py-4">
             <ShieldCheck className="h-5 w-5 text-amber-500" />
-            <h2 className="text-base font-semibold text-stone-900">Đổi mật khẩu</h2>
+            <h2 className="text-base font-semibold text-stone-900">{messages.account.changePassword}</h2>
           </div>
 
           {hasPassword === null ? (
@@ -142,16 +149,16 @@ export default function SettingsPage() {
           ) : hasPassword === false ? (
             <div className="px-6 py-8 text-center">
               <ShieldCheck className="mx-auto mb-3 h-10 w-10 text-stone-300" />
-              <p className="text-sm font-medium text-stone-600">Tài khoản OAuth</p>
+              <p className="text-sm font-medium text-stone-600">{messages.account.oauthAccount}</p>
               <p className="mt-1 text-xs text-stone-400">
-                Tài khoản của bạn đăng nhập qua Google/Facebook.<br />
-                Bạn không cần đặt mật khẩu riêng.
+                {messages.account.oauthPassword}<br />
+                {messages.account.oauthNoPassword}
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
               <PasswordInput
-                label="Mật khẩu hiện tại"
+                label={messages.account.currentPassword}
                 value={form.current}
                 onChange={v => setForm(f => ({ ...f, current: v }))}
                 placeholder="••••••••"
@@ -159,16 +166,16 @@ export default function SettingsPage() {
               />
               <div>
                 <PasswordInput
-                  label="Mật khẩu mới"
+                  label={messages.account.newPassword}
                   value={form.next}
                   onChange={v => setForm(f => ({ ...f, next: v }))}
-                  placeholder="Tối thiểu 8 ký tự, 1 chữ hoa, 1 số"
+                  placeholder={messages.account.newPasswordHint}
                   error={errors.next}
                 />
                 <PasswordStrength password={form.next} />
               </div>
               <PasswordInput
-                label="Xác nhận mật khẩu mới"
+                label={messages.account.confirmNewPassword}
                 value={form.confirm}
                 onChange={v => setForm(f => ({ ...f, confirm: v }))}
                 placeholder="••••••••"
@@ -184,7 +191,7 @@ export default function SettingsPage() {
                     ? <Loader2 className="h-4 w-4 animate-spin" />
                     : <ShieldCheck className="h-4 w-4" />
                   }
-                  Cập nhật mật khẩu
+                  {messages.account.updatePassword}
                 </button>
               </div>
             </form>

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { EASE_OUT_EXPO } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 const POPUP_W = 520;
 const POPUP_H = 640;
@@ -19,8 +20,29 @@ const POPUP_H = 640;
  *
  * Falls back to full-page redirect if the browser blocks popups.
  */
-export function OAuthButtons({ mode = 'login', onSuccess }: { mode?: 'login' | 'register'; onSuccess?: () => void }) {
-  const verb = mode === 'register' ? 'Đăng ký' : 'Tiếp tục';
+type OAuthUser = {
+  id: number | string;
+  email: string;
+  name: string;
+  role?: 'customer' | 'admin';
+  avatar_url?: string | null;
+};
+
+type OAuthSuccessPayload = {
+  token: string;
+  user: { id: number; email: string; full_name: string; role: 'customer' | 'admin'; avatar_url?: string | null };
+  maintenance_mode: boolean;
+};
+
+export function OAuthButtons({
+  mode = 'login',
+  onSuccess,
+}: {
+  mode?: 'login' | 'register';
+  onSuccess?: (result: OAuthSuccessPayload) => void;
+}) {
+  const { messages } = useLocale();
+  const verb = mode === 'register' ? messages.auth.register : messages.auth.continue;
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const [loading, setLoading] = useState<'google' | 'facebook' | null>(null);
@@ -87,21 +109,23 @@ export function OAuthButtons({ mode = 'login', onSuccess }: { mode?: 'login' | '
       if (ev.data?.type === 'oauth-success') {
         const { token, user } = ev.data as {
           token: string | null;
-          user: { id: number | string; email: string; name: string; avatar_url?: string | null };
+          user: OAuthUser;
+          maintenance_mode?: boolean;
         };
         if (token) {
-          setAuth(token, {
+          const authUser = {
             id:         Number(user.id),
             email:      user.email,
             full_name:  user.name,
-            role:       'customer',
+            role:       user.role ?? 'customer',
             avatar_url: user.avatar_url ?? null,
-          });
+          } as const;
+          setAuth(token, authUser);
           toast.success(`Chào mừng, ${user.name.split(' ').pop()}!`);
           if (onSuccess) {
-            onSuccess();
+            onSuccess({ token, user: authUser, maintenance_mode: ev.data.maintenance_mode ?? false });
           } else {
-            router.push('/onboarding');
+            router.push(authUser.role === 'admin' ? '/admin' : ev.data.maintenance_mode ? '/maintenance' : '/onboarding');
             router.refresh();
           }
         } else {
@@ -151,7 +175,7 @@ export function OAuthButtons({ mode = 'login', onSuccess }: { mode?: 'login' | '
         <AnimatePresence mode="wait" initial={false}>
           {loading === 'facebook' ? (
             <motion.span key="spin" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Đang mở cửa sổ…
+              <Loader2 className="h-4 w-4 animate-spin" /> {messages.auth.openWindow}
             </motion.span>
           ) : (
             <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
@@ -173,7 +197,7 @@ export function OAuthButtons({ mode = 'login', onSuccess }: { mode?: 'login' | '
         <AnimatePresence mode="wait" initial={false}>
           {loading === 'google' ? (
             <motion.span key="spin" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Đang mở cửa sổ…
+              <Loader2 className="h-4 w-4 animate-spin" /> {messages.auth.openWindow}
             </motion.span>
           ) : (
             <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">

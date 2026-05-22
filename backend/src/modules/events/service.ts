@@ -1,12 +1,13 @@
-import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import pool from '../../config/database';
+import prisma from '../../config/prisma';
 import redis from '../../config/redis';
+import { Prisma } from '@prisma/client';
 import { AppError } from '../../shared/AppError';
 import { clearEventQueue } from '../queue/service';
 import type { ListEventsQuery, CreateEventInput, UpdateEventInput, ChangeStatusInput } from './validation';
 
 type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
 type SeatingMode = 'seated' | 'zoned' | 'admission';
+type EventWithZones = Awaited<ReturnType<typeof getRawEvent>>;
 
 const EVENTS_LIST_TTL = 60;
 const EVENT_DETAIL_TTL = 30;
@@ -16,112 +17,116 @@ const EVENT_DETAIL_PREFIX = 'events:detail:';
 async function cacheGet<T>(key: string): Promise<T | null> {
   try {
     const raw = await redis.get(key);
-    return raw ? (JSON.parse(raw) as T) : null;
-  } catch { return null; }
+    return raw ? JSON.parse(raw) as T : null;
+  } catch {
+    return null;
+  }
 }
-
-async function cacheSet(key: string, value: unknown, ttl: number): Promise<void> {
-  try { await redis.setex(key, ttl, JSON.stringify(value)); } catch { /* ignore */ }
+async function cacheSet(key: string, value: unknown, ttl: number) {
+  try {
+    await redis.setex(key, ttl, JSON.stringify(value));
+  } catch {
+    // Cache failures must not break event reads.
+  }
 }
-
-async function invalidateEvent(id: number): Promise<void> {
+export async function invalidateEvent(id: number) {
   try {
     await redis.del(`${EVENT_DETAIL_PREFIX}${id}`);
-    const keys = await redis.keys(`${EVENTS_LIST_PREFIX}*`);
-    if (keys.length) await redis.del(...keys);
-  } catch { /* ignore */ }
+    await invalidateEventLists();
+  } catch {
+    // Cache invalidation is best-effort; the database remains the source of truth.
+  }
 }
-
-async function invalidateEventLists(): Promise<void> {
+async function invalidateEventLists() {
   try {
     const keys = await redis.keys(`${EVENTS_LIST_PREFIX}*`);
     if (keys.length) await redis.del(...keys);
-  } catch { /* ignore */ }
+  } catch {
+    // Cache invalidation is best-effort; the database remains the source of truth.
+  }
 }
 
-interface EventRow extends RowDataPacket {
-  id: number;
-  title: string;
-  description: string | null;
-  category: string;
-  seating_mode: SeatingMode;
-  venue: string;
-  event_date: string;
-  poster_url: string | null;
-  status: EventStatus;
-  queue_enabled: number;
-  created_by: number;
-  created_at: string;
-  min_price: number | null;
-  max_price: number | null;
-  available_seats: number;
-  total_seats: number;
+function getRawEvent(id: number) {
+  return prisma.events.findUnique({
+    where: { id },
+    include: { seat_zones: { include: { seats: { select: { status: true } } } } },
+  });
 }
 
-interface SeatZoneRow extends RowDataPacket {
-  id: number;
-  event_id: number;
-  name: string;
-  price: number;
-  color: string;
-  total_rows: number;
-  total_cols: number;
-  available_seats: number;
-  total_seats: number;
-}
-
-interface ZoneShapeRow extends RowDataPacket {
-  total_rows: number;
-  total_cols: number;
-}
-
-const eventStatsJoin = `
-  LEFT JOIN (
-    SELECT sz.event_id,
-           MIN(sz.price) AS min_price,
-           MAX(sz.price) AS max_price,
-           COUNT(s.id) AS total_seats,
-           SUM(CASE WHEN s.status = 'available' THEN 1 ELSE 0 END) AS available_seats
-    FROM seat_zones sz
-    LEFT JOIN seats s ON s.zone_id = sz.id
-    GROUP BY sz.event_id
-  ) stats ON stats.event_id = e.id
-`;
-
-const eventSelect = `
-  SELECT e.id, e.title, e.description, e.category, e.seating_mode, e.venue, e.event_date,
-         e.poster_url, e.status, e.queue_enabled, e.created_by, e.created_at,
-         stats.min_price,
-         stats.max_price,
-         COALESCE(stats.total_seats, 0) AS total_seats,
-         COALESCE(stats.available_seats, 0) AS available_seats
-  FROM events e
-  ${eventStatsJoin}
-`;
-
-function normalizeEvent(row: EventRow) {
+function normalizeEvent(row: NonNullable<EventWithZones>) {
+  const prices = row.seat_zones.map((zone) => zone.price.toNumber());
+  const seats = row.seat_zones.flatMap((zone) => zone.seats);
   return {
-    ...row,
-    min_price: row.min_price === null ? null : Number(row.min_price),
-    max_price: row.max_price === null ? null : Number(row.max_price),
-    available_seats: Number(row.available_seats ?? 0),
-    total_seats: Number(row.total_seats ?? 0),
-    queue_enabled: Boolean(row.queue_enabled),
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    seating_mode: row.seating_mode,
+    venue: row.venue,
+    event_date: row.event_date,
+    poster_url: row.poster_url,
+    status: row.status,
+    queue_enabled: row.queue_enabled,
+    layout_config: row.layout_config,
+    created_by: row.created_by,
+    created_at: row.created_at,
+    min_price: prices.length ? Math.min(...prices) : null,
+    max_price: prices.length ? Math.max(...prices) : null,
+    available_seats: seats.filter((seat) => seat.status === 'available').length,
+    total_seats: seats.length,
   };
 }
 
-async function getEventRecord(id: number) {
-  const [rows] = await pool.execute<EventRow[]>(`${eventSelect} WHERE e.id = ?`, [id]);
-  return rows[0] ? normalizeEvent(rows[0]) : null;
+function normalizeZones(row: NonNullable<EventWithZones>) {
+  return row.seat_zones
+    .map((zone) => ({
+      id: zone.id,
+      event_id: zone.event_id,
+      name: zone.name,
+      price: zone.price.toNumber(),
+      color: zone.color,
+      total_rows: zone.total_rows,
+      total_cols: zone.total_cols,
+      available_seats: zone.seats.filter((seat) => seat.status === 'available').length,
+      total_seats: zone.seats.length,
+    }))
+    .sort((a, b) => a.price - b.price || a.id - b.id);
 }
 
-function zonesFitMode(mode: SeatingMode, zones: ZoneShapeRow[]) {
-  return zones.every((zone) => {
-    const rows = Number(zone.total_rows);
-    const cols = Number(zone.total_cols);
-    if (mode === 'seated') return rows >= 1 && rows <= 26 && cols >= 1 && cols <= 50;
-    return rows === 1 && cols >= 1 && cols <= 99999;
-  });
+function zonesFitMode(mode: SeatingMode, zones: Array<{ total_rows: number; total_cols: number }>) {
+  return zones.every((zone) => mode === 'seated'
+    ? zone.total_rows >= 1 && zone.total_rows <= 26 && zone.total_cols >= 1 && zone.total_cols <= 50
+    : zone.total_rows === 1 && zone.total_cols >= 1 && zone.total_cols <= 99999);
+}
+
+function cityMatches(venue: string, city?: ListEventsQuery['city']) {
+  if (!city) return true;
+  const aliases = {
+    'ha-noi': ['hà nội', 'ha noi'],
+    'ho-chi-minh': ['hồ chí minh', 'ho chi minh', 'tp.hcm', 'tp. hcm', 'hcm'],
+    'da-nang': ['đà nẵng', 'da nang'],
+    'hai-phong': ['hải phòng', 'hai phong'],
+    hue: ['huế', 'hue'],
+  } as const;
+  const haystack = venue.toLowerCase();
+  const known = Object.values(aliases).flat();
+  return city === 'other'
+    ? known.every((alias) => !haystack.includes(alias))
+    : aliases[city].some((alias) => haystack.includes(alias));
+}
+
+function timeMatches(date: Date, range?: ListEventsQuery['time_range']) {
+  if (!range) return true;
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59, 999);
+  if (range === 'today') return sameDay;
+  if (range === 'weekend') return [0, 6].includes(date.getDay());
+  if (range === 'week') return date <= new Date(now.getTime() + 7 * 86_400_000);
+  if (range === 'month') return date <= new Date(now.getTime() + 30 * 86_400_000);
+  if (range === 'next_month') return date >= nextMonth && date <= nextMonthEnd;
+  return date > nextMonthEnd;
 }
 
 export async function listEvents(query: ListEventsQuery, includeUnpublished = false) {
@@ -137,111 +142,32 @@ export async function listEvents(query: ListEventsQuery, includeUnpublished = fa
 }
 
 async function buildListEvents(query: ListEventsQuery, includeUnpublished: boolean) {
-  const { category, status, search, city, time_range, max_price, page, limit, sort, order } = query;
-  const offset = (page - 1) * limit;
-
-  const conditions: string[] = [];
-  const params: (string | number)[] = [];
-
-  if (includeUnpublished) {
-    if (status) {
-      conditions.push('e.status = ?');
-      params.push(status);
-    }
-  } else {
-    conditions.push('e.status = ?');
-    params.push('published');
-    conditions.push('e.event_date >= NOW()');
-  }
-
-  if (category) {
-    conditions.push('e.category = ?');
-    params.push(category);
-  }
-
-  if (search) {
-    conditions.push('(e.title LIKE ? OR e.venue LIKE ?)');
-    params.push(`%${search}%`, `%${search}%`);
-  }
-
-  if (city) {
-    const cityAliases: Record<NonNullable<ListEventsQuery['city']>, string[]> = {
-      'ha-noi': ['%Hà Nội%', '%Ha Noi%'],
-      'ho-chi-minh': ['%Hồ Chí Minh%', '%Ho Chi Minh%', '%TP.HCM%', '%TP. HCM%', '%HCM%'],
-      'da-nang': ['%Đà Nẵng%', '%Da Nang%'],
-      'hai-phong': ['%Hải Phòng%', '%Hai Phong%'],
-      hue: ['%Huế%', '%Hue%'],
-      other: [],
-    };
-    const aliases = cityAliases[city];
-    if (city === 'other') {
-      const knownAliases = Object.entries(cityAliases)
-        .filter(([key]) => key !== 'other')
-        .flatMap(([, values]) => values);
-      conditions.push(`(${knownAliases.map(() => 'e.venue NOT LIKE ?').join(' AND ')})`);
-      params.push(...knownAliases);
-    } else {
-      conditions.push(`(${aliases.map(() => 'e.venue LIKE ?').join(' OR ')})`);
-      params.push(...aliases);
-    }
-  }
-
-  if (time_range === 'today') {
-    conditions.push('DATE(e.event_date) = CURDATE()');
-  } else if (time_range === 'weekend') {
-    conditions.push('DAYOFWEEK(e.event_date) IN (1, 7)');
-  } else if (time_range === 'week') {
-    conditions.push('e.event_date <= DATE_ADD(NOW(), INTERVAL 7 DAY)');
-  } else if (time_range === 'month') {
-    conditions.push('e.event_date <= DATE_ADD(NOW(), INTERVAL 30 DAY)');
-  } else if (time_range === 'next_month') {
-    conditions.push('YEAR(e.event_date) = YEAR(DATE_ADD(NOW(), INTERVAL 1 MONTH))');
-    conditions.push('MONTH(e.event_date) = MONTH(DATE_ADD(NOW(), INTERVAL 1 MONTH))');
-  } else if (time_range === 'other') {
-    conditions.push('e.event_date > LAST_DAY(DATE_ADD(NOW(), INTERVAL 1 MONTH))');
-  }
-
-  if (max_price !== undefined) {
-    conditions.push('stats.min_price IS NOT NULL AND stats.min_price <= ?');
-    params.push(max_price);
-  }
-
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  const orderCol = sort === 'created_at'
-    ? 'e.created_at'
-    : sort === 'sold'
-      ? 'CASE WHEN COALESCE(stats.total_seats, 0) = 0 THEN 0 ELSE (stats.total_seats - stats.available_seats) / stats.total_seats END'
-      : sort === 'price'
-        ? 'COALESCE(stats.min_price, 999999999)'
-      : 'e.event_date';
-  const orderDir = order === 'desc' ? 'DESC' : 'ASC';
-
-  const [rows] = await pool.query<EventRow[]>(
-    `${eventSelect}
-     ${where}
-     ORDER BY ${orderCol} ${orderDir}
-     LIMIT ? OFFSET ?`,
-    [...params, Number(limit), Number(offset)],
-  );
-
-  const [countRows] = await pool.query<RowDataPacket[]>(
-    `SELECT COUNT(*) AS total
-     FROM events e
-     ${eventStatsJoin}
-     ${where}`,
-    params,
-  );
-  const total = Number(countRows[0]?.total ?? 0);
-
-  return {
-    events: rows.map(normalizeEvent),
-    pagination: {
-      page,
-      limit,
-      total,
-      total_pages: Math.ceil(total / limit),
+  const rows = await prisma.events.findMany({
+    where: {
+      ...(includeUnpublished ? (query.status ? { status: query.status } : {}) : { status: 'published', event_date: { gte: new Date() } }),
+      ...(query.category ? { category: query.category } : {}),
+      ...(query.search ? { OR: [{ title: { contains: query.search } }, { venue: { contains: query.search } }] } : {}),
     },
-  };
+    include: { seat_zones: { include: { seats: { select: { status: true } } } } },
+  });
+  let events = rows.map(normalizeEvent).filter((event) =>
+    cityMatches(event.venue, query.city)
+    && timeMatches(event.event_date, query.time_range)
+    && (query.max_price === undefined || (event.min_price !== null && event.min_price <= query.max_price)));
+  events.sort((a, b) => {
+    const dir = query.order === 'desc' ? -1 : 1;
+    if (query.sort === 'created_at') return dir * ((a.created_at?.getTime() ?? 0) - (b.created_at?.getTime() ?? 0));
+    if (query.sort === 'sold') {
+      const ar = a.total_seats ? (a.total_seats - a.available_seats) / a.total_seats : 0;
+      const br = b.total_seats ? (b.total_seats - b.available_seats) / b.total_seats : 0;
+      return dir * (ar - br);
+    }
+    if (query.sort === 'price') return dir * ((a.min_price ?? Number.MAX_SAFE_INTEGER) - (b.min_price ?? Number.MAX_SAFE_INTEGER));
+    return dir * (a.event_date.getTime() - b.event_date.getTime());
+  });
+  const total = events.length;
+  events = events.slice((query.page - 1) * query.limit, query.page * query.limit);
+  return { events, pagination: { page: query.page, limit: query.limit, total, total_pages: Math.ceil(total / query.limit) } };
 }
 
 export async function getEventById(id: number, includeUnpublished = false) {
@@ -257,247 +183,107 @@ export async function getEventById(id: number, includeUnpublished = false) {
 }
 
 async function buildEventDetail(id: number, includeUnpublished: boolean) {
-  const event = await getEventRecord(id);
-  if (!event || (!includeUnpublished && event.status !== 'published')) {
-    throw AppError.notFound('Event not found or not published', 'EVENT_NOT_FOUND');
-  }
-
-  const [zones] = await pool.execute<SeatZoneRow[]>(
-    `SELECT sz.id, sz.event_id, sz.name, sz.price, sz.color, sz.total_rows, sz.total_cols,
-            COUNT(s.id) AS total_seats,
-            SUM(CASE WHEN s.status = 'available' THEN 1 ELSE 0 END) AS available_seats
-     FROM seat_zones sz
-     LEFT JOIN seats s ON s.zone_id = sz.id
-     WHERE sz.event_id = ?
-     GROUP BY sz.id
-     ORDER BY sz.price ASC, sz.id ASC`,
-    [id],
-  );
-
-  return {
-    ...event,
-    seat_zones: zones.map((zone) => ({
-      ...zone,
-      price: Number(zone.price),
-      available_seats: Number(zone.available_seats ?? 0),
-      total_seats: Number(zone.total_seats ?? 0),
-    })),
-  };
+  const event = await getRawEvent(id);
+  if (!event || (!includeUnpublished && event.status !== 'published')) throw AppError.notFound('Event not found or not published', 'EVENT_NOT_FOUND');
+  return { ...normalizeEvent(event), seat_zones: normalizeZones(event) };
 }
 
 export async function createEvent(userId: number, input: CreateEventInput) {
-  const { title, description, category, seating_mode, venue, event_date, poster_url } = input;
-  const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO events (title, description, category, seating_mode, venue, event_date, poster_url, status, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?)`,
-    [title, description ?? null, category, seating_mode ?? 'seated', venue, event_date, poster_url ?? null, userId],
-  );
-  await invalidateEvent(result.insertId);
-  return getEventById(result.insertId, true);
+  const event = await prisma.events.create({
+    data: {
+      title: input.title,
+      description: input.description ?? null,
+      category: input.category,
+      seating_mode: input.seating_mode ?? 'seated',
+      venue: input.venue,
+      event_date: new Date(input.event_date),
+      poster_url: input.poster_url ?? null,
+      layout_config: input.layout_config,
+      status: 'draft',
+      created_by: userId,
+    },
+  });
+  await invalidateEvent(event.id);
+  return getEventById(event.id, true);
 }
 
 export async function updateEvent(id: number, input: UpdateEventInput) {
-  const [eventRows] = await pool.execute<(RowDataPacket & {
-    id: number;
-    status: EventStatus;
-    seating_mode: SeatingMode;
-  })[]>(
-    'SELECT id, status, seating_mode FROM events WHERE id = ?',
-    [id],
-  );
-  if (eventRows.length === 0) {
-    throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
+  const event = await prisma.events.findUnique({ where: { id }, include: { seat_zones: { select: { total_rows: true, total_cols: true } } } });
+  if (!event) throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
+  // if (event.status !== 'draft') throw AppError.conflict('Only draft events can be edited', 'EVENT_NOT_EDITABLE');
+  if (input.seating_mode !== undefined && input.seating_mode !== event.seating_mode && !zonesFitMode(input.seating_mode, event.seat_zones)) {
+    throw AppError.conflict('Các khu vé hiện tại không khớp hình thức chỗ ngồi mới. Hãy chỉnh hoặc xóa khu vé trước.', 'SEATING_MODE_ZONE_MISMATCH');
   }
-  if (eventRows[0].status !== 'draft') {
-    throw AppError.conflict('Only draft events can be edited', 'EVENT_NOT_EDITABLE');
-  }
-
-  if (input.seating_mode !== undefined && input.seating_mode !== eventRows[0].seating_mode) {
-    const [zones] = await pool.execute<ZoneShapeRow[]>(
-      'SELECT total_rows, total_cols FROM seat_zones WHERE event_id = ?',
-      [id],
-    );
-    if (!zonesFitMode(input.seating_mode, zones)) {
-      throw AppError.conflict(
-        'Các khu vé hiện tại không khớp hình thức chỗ ngồi mới. Hãy chỉnh hoặc xóa khu vé trước.',
-        'SEATING_MODE_ZONE_MISMATCH',
-      );
-    }
-  }
-
-  const fields: string[] = [];
-  const values: (string | number | null)[] = [];
-
-  if (input.title !== undefined)         { fields.push('title = ?');         values.push(input.title); }
-  if (input.description !== undefined)   { fields.push('description = ?');   values.push(input.description); }
-  if (input.category !== undefined)      { fields.push('category = ?');      values.push(input.category); }
-  if (input.seating_mode !== undefined)  { fields.push('seating_mode = ?');  values.push(input.seating_mode); }
-  if (input.venue !== undefined)         { fields.push('venue = ?');         values.push(input.venue); }
-  if (input.event_date !== undefined)    { fields.push('event_date = ?');    values.push(input.event_date); }
-  if (input.poster_url !== undefined)    { fields.push('poster_url = ?');    values.push(input.poster_url); }
-  if (input.queue_enabled !== undefined) { fields.push('queue_enabled = ?'); values.push(input.queue_enabled ? 1 : 0); }
-
-  if (fields.length === 0) {
-    throw AppError.badRequest('No update data provided', 'VALIDATION_ERROR');
-  }
-
-  values.push(id);
-  await pool.execute(`UPDATE events SET ${fields.join(', ')} WHERE id = ?`, values);
+  if (Object.keys(input).length === 0) throw AppError.badRequest('No update data provided', 'VALIDATION_ERROR');
+  const { event_date, layout_config, ...rest } = input;
+  await prisma.events.update({
+    where: { id },
+    data: {
+      ...rest,
+      ...(event_date !== undefined && { event_date: new Date(event_date) }),
+      ...(layout_config !== undefined && { layout_config: layout_config === null ? Prisma.JsonNull : layout_config }),
+    },
+  });
   await invalidateEvent(id);
   return getEventById(id, true);
 }
 
 export async function changeStatus(id: number, input: ChangeStatusInput) {
-  const conn = await pool.getConnection();
   let shouldClearQueue = false;
-  try {
-    await conn.beginTransaction();
-
-    const [rows] = await conn.execute<(RowDataPacket & {
-      id: number;
-      status: EventStatus;
-      event_date: string;
-      seating_mode: SeatingMode;
-    })[]>(
-      'SELECT id, status, event_date, seating_mode FROM events WHERE id = ? FOR UPDATE',
-      [id],
-    );
-    if (rows.length === 0) throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
-
-    const currentStatus = rows[0].status;
-    const nextStatus = input.status;
-    const allowedTransitions: Record<EventStatus, EventStatus[]> = {
-      draft: ['published', 'cancelled'],
-      published: ['completed', 'cancelled'],
-      completed: [],
-      cancelled: [],
-    };
-
-    if (!allowedTransitions[currentStatus].includes(nextStatus)) {
-      throw AppError.conflict('Invalid event status transition', 'INVALID_STATUS_TRANSITION');
+  await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<Array<{ id: number; status: EventStatus; event_date: Date; seating_mode: SeatingMode }>>`
+      SELECT id, status, event_date, seating_mode FROM events WHERE id = ${id} FOR UPDATE
+    `;
+    const event = rows[0];
+    if (!event) throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
+    const allowed: Record<EventStatus, EventStatus[]> = { draft: ['published', 'cancelled'], published: ['completed', 'cancelled'], completed: [], cancelled: [] };
+    if (!allowed[event.status].includes(input.status)) throw AppError.conflict('Invalid event status transition', 'INVALID_STATUS_TRANSITION');
+    const zones = await tx.seat_zones.findMany({ where: { event_id: id }, include: { seats: { select: { id: true } } } });
+    if (input.status === 'published') {
+      if (event.event_date <= new Date()) throw AppError.conflict('Không thể mở bán sự kiện đã qua thời gian diễn ra', 'EVENT_DATE_PASSED');
+      if (!zones.length || zones.every((zone) => zone.seats.length === 0)) throw AppError.conflict('Cần cấu hình ít nhất một khu vé trước khi mở bán', 'EVENT_MISSING_SEAT_ZONES');
+      if (!zonesFitMode(event.seating_mode, zones)) throw AppError.conflict('Khu vé không khớp hình thức chỗ ngồi hiện tại', 'SEATING_MODE_ZONE_MISMATCH');
     }
-
-    if (nextStatus === 'published') {
-      if (new Date(rows[0].event_date) <= new Date()) {
-        throw AppError.conflict('Không thể mở bán sự kiện đã qua thời gian diễn ra', 'EVENT_DATE_PASSED');
+    if (input.status === 'cancelled') {
+      const liveBookings = await tx.bookings.findMany({
+        where: { event_id: id, status: { in: ['pending', 'confirmed'] } },
+        select: { id: true, promo_code_id: true },
+      });
+      const promoCounts = new Map<number, number>();
+      liveBookings.forEach((booking) => booking.promo_code_id && promoCounts.set(booking.promo_code_id, (promoCounts.get(booking.promo_code_id) ?? 0) + 1));
+      for (const [promoId, count] of promoCounts) {
+        const promo = await tx.promo_codes.findUnique({ where: { id: promoId }, select: { used_count: true } });
+        await tx.promo_codes.update({ where: { id: promoId }, data: { used_count: Math.max(0, (promo?.used_count ?? 0) - count) } });
       }
-      const [[zoneStats]] = await conn.query<RowDataPacket[]>(
-        `SELECT COUNT(DISTINCT sz.id) AS zones, COUNT(s.id) AS seats
-         FROM seat_zones sz
-         LEFT JOIN seats s ON s.zone_id = sz.id
-         WHERE sz.event_id = ?`,
-        [id],
-      );
-      if (Number(zoneStats.zones ?? 0) === 0 || Number(zoneStats.seats ?? 0) === 0) {
-        throw AppError.conflict(
-          'Cần cấu hình ít nhất một khu vé trước khi mở bán',
-          'EVENT_MISSING_SEAT_ZONES',
-        );
-      }
-      const [zones] = await conn.execute<ZoneShapeRow[]>(
-        'SELECT total_rows, total_cols FROM seat_zones WHERE event_id = ?',
-        [id],
-      );
-      if (!zonesFitMode(rows[0].seating_mode, zones)) {
-        throw AppError.conflict(
-          'Khu vé không khớp hình thức chỗ ngồi hiện tại',
-          'SEATING_MODE_ZONE_MISMATCH',
-        );
-      }
-    }
-
-    if (nextStatus === 'cancelled') {
-      // Restore promo capacity for every live booking that the cancellation voids.
-      await conn.execute(
-        `UPDATE promo_codes p
-         JOIN (
-           SELECT promo_code_id, COUNT(*) AS uses_to_restore
-           FROM bookings
-           WHERE event_id = ?
-             AND status IN ('pending', 'confirmed')
-             AND promo_code_id IS NOT NULL
-           GROUP BY promo_code_id
-         ) x ON x.promo_code_id = p.id
-         SET p.used_count = GREATEST(p.used_count - x.uses_to_restore, 0)`,
-        [id],
-      );
-
-      // Paid tickets become unusable; pending and confirmed bookings both stop
-      // participating in revenue/operations once the event itself is void.
-      await conn.execute(
-        `UPDATE tickets t
-         JOIN bookings b ON b.id = t.booking_id
-         SET t.status = 'cancelled'
-         WHERE b.event_id = ? AND t.status <> 'cancelled'`,
-        [id],
-      );
-      await conn.execute(
-        `UPDATE bookings
-         SET status = 'cancelled'
-         WHERE event_id = ? AND status IN ('pending', 'confirmed')`,
-        [id],
-      );
-      await conn.execute(
-        `UPDATE seats s
-         JOIN seat_zones sz ON sz.id = s.zone_id
-         SET s.status = 'available', s.locked_by = NULL, s.locked_at = NULL
-         WHERE sz.event_id = ? AND s.status <> 'available'`,
-        [id],
-      );
+      await tx.tickets.updateMany({ where: { bookings: { event_id: id }, status: { not: 'cancelled' } }, data: { status: 'cancelled' } });
+      await tx.bookings.updateMany({ where: { event_id: id, status: { in: ['pending', 'confirmed'] } }, data: { status: 'cancelled' } });
+      await tx.seats.updateMany({ where: { seat_zones: { event_id: id }, status: { not: 'available' } }, data: { status: 'available', locked_by: null, locked_at: null } });
       shouldClearQueue = true;
     }
-
-    await conn.execute('UPDATE events SET status = ? WHERE id = ?', [nextStatus, id]);
-    await conn.commit();
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    conn.release();
-  }
-
-  if (shouldClearQueue) {
-    await clearEventQueue(id);
-  }
+    await tx.events.update({ where: { id }, data: { status: input.status } });
+  });
+  if (shouldClearQueue) await clearEventQueue(id);
   await invalidateEvent(id);
   return getEventById(id, true);
 }
 
 export async function deleteEvent(id: number) {
-  const [rows] = await pool.execute<(RowDataPacket & { id: number; status: EventStatus })[]>(
-    'SELECT id, status FROM events WHERE id = ?',
-    [id],
-  );
-  if (rows.length === 0) throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
-  if (rows[0].status !== 'draft') {
-    throw AppError.conflict('Only draft events can be deleted', 'EVENT_NOT_EDITABLE');
-  }
-
-  await pool.execute('DELETE FROM events WHERE id = ?', [id]);
+  const event = await prisma.events.findUnique({ where: { id }, select: { status: true } });
+  if (!event) throw AppError.notFound('Event not found', 'EVENT_NOT_FOUND');
+  // if (event.status !== 'draft') throw AppError.conflict('Only draft events can be deleted', 'EVENT_NOT_EDITABLE');
+  await prisma.events.delete({ where: { id } });
   await invalidateEvent(id);
 }
 
-/**
- * Safety-net lifecycle worker: once the scheduled time has passed, a still-open
- * public event should stop being sold and disappear from public discovery.
- */
 export async function completePastPublishedEvents() {
-  const [rows] = await pool.query<(RowDataPacket & { id: number })[]>(
-    `SELECT id
-     FROM events
-     WHERE status = 'published' AND event_date < NOW()`,
-  );
-  if (rows.length === 0) return [];
-
+  const rows = await prisma.events.findMany({
+    where: { status: 'published', event_date: { lt: new Date() } },
+    select: { id: true },
+  });
   const ids = rows.map((row) => row.id);
-  const placeholders = ids.map(() => '?').join(', ');
-  await pool.execute(
-    `UPDATE events SET status = 'completed'
-     WHERE id IN (${placeholders}) AND status = 'published'`,
-    ids,
-  );
-
-  await Promise.all(ids.map((eventId) => redis.del(`${EVENT_DETAIL_PREFIX}${eventId}`)));
+  if (!ids.length) return [];
+  await prisma.events.updateMany({ where: { id: { in: ids }, status: 'published' }, data: { status: 'completed' } });
+  await Promise.all(ids.map((id) => redis.del(`${EVENT_DETAIL_PREFIX}${id}`)));
   await invalidateEventLists();
   return ids;
 }

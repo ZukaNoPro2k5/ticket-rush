@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { RowDataPacket } from 'mysql2';
-import pool from '../config/database';
+import prisma from '../config/prisma';
 import { AppError } from '../shared/AppError';
 import * as queueService from '../modules/queue/service';
 
@@ -18,12 +17,9 @@ export async function requireQueueGrant(req: Request, _res: Response, next: Next
   const eventId = Number(req.body?.event_id);
   if (!eventId) return next();
 
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    'SELECT queue_enabled FROM events WHERE id = ?',
-    [eventId],
-  );
-  if (rows.length === 0) return next(AppError.notFound('Sự kiện không tồn tại'));
-  if (!rows[0].queue_enabled) return next();
+  const event = await prisma.events.findUnique({ where: { id: eventId }, select: { queue_enabled: true } });
+  if (!event) return next(AppError.notFound('Sự kiện không tồn tại'));
+  if (!event.queue_enabled) return next();
 
   const granted = await queueService.hasGrant(eventId, req.user.userId);
   if (!granted) {

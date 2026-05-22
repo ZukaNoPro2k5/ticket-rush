@@ -33,6 +33,22 @@ api.interceptors.response.use(
       localStorage.removeItem('auth-storage');
       window.location.href = '/login';
     }
+    if (
+      error.response?.status === 503
+      && error.response?.data?.error?.code === 'MAINTENANCE_MODE'
+      && typeof window !== 'undefined'
+      && window.location.pathname !== '/maintenance'
+    ) {
+      const raw = localStorage.getItem('auth-storage');
+      const role = raw ? (() => {
+        try {
+          return (JSON.parse(raw) as { state?: { user?: { role?: string } } }).state?.user?.role;
+        } catch {
+          return undefined;
+        }
+      })() : undefined;
+      if (role !== 'admin') window.location.href = '/maintenance';
+    }
     return Promise.reject(error);
   },
 );

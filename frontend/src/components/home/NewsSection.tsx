@@ -8,12 +8,14 @@ import { listPosts } from '@/lib/api/posts';
 import { formatPostDate } from '@/lib/utils/posts';
 import type { Post } from '@/types';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export function NewsSection() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [featured, ...rest] = posts;
   const { ref, inView } = useSectionInView();
+  const { messages } = useLocale();
 
   useEffect(() => {
     listPosts({ limit: 5 })
@@ -32,24 +34,24 @@ export function NewsSection() {
         >
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-sky-700">
-              <Newspaper className="h-3.5 w-3.5" /> Tin tức
+              <Newspaper className="h-3.5 w-3.5" /> {messages.home.newsEyebrow}
             </span>
-            <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Điểm tin sự kiện &amp; nghệ sĩ</h2>
-            <p className="mt-1 text-sm text-stone-500 md:text-base">Cập nhật trực tiếp từ newsroom TicketRush</p>
+            <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">{messages.home.newsTitle}</h2>
+            <p className="mt-1 text-sm text-stone-500 md:text-base">{messages.home.readAllPosts}</p>
           </div>
           <Link href="/news" className="hidden items-center gap-1 text-sm font-semibold text-amber-700 hover:text-amber-600 sm:inline-flex">
-            Xem tất cả <ArrowRight className="h-4 w-4" />
+            {messages.common.viewAll} <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
 
         {loading ? (
           <div className="flex items-center justify-center gap-2 rounded-2xl border border-stone-200 py-16 text-stone-400">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Đang tải tin mới…</span>
+            <span className="text-sm">{messages.home.loadingNews}</span>
           </div>
         ) : !featured ? (
           <div className="rounded-2xl border border-dashed border-stone-300 py-16 text-center text-sm text-stone-500">
-            Chưa có bài đăng nào được xuất bản.
+            {messages.home.noPosts}
           </div>
         ) : (
           <motion.div
@@ -73,7 +75,7 @@ export function NewsSection() {
                     <div className="mt-3 flex items-center gap-3 text-xs text-white/70">
                       <span>{formatPostDate(featured.published_at)}</span>
                       <span className="h-1 w-1 rounded-full bg-white/40" />
-                      <span>{featured.read_time_min} phút đọc</span>
+                      <span>{featured.read_time_min} {messages.home.minuteRead}</span>
                     </div>
                   </div>
                 </div>
@@ -96,7 +98,7 @@ export function NewsSection() {
                       <div className="mt-1.5 flex items-center gap-2 text-[11px] text-stone-500">
                         <span>{formatPostDate(post.published_at)}</span>
                         <span className="h-1 w-1 rounded-full bg-stone-300" />
-                        <span>{post.read_time_min} phút đọc</span>
+                        <span>{post.read_time_min} {messages.home.minuteRead}</span>
                       </div>
                     </div>
                   </Link>
@@ -108,7 +110,7 @@ export function NewsSection() {
 
         <div className="mt-5 flex justify-center sm:hidden">
           <Link href="/news" className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700">
-            Xem tất cả bài viết <ArrowRight className="h-4 w-4" />
+            {messages.home.readAllPosts} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

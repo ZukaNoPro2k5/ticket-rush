@@ -6,6 +6,7 @@ import { EventCalendar } from '../EventCalendar';
 import type { DisplayEvent } from '@/types';
 import { listEvents } from '@/lib/api/events';
 import { toDisplayEvent } from '@/lib/utils/eventMappers';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   linkCls: string;
@@ -15,6 +16,7 @@ interface Props {
 export function CalendarDropdown({ linkCls, scrolled }: Props) {
   const [open, setOpen] = useState(false);
   const [events, setEvents] = useState<DisplayEvent[]>([]);
+  const { messages } = useLocale();
 
   // Pre-fetch on mount so data is ready when the user opens the dropdown
   useEffect(() => {
@@ -31,7 +33,7 @@ export function CalendarDropdown({ linkCls, scrolled }: Props) {
           open ? (scrolled ? 'bg-amber-50 text-amber-700' : 'bg-white/10 text-white') : linkCls
         }`}
       >
-        <Calendar className="h-4 w-4" /> Lịch sự kiện <ChevronDown className="h-4 w-4" />
+        <Calendar className="h-4 w-4" /> {messages.nav.eventCalendar} <ChevronDown className="h-4 w-4" />
       </button>
       {open && (
         <>

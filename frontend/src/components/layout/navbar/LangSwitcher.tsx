@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Globe } from 'lucide-react';
 import { EASE_OUT_EXPO } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import { NAVBAR_LANGUAGES, type NavbarLang } from './constants';
 
 interface Props {
@@ -13,14 +14,15 @@ interface Props {
 
 export function LangSwitcher({ scrolled, linkCls }: Props) {
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState<NavbarLang>('vi');
+  const { locale, messages, setLocale } = useLocale();
+  const lang: NavbarLang = locale;
 
   return (
     <div className="relative hidden lg:block">
       <button
         onClick={() => setOpen((v) => !v)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        aria-label="Đổi ngôn ngữ"
+        aria-label={messages.nav.language}
         className={`flex h-10 items-center gap-1 rounded-full px-2.5 text-sm font-medium transition-colors ${linkCls} ${scrolled ? 'hover:bg-stone-100' : 'hover:bg-white/10'}`}
       >
         <Globe className="h-4 w-4" />
@@ -39,7 +41,7 @@ export function LangSwitcher({ scrolled, linkCls }: Props) {
             {NAVBAR_LANGUAGES.map((l) => (
               <button
                 key={l.code}
-                onClick={() => { setLang(l.code); setOpen(false); }}
+                onClick={() => { setLocale(l.code); setOpen(false); }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors
                   ${lang === l.code ? 'bg-amber-50 font-semibold text-amber-800' : 'text-stone-700 hover:bg-stone-100'}`}
               >

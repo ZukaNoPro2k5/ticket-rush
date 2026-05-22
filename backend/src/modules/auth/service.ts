@@ -4,6 +4,7 @@ import { createHash, randomBytes } from 'crypto';
 import prisma from '../../config/prisma';
 import { config } from '../../config/env';
 import { AppError } from '../../shared/AppError';
+import { getRuntimeSystemSettings } from '../../config/runtimeSettings';
 import { sendTemplatedEmail } from '../email/service';
 import type {
   RegisterInput,
@@ -20,7 +21,7 @@ function signToken(payload: { userId: number; role: string }): string {
 }
 
 function sanitizeUser(user: any) {
-  const { password_hash, ...safe } = user;
+  const { password_hash: _password_hash, ...safe } = user;
   return safe;
 }
 
@@ -50,7 +51,8 @@ export async function register(input: RegisterInput) {
   const token = signToken({ userId: newUser.id, role: newUser.role });
   await sendTemplatedEmail('account_welcome', newUser.email, { user_name: newUser.full_name });
 
-  return { token, user: sanitizeUser(newUser) };
+  const { maintenanceMode } = await getRuntimeSystemSettings();
+  return { token, user: sanitizeUser(newUser), maintenance_mode: maintenanceMode };
 }
 
 export async function login(input: LoginInput) {
@@ -70,7 +72,8 @@ export async function login(input: LoginInput) {
 
   const token = signToken({ userId: user.id, role: user.role });
 
-  return { token, user: sanitizeUser(user) };
+  const { maintenanceMode } = await getRuntimeSystemSettings();
+  return { token, user: sanitizeUser(user), maintenance_mode: maintenanceMode };
 }
 
 export async function getProfile(userId: number) {
@@ -87,6 +90,7 @@ export async function getProfile(userId: number) {
 
 export async function oauthSync(input: OAuthSyncInput) {
   const { provider, providerAccountId, email, name, avatar } = input;
+  const { maintenanceMode } = await getRuntimeSystemSettings();
 
   const byOAuth = await prisma.users.findFirst({
     where: { oauth_provider: provider, oauth_provider_id: providerAccountId }
@@ -94,7 +98,7 @@ export async function oauthSync(input: OAuthSyncInput) {
 
   if (byOAuth) {
     const token = signToken({ userId: byOAuth.id, role: byOAuth.role });
-    return { token, user: sanitizeUser(byOAuth), isNewUser: false };
+    return { token, user: sanitizeUser(byOAuth), isNewUser: false, maintenance_mode: maintenanceMode };
   }
 
   const byEmail = await prisma.users.findFirst({
@@ -112,7 +116,7 @@ export async function oauthSync(input: OAuthSyncInput) {
     });
     
     const token = signToken({ userId: updatedUser.id, role: updatedUser.role });
-    return { token, user: sanitizeUser(updatedUser), isNewUser: false };
+    return { token, user: sanitizeUser(updatedUser), isNewUser: false, maintenance_mode: maintenanceMode };
   }
 
   const newUser = await prisma.users.create({
@@ -127,7 +131,7 @@ export async function oauthSync(input: OAuthSyncInput) {
   });
 
   const token = signToken({ userId: newUser.id, role: newUser.role });
-  return { token, user: sanitizeUser(newUser), isNewUser: true };
+  return { token, user: sanitizeUser(newUser), isNewUser: true, maintenance_mode: maintenanceMode };
 }
 
 function hashToken(token: string) {

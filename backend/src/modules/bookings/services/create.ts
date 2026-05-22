@@ -1,53 +1,27 @@
-import { ResultSetHeader } from 'mysql2';
-import pool from '../../../config/database';
+import prisma from '../../../config/prisma';
 import redis from '../../../config/redis';
 import { AppError } from '../../../shared/AppError';
-import {
-  bookingsCreatedTotal,
-  bookingsFailedTotal,
-  seatLockContentionTotal,
-} from '../../../config/metrics';
+import { bookingsCreatedTotal, bookingsFailedTotal, seatLockContentionTotal } from '../../../config/metrics';
 import { getBookingRules } from '../../../config/runtimeSettings';
 import type { CreateBookingInput } from '../validation';
 import { lockAndValidateSeats, updateSeatsStatus } from './helpers';
 
-// Distributed lock TTL (seconds). Short window — just guards the DB transaction
-// against thundering-herd contention. After commit the DB seat row (status='locked')
-// becomes the source of truth for the 10-minute hold.
 const SEAT_LOCK_TTL_SEC = 15;
-
-// Atomic multi-key lock via Lua. Either ALL seat keys are SET (return 1) or
-// NONE are touched and we get the index (1-based) of the first conflicting seat.
-// Runs single-threaded inside Redis → no race regardless of how many concurrent
-// bookings hit the same seats. Replaces N round-trip SET-NX with 1 EVAL.
 const ATOMIC_LOCK_SCRIPT = `
 local ttl = tonumber(ARGV[1])
 for i = 1, #KEYS do
-  if redis.call('EXISTS', KEYS[i]) == 1 then
-    return i
-  end
+  if redis.call('EXISTS', KEYS[i]) == 1 then return i end
 end
-for i = 1, #KEYS do
-  redis.call('SET', KEYS[i], '1', 'EX', ttl)
-end
+for i = 1, #KEYS do redis.call('SET', KEYS[i], '1', 'EX', ttl) end
 return 0
 `;
 
 async function acquireSeatLocks(eventId: number, seatIds: number[]): Promise<string[]> {
   const keys = seatIds.map((id) => `seat-lock:${eventId}:${id}`);
-  const result = await redis.eval(
-    ATOMIC_LOCK_SCRIPT,
-    keys.length,
-    ...keys,
-    String(SEAT_LOCK_TTL_SEC),
-  );
+  const result = await redis.eval(ATOMIC_LOCK_SCRIPT, keys.length, ...keys, String(SEAT_LOCK_TTL_SEC));
   if (Number(result) !== 0) {
     seatLockContentionTotal.inc();
-    throw new AppError(
-      'Một hoặc nhiều ghế đang được người khác đặt, vui lòng thử lại',
-      409,
-      'SEATS_UNAVAILABLE',
-    );
+    throw new AppError('Một hoặc nhiều ghế đang được người khác đặt, vui lòng thử lại', 409, 'SEATS_UNAVAILABLE');
   }
   return keys;
 }
@@ -55,89 +29,56 @@ async function acquireSeatLocks(eventId: number, seatIds: number[]): Promise<str
 export async function createBooking(userId: number, input: CreateBookingInput) {
   const rules = await getBookingRules();
   if (input.seat_ids.length > rules.maxTicketsPerBooking) {
-    throw AppError.badRequest(
-      `Tối đa ${rules.maxTicketsPerBooking} vé cho mỗi giao dịch`,
-      'MAX_TICKETS_PER_BOOKING',
-    );
+    throw AppError.badRequest(`Tối đa ${rules.maxTicketsPerBooking} vé cho mỗi giao dịch`, 'MAX_TICKETS_PER_BOOKING');
   }
-
-  // Fast-fail Redis lock BEFORE opening DB transaction (avoids holding row locks
-  // while waiting on contended seats). The DB FOR UPDATE inside still gives us
-  // strong consistency.
   const lockKeys = await acquireSeatLocks(input.event_id, input.seat_ids);
-
-  const conn = await pool.getConnection();
   try {
-    await conn.beginTransaction();
-
-    const [eventRows] = await conn.execute<
-      (import('mysql2').RowDataPacket & { status: string; event_date: string })[]
-    >(
-      'SELECT status, event_date FROM events WHERE id = ? FOR UPDATE',
-      [input.event_id],
-    );
-    if (eventRows.length === 0) {
-      throw AppError.notFound('Sự kiện không tồn tại', 'EVENT_NOT_FOUND');
-    }
-    if (eventRows[0].status !== 'published') {
-      throw AppError.conflict('Sự kiện chưa mở bán', 'EVENT_NOT_BOOKABLE');
-    }
-    if (new Date(eventRows[0].event_date) <= new Date()) {
-      throw AppError.conflict('Sự kiện đã diễn ra hoặc đã đóng bán', 'EVENT_NOT_BOOKABLE');
-    }
-
-    const seatRows = await lockAndValidateSeats(conn, input.seat_ids, input.event_id);
-    const subtotal = seatRows.reduce((sum, s) => sum + Number(s.price), 0);
-    const totalAmount = subtotal;
-
-    const expiresAt = new Date(Date.now() + rules.ticketHoldMinutes * 60 * 1000);
-    const [bookingResult] = await conn.execute<ResultSetHeader>(
-      `INSERT INTO bookings (user_id, event_id, promo_code_id, discount_amount, total_amount, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, input.event_id, null, 0, totalAmount, expiresAt],
-    );
-    const bookingId = bookingResult.insertId;
-
-    // booking_seats (snapshot giá)
-    const bsValues: (string | number)[] = [];
-    const bsPlaceholders: string[] = [];
-    for (const seat of seatRows) {
-      bsPlaceholders.push('(?, ?, ?)');
-      bsValues.push(bookingId, seat.id, seat.price);
-    }
-    await conn.execute(
-      `INSERT INTO booking_seats (booking_id, seat_id, price) VALUES ${bsPlaceholders.join(', ')}`,
-      bsValues,
-    );
-
-    await updateSeatsStatus(conn, input.seat_ids, 'locked', userId);
-
-    await conn.commit();
-
+    const result = await prisma.$transaction(async (tx) => {
+      const events = await tx.$queryRaw<Array<{ id: number; status: string; event_date: Date }>>`
+        SELECT id, status, event_date FROM events WHERE id = ${input.event_id} FOR UPDATE
+      `;
+      const event = events[0];
+      if (!event) throw AppError.notFound('Sự kiện không tồn tại', 'EVENT_NOT_FOUND');
+      if (event.status !== 'published') throw AppError.conflict('Sự kiện chưa mở bán', 'EVENT_NOT_BOOKABLE');
+      if (new Date(event.event_date) <= new Date()) {
+        throw AppError.conflict('Sự kiện đã diễn ra hoặc đã đóng bán', 'EVENT_NOT_BOOKABLE');
+      }
+      const seatRows = await lockAndValidateSeats(tx, input.seat_ids, input.event_id);
+      const subtotal = seatRows.reduce((sum, seat) => sum + Number(seat.price), 0);
+      const expiresAt = new Date(Date.now() + rules.ticketHoldMinutes * 60 * 1000);
+      const booking = await tx.bookings.create({
+        data: {
+          user_id: userId,
+          event_id: input.event_id,
+          promo_code_id: null,
+          discount_amount: 0,
+          total_amount: subtotal,
+          expires_at: expiresAt,
+          booking_seats: {
+            create: seatRows.map((seat) => ({ seat_id: seat.id, price: seat.price })),
+          },
+        },
+      });
+      await updateSeatsStatus(tx, input.seat_ids, 'locked', userId);
+      return { booking, subtotal, expiresAt };
+    });
     bookingsCreatedTotal.inc({ event_id: String(input.event_id) });
-
     return {
-      id: bookingId,
+      id: result.booking.id,
       event_id: input.event_id,
       seat_ids: input.seat_ids,
-      subtotal,
+      subtotal: result.subtotal,
       discount_amount: 0,
-      total_amount: totalAmount,
+      total_amount: result.subtotal,
       promo_code: null,
       status: 'pending',
-      expires_at: expiresAt.toISOString(),
+      expires_at: result.expiresAt.toISOString(),
       hold_minutes: rules.ticketHoldMinutes,
     };
   } catch (err) {
-    await conn.rollback();
-    const reason = err instanceof AppError ? err.code : 'UNKNOWN';
-    bookingsFailedTotal.inc({ reason });
+    bookingsFailedTotal.inc({ reason: err instanceof AppError ? err.code : 'UNKNOWN' });
     throw err;
   } finally {
-    conn.release();
-    // Always release Redis locks — DB state is now source of truth
-    if (lockKeys.length > 0) {
-      redis.del(...lockKeys).catch(() => { /* best-effort cleanup */ });
-    }
+    if (lockKeys.length > 0) redis.del(...lockKeys).catch(() => {});
   }
 }

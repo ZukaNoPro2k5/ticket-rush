@@ -1,0 +1,19 @@
+[   17316ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:38559
+[   18479ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/events?limit=100&sort=event_date&order=asc:0
+[   18480ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/posts?limit=5:0
+[   18480ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/events?limit=200&sort=event_date&order=asc:0
+[   18481ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/events?limit=10&sort=sold&order=desc:0
+[   18534ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/events?limit=8&sort=created_at&order=desc:0
+[   18534ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/events?limit=100&sort=event_date&order=asc:0
+[   18535ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/posts?limit=5:0
+[   18536ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/events?limit=200&sort=event_date&order=asc:0
+[   18537ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/events?limit=10&sort=sold&order=desc:0
+[   18538ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:4000/api/events?limit=8&sort=created_at&order=desc:0
+[   18609ms] AxiosError: Network Error
+    at XMLHttpRequest.handleError (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/adapters/xhr.js:133:21)
+    at Axios.request (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/core/Axios.js:56:41)
+    at async listPosts (webpack-internal:///(app-pages-browser)/./src/lib/api/posts.ts:16:17)
+[   18677ms] AxiosError: Network Error
+    at XMLHttpRequest.handleError (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/adapters/xhr.js:133:21)
+    at Axios.request (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/core/Axios.js:56:41)
+    at async listPosts (webpack-internal:///(app-pages-browser)/./src/lib/api/posts.ts:16:17)

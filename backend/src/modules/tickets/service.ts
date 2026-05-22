@@ -1,18 +1,7 @@
 import { randomUUID } from 'crypto';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import QRCode from 'qrcode';
-import pool from '../../config/database';
+import prisma from '../../config/prisma';
 import { AppError } from '../../shared/AppError';
-
-interface TicketRow extends RowDataPacket {
-  id: number;
-  booking_id: number;
-  seat_id: number;
-  qr_code: string;
-  status: 'active' | 'used' | 'cancelled';
-  checked_in_at: string | null;
-  created_at: string;
-}
 
 interface ScannerPayload {
   ticket_id?: number;
@@ -25,28 +14,12 @@ interface ScannerPayload {
 }
 
 function buildQrPayload(ticketId: number, bookingId: number, seatId: number, token: string) {
-  return JSON.stringify({
-    ticket_id: ticketId,
-    booking_id: bookingId,
-    seat_id: seatId,
-    token,
-  });
+  return JSON.stringify({ ticket_id: ticketId, booking_id: bookingId, seat_id: seatId, token });
 }
 
-async function qrDataUrlForTicket(ticket: {
-  id: number;
-  booking_id: number;
-  seat_id: number;
-  qr_code: string;
-}) {
-  if (ticket.qr_code.startsWith('data:image/')) {
-    return ticket.qr_code;
-  }
-
-  return QRCode.toDataURL(
-    buildQrPayload(ticket.id, ticket.booking_id, ticket.seat_id, ticket.qr_code),
-    { width: 300, margin: 2 },
-  );
+async function qrDataUrlForTicket(ticket: { id: number; booking_id: number; seat_id: number; qr_code: string }) {
+  if (ticket.qr_code.startsWith('data:image/')) return ticket.qr_code;
+  return QRCode.toDataURL(buildQrPayload(ticket.id, ticket.booking_id, ticket.seat_id, ticket.qr_code), { width: 300, margin: 2 });
 }
 
 function normalizeScannerPayload(input: unknown): ScannerPayload {
@@ -58,16 +31,13 @@ function normalizeScannerPayload(input: unknown): ScannerPayload {
           : typeof body.payload === 'string' ? body.payload
             : typeof body.token === 'string' && body.token.trim().startsWith('{') ? body.token
               : null;
-
   if (rawPayload) {
     try {
-      const parsed = JSON.parse(rawPayload) as ScannerPayload;
-      return parsed;
+      return JSON.parse(rawPayload) as ScannerPayload;
     } catch {
       return { token: rawPayload };
     }
   }
-
   return {
     ticket_id: typeof body.ticket_id === 'number' ? body.ticket_id : undefined,
     ticketId: typeof body.ticketId === 'number' ? body.ticketId : undefined,
@@ -79,199 +49,116 @@ function normalizeScannerPayload(input: unknown): ScannerPayload {
   };
 }
 
-/**
- * Create one ticket per booked seat. The database stores a short QR token in
- * tickets.qr_code so it fits the current schema; API responses render it as a
- * QR data URL for the frontend.
- */
 export async function generateTickets(bookingId: number) {
-  const [seatRows] = await pool.execute<RowDataPacket[]>(
-    `SELECT bs.seat_id, sz.name AS zone_name, s.row_label, s.col_number,
-            t.id AS ticket_id, t.qr_code AS ticket_qr_code
-     FROM booking_seats bs
-     JOIN seats s ON s.id = bs.seat_id
-     JOIN seat_zones sz ON sz.id = s.zone_id
-     LEFT JOIN tickets t ON t.booking_id = bs.booking_id AND t.seat_id = bs.seat_id
-     WHERE bs.booking_id = ?`,
-    [bookingId],
-  );
-
+  const seats = await prisma.booking_seats.findMany({
+    where: { booking_id: bookingId },
+    include: {
+      seats: { include: { seat_zones: { select: { name: true } } } },
+    },
+  });
+  const existing = await prisma.tickets.findMany({ where: { booking_id: bookingId } });
+  const existingBySeat = new Map(existing.map((ticket) => [ticket.seat_id, ticket]));
   const tickets: { id: number; seat: string; qr_code: string }[] = [];
-
-  for (const seat of seatRows) {
-    let ticketId = Number(seat.ticket_id ?? 0);
-    let token = seat.ticket_qr_code as string | undefined;
-
-    if (!ticketId || !token) {
-      token = randomUUID();
-      try {
-        const [result] = await pool.execute<ResultSetHeader>(
-          'INSERT INTO tickets (booking_id, seat_id, qr_code) VALUES (?, ?, ?)',
-          [bookingId, seat.seat_id, token],
-        );
-        ticketId = result.insertId;
-      } catch (err) {
-        // A retry racing with another successful confirmation may have created
-        // the same booking-seat ticket a millisecond earlier. Reuse it rather
-        // than minting another QR or failing the otherwise-valid checkout.
-        const mysqlErr = err as { code?: string };
-        if (mysqlErr.code !== 'ER_DUP_ENTRY') throw err;
-
-        const [existing] = await pool.execute<RowDataPacket[]>(
-          `SELECT id, qr_code
-           FROM tickets
-           WHERE booking_id = ? AND seat_id = ?
-           LIMIT 1`,
-          [bookingId, seat.seat_id],
-        );
-        if (existing.length === 0) throw err;
-        ticketId = Number(existing[0].id);
-        token = existing[0].qr_code as string;
-      }
+  for (const row of seats) {
+    let ticket = existingBySeat.get(row.seat_id);
+    if (!ticket) {
+      ticket = await prisma.tickets.upsert({
+        where: { booking_id_seat_id: { booking_id: bookingId, seat_id: row.seat_id } },
+        update: {},
+        create: { booking_id: bookingId, seat_id: row.seat_id, qr_code: randomUUID() },
+      });
     }
-
-    const qr_code = await qrDataUrlForTicket({
-      id: ticketId,
-      booking_id: bookingId,
-      seat_id: Number(seat.seat_id),
-      qr_code: token,
-    });
-
     tickets.push({
-      id: ticketId,
-      seat: `${seat.zone_name} - ${seat.row_label}${seat.col_number}`,
-      qr_code,
+      id: ticket.id,
+      seat: `${row.seats.seat_zones.name} - ${row.seats.row_label}${row.seats.col_number}`,
+      qr_code: await qrDataUrlForTicket(ticket),
     });
   }
-
   return tickets;
 }
 
 export async function listMyTickets(userId: number, status?: string, page = 1, limit = 10) {
-  const conditions = ['b.user_id = ?', 'b.status = ?'];
-  const params: (string | number | boolean | null)[] = [userId, 'confirmed'];
-
-  if (status) {
-    conditions.push('t.status = ?');
-    params.push(status);
-  }
-
-  const where = `WHERE ${conditions.join(' AND ')}`;
-
-  const [countRows] = await pool.execute<RowDataPacket[]>(
-    `SELECT COUNT(*) AS total
-     FROM tickets t
-     JOIN bookings b ON b.id = t.booking_id
-     ${where}`,
-    params,
-  );
-  const total = Number(countRows[0]?.total ?? 0);
-
-  const offset = (page - 1) * limit;
-  // pool.query() (not execute) — mysql2 prepared statement protocol has a known
-  // issue binding integers to LIMIT/OFFSET on MySQL 8.x newer revisions:
-  // https://github.com/sidorares/node-mysql2/issues/1239
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT t.id, t.status, t.checked_in_at, t.created_at,
-            e.id AS event_id, e.title AS event_title, e.venue, e.event_date,
-            sz.name AS zone_name, s.row_label, s.col_number
-     FROM tickets t
-     JOIN bookings b ON b.id = t.booking_id
-     JOIN events e ON e.id = b.event_id
-     JOIN seats s ON s.id = t.seat_id
-     JOIN seat_zones sz ON sz.id = s.zone_id
-     ${where}
-     ORDER BY t.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [...params, Number(limit), Number(offset)],
-  );
-
-  const items = rows.map((r) => ({
-    id: r.id,
-    event: { id: r.event_id, title: r.event_title, venue: r.venue, event_date: r.event_date },
-    seat: { zone_name: r.zone_name, row_label: r.row_label, col_number: r.col_number },
-    status: r.status,
-    checked_in_at: r.checked_in_at,
-    created_at: r.created_at,
-  }));
-
-  return { items, pagination: { page, limit, total, total_pages: Math.ceil(total / limit) } };
+  const where = {
+    bookings: { user_id: userId, status: 'confirmed' as const },
+    ...(status ? { status: status as 'active' | 'used' | 'cancelled' } : {}),
+  };
+  const [rows, total] = await prisma.$transaction([
+    prisma.tickets.findMany({
+      where,
+      include: {
+        bookings: { include: { events: { select: { id: true, title: true, venue: true, event_date: true } } } },
+        seats: { include: { seat_zones: { select: { name: true } } } },
+      },
+      orderBy: { created_at: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.tickets.count({ where }),
+  ]);
+  return {
+    items: rows.map((row) => ({
+      id: row.id,
+      event: row.bookings.events,
+      seat: { zone_name: row.seats.seat_zones.name, row_label: row.seats.row_label, col_number: row.seats.col_number },
+      status: row.status,
+      checked_in_at: row.checked_in_at,
+      created_at: row.created_at,
+    })),
+    pagination: { page, limit, total, total_pages: Math.ceil(total / limit) },
+  };
 }
 
 export async function getTicket(ticketId: number, userId?: number) {
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT t.id, t.booking_id, t.seat_id, t.qr_code, t.status, t.checked_in_at, t.created_at,
-            e.id AS event_id, e.title AS event_title, e.venue, e.event_date,
-            sz.name AS zone_name, s.row_label, s.col_number, bs.price,
-            u.full_name AS holder_name, u.email AS holder_email,
-            b.user_id AS owner_id
-     FROM tickets t
-     JOIN bookings b ON b.id = t.booking_id
-     JOIN events e ON e.id = b.event_id
-     JOIN seats s ON s.id = t.seat_id
-     JOIN seat_zones sz ON sz.id = s.zone_id
-     JOIN booking_seats bs ON bs.seat_id = t.seat_id AND bs.booking_id = t.booking_id
-     JOIN users u ON u.id = b.user_id
-     WHERE t.id = ?`,
-    [ticketId],
-  );
-
-  if (rows.length === 0) {
-    throw AppError.notFound('Ticket not found', 'TICKET_NOT_FOUND');
-  }
-
-  const r = rows[0];
-
-  if (userId && r.owner_id !== userId) {
-    throw AppError.forbidden('You do not have permission to view this ticket');
-  }
-
-  return {
-    id: r.id,
-    booking_id: r.booking_id,
-    event: { id: r.event_id, title: r.event_title, venue: r.venue, event_date: r.event_date },
-    seat: {
-      zone_name: r.zone_name,
-      row_label: r.row_label,
-      col_number: r.col_number,
-      price: Number(r.price),
+  const ticket = await prisma.tickets.findUnique({
+    where: { id: ticketId },
+    include: {
+      bookings: {
+        include: {
+          events: { select: { id: true, title: true, venue: true, event_date: true } },
+          users: { select: { full_name: true, email: true } },
+        },
+      },
+      seats: { include: { seat_zones: { select: { name: true } } } },
     },
-    holder: { full_name: r.holder_name, email: r.holder_email },
-    qr_code: await qrDataUrlForTicket({
-      id: r.id,
-      booking_id: r.booking_id,
-      seat_id: r.seat_id,
-      qr_code: r.qr_code,
-    }),
-    status: r.status,
-    checked_in_at: r.checked_in_at,
+  });
+  if (!ticket) throw AppError.notFound('Ticket not found', 'TICKET_NOT_FOUND');
+  if (userId && ticket.bookings.user_id !== userId) throw AppError.forbidden('You do not have permission to view this ticket');
+  const bookingSeat = await prisma.booking_seats.findFirst({
+    where: { booking_id: ticket.booking_id, seat_id: ticket.seat_id },
+    select: { price: true },
+  });
+  return {
+    id: ticket.id,
+    booking_id: ticket.booking_id,
+    event: ticket.bookings.events,
+    seat: {
+      zone_name: ticket.seats.seat_zones.name,
+      row_label: ticket.seats.row_label,
+      col_number: ticket.seats.col_number,
+      price: Number(bookingSeat?.price ?? 0),
+    },
+    holder: ticket.bookings.users,
+    qr_code: await qrDataUrlForTicket(ticket),
+    status: ticket.status,
+    checked_in_at: ticket.checked_in_at,
   };
 }
 
 export async function checkIn(ticketId: number) {
-  const [rows] = await pool.execute<TicketRow[]>(
-    `SELECT t.id, t.status
-     FROM tickets t
-     JOIN bookings b ON b.id = t.booking_id
-     JOIN events e ON e.id = b.event_id
-     WHERE t.id = ? AND DATE(e.event_date) = CURDATE()`,
-    [ticketId],
-  );
-  if (rows.length === 0) {
-    throw AppError.notFound('Ticket not found or event is not today', 'TICKET_NOT_FOUND');
-  }
-  if (rows[0].status === 'used') {
-    throw AppError.badRequest('Ticket already checked in', 'TICKET_ALREADY_USED');
-  }
-  if (rows[0].status === 'cancelled') {
-    throw AppError.badRequest('Ticket is cancelled', 'TICKET_CANCELLED');
-  }
-
-  await pool.execute<ResultSetHeader>(
-    "UPDATE tickets SET status = 'used', checked_in_at = NOW() WHERE id = ?",
-    [ticketId],
-  );
-
+  const ticket = await prisma.tickets.findUnique({
+    where: { id: ticketId },
+    include: { bookings: { include: { events: { select: { event_date: true } } } } },
+  });
+  const today = new Date();
+  const eventDate = ticket?.bookings.events.event_date;
+  const sameDay = eventDate
+    && eventDate.getFullYear() === today.getFullYear()
+    && eventDate.getMonth() === today.getMonth()
+    && eventDate.getDate() === today.getDate();
+  if (!ticket || !sameDay) throw AppError.notFound('Ticket not found or event is not today', 'TICKET_NOT_FOUND');
+  if (ticket.status === 'used') throw AppError.badRequest('Ticket already checked in', 'TICKET_ALREADY_USED');
+  if (ticket.status === 'cancelled') throw AppError.badRequest('Ticket is cancelled', 'TICKET_CANCELLED');
+  await prisma.tickets.update({ where: { id: ticketId }, data: { status: 'used', checked_in_at: new Date() } });
   return getTicket(ticketId);
 }
 
@@ -281,54 +168,26 @@ export async function checkInByQr(input: unknown) {
   const bookingId = Number(payload.booking_id ?? payload.bookingId);
   const seatId = Number(payload.seat_id ?? payload.seatId);
   const token = payload.token?.trim();
-
-  let rows: TicketRow[] = [];
-
-  if (Number.isInteger(ticketId) && ticketId > 0) {
-    const [found] = await pool.execute<TicketRow[]>(
-      'SELECT id, booking_id, seat_id, qr_code, status, checked_in_at, created_at FROM tickets WHERE id = ?',
-      [ticketId],
-    );
-    rows = found;
-  } else if (token) {
-    const [found] = await pool.execute<TicketRow[]>(
-      'SELECT id, booking_id, seat_id, qr_code, status, checked_in_at, created_at FROM tickets WHERE qr_code = ?',
-      [token],
-    );
-    rows = found;
-  } else if (Number.isInteger(bookingId) && Number.isInteger(seatId)) {
-    const [found] = await pool.execute<TicketRow[]>(
-      `SELECT id, booking_id, seat_id, qr_code, status, checked_in_at, created_at
-       FROM tickets
-       WHERE booking_id = ? AND seat_id = ?`,
-      [bookingId, seatId],
-    );
-    rows = found;
-  }
-
-  if (rows.length === 0) {
-    throw AppError.notFound('Ticket not found', 'TICKET_NOT_FOUND');
-  }
-
-  const ticket = rows[0];
+  const ticket = Number.isInteger(ticketId) && ticketId > 0
+    ? await prisma.tickets.findUnique({ where: { id: ticketId } })
+    : token
+      ? await prisma.tickets.findUnique({ where: { qr_code: token } })
+      : Number.isInteger(bookingId) && Number.isInteger(seatId)
+        ? await prisma.tickets.findUnique({ where: { booking_id_seat_id: { booking_id: bookingId, seat_id: seatId } } })
+        : null;
+  if (!ticket) throw AppError.notFound('Ticket not found', 'TICKET_NOT_FOUND');
   const tokenMismatch = token && !ticket.qr_code.startsWith('data:image/') && ticket.qr_code !== token;
   const bookingMismatch = Number.isInteger(bookingId) && bookingId > 0 && ticket.booking_id !== bookingId;
   const seatMismatch = Number.isInteger(seatId) && seatId > 0 && ticket.seat_id !== seatId;
-
-  if (tokenMismatch || bookingMismatch || seatMismatch) {
-    throw AppError.badRequest('Invalid QR payload', 'INVALID_QR');
-  }
-
+  if (tokenMismatch || bookingMismatch || seatMismatch) throw AppError.badRequest('Invalid QR payload', 'INVALID_QR');
   return checkIn(ticket.id);
 }
 
 export async function resolveTicketByQr(bookingId: number, seatId: number) {
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    'SELECT id FROM tickets WHERE booking_id = ? AND seat_id = ? LIMIT 1',
-    [bookingId, seatId],
-  );
-  if (rows.length === 0) {
-    throw AppError.notFound('Vé không tồn tại', 'TICKET_NOT_FOUND');
-  }
-  return { ticket_id: rows[0].id as number };
+  const ticket = await prisma.tickets.findUnique({
+    where: { booking_id_seat_id: { booking_id: bookingId, seat_id: seatId } },
+    select: { id: true },
+  });
+  if (!ticket) throw AppError.notFound('Vé không tồn tại', 'TICKET_NOT_FOUND');
+  return { ticket_id: ticket.id };
 }

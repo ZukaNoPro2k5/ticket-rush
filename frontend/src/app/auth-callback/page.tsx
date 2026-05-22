@@ -23,11 +23,13 @@ export default function AuthCallbackPage() {
 
     if (status === 'authenticated' && session) {
       const backendToken = (session as { backendToken?: string }).backendToken;
+      const maintenanceMode = (session as { maintenanceMode?: boolean }).maintenanceMode ?? false;
       const u = session.user as {
         id?: string | number;
         email?: string | null;
         name?: string | null;
         image?: string | null;
+        role?: 'customer' | 'admin';
       };
 
       if (opener) {
@@ -39,8 +41,10 @@ export default function AuthCallbackPage() {
               id:         u.id ?? 0,
               email:      u.email ?? '',
               name:       u.name ?? '',
+              role:       u.role ?? 'customer',
               avatar_url: u.image ?? null,
             },
+            maintenance_mode: maintenanceMode,
           },
           window.location.origin,
         );

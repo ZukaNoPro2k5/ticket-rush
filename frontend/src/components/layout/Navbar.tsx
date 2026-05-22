@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, Newspaper, Tag, Ticket } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import {
   CalendarDropdown, ExploreDropdown, LangSwitcher, MobileDrawer, UserMenu,
 } from './navbar/index';
@@ -15,6 +16,7 @@ export function Navbar({ variant = 'overlay' }: { variant?: NavbarVariant }) {
   const pathname = usePathname();
   const { isAuthenticated, user, clearAuth } = useAuthStore();
   const { openLoginModal } = useUIStore();
+  const { messages } = useLocale();
 
   const [scrolled, setScrolled] = useState(variant === 'solid');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -63,7 +65,7 @@ export function Navbar({ variant = 'overlay' }: { variant?: NavbarVariant }) {
             className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors
               ${isActive('/promotions') ? (scrolled ? 'text-amber-700 bg-amber-50' : 'text-white bg-white/10') : linkCls}`}
           >
-            <Tag className="h-4 w-4" /> Ưu đãi
+            <Tag className="h-4 w-4" /> {messages.nav.promotions}
           </Link>
 
           <Link
@@ -71,7 +73,7 @@ export function Navbar({ variant = 'overlay' }: { variant?: NavbarVariant }) {
             className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors
               ${isActive('/news') ? (scrolled ? 'text-amber-700 bg-amber-50' : 'text-white bg-white/10') : linkCls}`}
           >
-            <Newspaper className="h-4 w-4" /> Tin tức
+            <Newspaper className="h-4 w-4" /> {messages.nav.news}
           </Link>
         </nav>
 
@@ -86,13 +88,13 @@ export function Navbar({ variant = 'overlay' }: { variant?: NavbarVariant }) {
               onClick={() => openLoginModal('login')}
               className="hidden rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-lift sm:inline-flex sm:items-center"
             >
-              Đăng nhập
+              {messages.nav.login}
             </button>
           )}
 
           <button
             onClick={() => setMobileOpen(true)}
-            aria-label="Mở menu"
+            aria-label={messages.nav.openMenu}
             className={`grid h-10 w-10 place-items-center rounded-lg lg:hidden ${linkCls}`}
           >
             <Menu className="h-5 w-5" />

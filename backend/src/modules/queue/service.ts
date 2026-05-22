@@ -1,5 +1,4 @@
-import { RowDataPacket } from 'mysql2';
-import pool from '../../config/database';
+import prisma from '../../config/prisma';
 import redis from '../../config/redis';
 import { AppError } from '../../shared/AppError';
 import { queueGrantedTotal, queueWaitingGauge } from '../../config/metrics';
@@ -32,12 +31,9 @@ export interface QueueStatus {
 }
 
 async function isQueueEnabled(eventId: number): Promise<boolean> {
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    'SELECT queue_enabled FROM events WHERE id = ?',
-    [eventId],
-  );
-  if (rows.length === 0) throw AppError.notFound('Sự kiện không tồn tại');
-  return Boolean(rows[0].queue_enabled);
+  const event = await prisma.events.findUnique({ where: { id: eventId }, select: { queue_enabled: true } });
+  if (!event) throw AppError.notFound('Sự kiện không tồn tại');
+  return event.queue_enabled;
 }
 
 export async function enterQueue(eventId: number, userId: number): Promise<QueueStatus> {
@@ -95,13 +91,14 @@ export async function leaveQueue(eventId: number, userId: number): Promise<void>
  * from the queue and mark them granted.
  */
 export async function processQueueTick(): Promise<void> {
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    'SELECT id FROM events WHERE queue_enabled = TRUE AND status = "published"',
-  );
+  const rows = await prisma.events.findMany({
+    where: { queue_enabled: true, status: 'published' },
+    select: { id: true },
+  });
   if (rows.length === 0) return;
 
   for (const row of rows) {
-    const eventId = row.id as number;
+    const eventId = row.id;
     const top = await redis.zrange(QUEUE_KEY(eventId), 0, BATCH_SIZE - 1);
     if (top.length === 0) {
       queueWaitingGauge.set({ event_id: String(eventId) }, 0);

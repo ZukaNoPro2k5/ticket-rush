@@ -4,20 +4,7 @@ import { Clock, MapPin, Search, X } from 'lucide-react';
 import type { EventCategory } from '@/types';
 import { EVENT_CATEGORY_OPTIONS } from './EventsCategoryBar';
 import { DEFAULT_PRICE_MAX, type TimeRangeKey } from '@/lib/utils/eventsFilters';
-
-const TIME_LABELS: Record<TimeRangeKey, string> = {
-  all: 'Tất cả thời gian',
-  today: 'Hôm nay',
-  weekend: 'Cuối tuần',
-  week: 'Tuần này',
-  month: 'Tháng này',
-  next_month: 'Tháng sau',
-  other: 'Khác',
-};
-
-function formatVnd(value: number): string {
-  return `${value.toLocaleString('vi-VN')}đ`;
-}
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   query: string;
@@ -47,6 +34,16 @@ export function EventsActiveChips({
   onResetAll,
 }: Props) {
   const cat = activeCat ? EVENT_CATEGORY_OPTIONS.find((c) => c.key === activeCat) : null;
+  const { messages, formatCurrency } = useLocale();
+  const timeLabels: Record<TimeRangeKey, string> = {
+    all: messages.events.timeAll,
+    today: messages.home.today,
+    weekend: messages.home.weekend,
+    week: messages.home.week,
+    month: messages.home.month,
+    next_month: messages.events.nextMonth,
+    other: messages.events.other,
+  };
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -63,7 +60,7 @@ export function EventsActiveChips({
           onClick={onClearCategory}
           className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200"
         >
-          {cat.label} <X className="h-3 w-3" />
+          {messages.categories[cat.key]} <X className="h-3 w-3" />
         </button>
       )}
       {timeRange !== 'all' && (
@@ -71,7 +68,7 @@ export function EventsActiveChips({
           onClick={onClearTime}
           className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-200"
         >
-          <Clock className="h-3 w-3" /> {TIME_LABELS[timeRange]} <X className="h-3 w-3" />
+          <Clock className="h-3 w-3" /> {timeLabels[timeRange]} <X className="h-3 w-3" />
         </button>
       )}
       {city !== 'Tất cả' && (
@@ -87,11 +84,11 @@ export function EventsActiveChips({
           onClick={onClearPrice}
           className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-200"
         >
-          ≤ {formatVnd(priceMax)} <X className="h-3 w-3" />
+          {'<='} {formatCurrency(priceMax)} <X className="h-3 w-3" />
         </button>
       )}
       <button onClick={onResetAll} className="text-xs font-medium text-amber-700 hover:text-amber-800">
-        Xóa tất cả
+        {messages.common.clearAll}
       </button>
     </div>
   );

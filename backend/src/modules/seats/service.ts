@@ -1,159 +1,99 @@
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import pool from '../../config/database';
+import { Prisma } from '@prisma/client';
+import prisma from '../../config/prisma';
 import { AppError } from '../../shared/AppError';
 import { getBookingRules } from '../../config/runtimeSettings';
 
-interface SeatRow extends RowDataPacket {
+function normalizeSeat(row: {
   id: number;
   zone_id: number;
-  zone_name: string;
-  zone_color: string;
-  zone_price: number;
   row_label: string;
   col_number: number;
-  status: string;
-}
-
-function normalizeSeat(row: SeatRow) {
+  status: 'available' | 'locked' | 'sold';
+  seat_zones: { name: string; color: string; price: Prisma.Decimal };
+}) {
   return {
-    ...row,
-    zone_price: Number(row.zone_price),
+    id: row.id,
+    zone_id: row.zone_id,
+    zone_name: row.seat_zones.name,
+    zone_color: row.seat_zones.color,
+    zone_price: row.seat_zones.price.toNumber(),
+    row_label: row.row_label,
+    col_number: row.col_number,
+    status: row.status,
   };
 }
 
-/**
- * A6 — List all seats for an event with zone info
- */
+const seatInclude = { seat_zones: { select: { name: true, color: true, price: true } } } as const;
+
 export async function listByEvent(eventId: number) {
-  const [rows] = await pool.execute<SeatRow[]>(
-    `SELECT
-       s.id, s.zone_id,
-       sz.name AS zone_name, sz.color AS zone_color, sz.price AS zone_price,
-       s.row_label, s.col_number, s.status
-     FROM seats s
-     JOIN seat_zones sz ON sz.id = s.zone_id
-     WHERE sz.event_id = ?
-     ORDER BY sz.id, s.row_label, s.col_number`,
-    [eventId],
-  );
+  const rows = await prisma.seats.findMany({
+    where: { seat_zones: { event_id: eventId } },
+    include: seatInclude,
+    orderBy: [{ zone_id: 'asc' }, { row_label: 'asc' }, { col_number: 'asc' }],
+  });
   return rows.map(normalizeSeat);
 }
 
-/**
- * List seats for one zone within an event.
- * Keeping the event guard avoids leaking a valid zone id across events.
- */
 export async function listByZone(eventId: number, zoneId: number) {
-  const [rows] = await pool.execute<SeatRow[]>(
-    `SELECT
-       s.id, s.zone_id,
-       sz.name AS zone_name, sz.color AS zone_color, sz.price AS zone_price,
-       s.row_label, s.col_number, s.status
-     FROM seats s
-     JOIN seat_zones sz ON sz.id = s.zone_id
-     WHERE sz.event_id = ? AND sz.id = ?
-     ORDER BY s.row_label, s.col_number`,
-    [eventId, zoneId],
-  );
+  const rows = await prisma.seats.findMany({
+    where: { zone_id: zoneId, seat_zones: { event_id: eventId } },
+    include: seatInclude,
+    orderBy: [{ row_label: 'asc' }, { col_number: 'asc' }],
+  });
   return rows.map(normalizeSeat);
 }
 
 /**
- * Lock ghế cho user — sử dụng SELECT ... FOR UPDATE để tránh race condition
- * Trả về danh sách ghế đã lock thành công
+ * Row locking is one of the few legitimate raw SQL cases left: Prisma does not expose
+ * SELECT ... FOR UPDATE in its model API. It still runs inside Prisma's transaction
+ * client so the application has one database abstraction boundary.
  */
 export async function lockSeats(seatIds: number[], userId: number) {
-  const conn = await pool.getConnection();
-  try {
-    await conn.beginTransaction();
-
-    // Row-level lock: SELECT ... FOR UPDATE
-    const placeholders = seatIds.map(() => '?').join(', ');
-    const [rows] = await conn.execute<SeatRow[]>(
-      `SELECT id, status FROM seats WHERE id IN (${placeholders}) FOR UPDATE`,
-      seatIds,
-    );
-
-    if (rows.length !== seatIds.length) {
-      throw AppError.notFound('Một số ghế không tồn tại');
-    }
-
-    const unavailable = rows.filter((r) => r.status !== 'available');
+  return prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<{ id: number; status: 'available' | 'locked' | 'sold' }[]>`
+      SELECT id, status FROM seats WHERE id IN (${Prisma.join(seatIds)}) FOR UPDATE
+    `;
+    if (rows.length !== seatIds.length) throw AppError.notFound('Một số ghế không tồn tại');
+    const unavailable = rows.filter((row) => row.status !== 'available');
     if (unavailable.length > 0) {
-      throw AppError.conflict(
-        `${unavailable.length} ghế đã bị người khác giữ hoặc đã bán`,
-        'SEATS_UNAVAILABLE',
-      );
+      throw AppError.conflict(`${unavailable.length} ghế đã bị người khác giữ hoặc đã bán`, 'SEATS_UNAVAILABLE');
     }
-
-    // Lock ghế
-    await conn.execute<ResultSetHeader>(
-      `UPDATE seats SET status = 'locked', locked_by = ?, locked_at = NOW()
-       WHERE id IN (${placeholders})`,
-      [userId, ...seatIds],
-    );
-
-    await conn.commit();
+    await tx.seats.updateMany({
+      where: { id: { in: seatIds } },
+      data: { status: 'locked', locked_by: userId, locked_at: new Date() },
+    });
     return seatIds;
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    conn.release();
-  }
+  });
 }
 
-/**
- * Release ghế (khi hủy booking hoặc cronjob hết hạn)
- */
 export async function releaseSeats(seatIds: number[]) {
   if (seatIds.length === 0) return;
-
-  const placeholders = seatIds.map(() => '?').join(', ');
-  await pool.execute<ResultSetHeader>(
-    `UPDATE seats SET status = 'available', locked_by = NULL, locked_at = NULL
-     WHERE id IN (${placeholders})`,
-    seatIds,
-  );
+  await prisma.seats.updateMany({
+    where: { id: { in: seatIds } },
+    data: { status: 'available', locked_by: null, locked_at: null },
+  });
 }
 
-/**
- * Mark ghế đã bán (khi confirm booking)
- */
 export async function markSold(seatIds: number[]) {
   if (seatIds.length === 0) return;
-
-  const placeholders = seatIds.map(() => '?').join(', ');
-  await pool.execute<ResultSetHeader>(
-    `UPDATE seats SET status = 'sold', locked_by = NULL, locked_at = NULL
-     WHERE id IN (${placeholders})`,
-    seatIds,
-  );
+  await prisma.seats.updateMany({
+    where: { id: { in: seatIds } },
+    data: { status: 'sold', locked_by: null, locked_at: null },
+  });
 }
 
-/**
- * Cronjob: tìm và release ghế locked quá thời gian giữ vé hiện tại
- */
 export async function releaseExpiredSeats() {
   const { ticketHoldMinutes } = await getBookingRules();
   const cutoff = new Date(Date.now() - ticketHoldMinutes * 60 * 1000);
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT s.id
-     FROM seats s
-     WHERE s.status = 'locked'
-       AND s.locked_at < ?
-       AND NOT EXISTS (
-         SELECT 1
-         FROM booking_seats bs
-         JOIN bookings b ON b.id = bs.booking_id
-         WHERE bs.seat_id = s.id AND b.status = 'pending'
-       )`,
-    [cutoff],
-  );
-
-  const seatIds = rows.map((r) => r.id as number);
-  if (seatIds.length > 0) {
-    await releaseSeats(seatIds);
-  }
+  const rows = await prisma.seats.findMany({
+    where: {
+      status: 'locked',
+      locked_at: { lt: cutoff },
+      booking_seats: { none: { bookings: { status: 'pending' } } },
+    },
+    select: { id: true },
+  });
+  const seatIds = rows.map((row) => row.id);
+  await releaseSeats(seatIds);
   return seatIds;
 }

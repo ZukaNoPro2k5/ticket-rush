@@ -1,0 +1,191 @@
+- main [ref=e2]:
+  - generic [ref=e4]:
+    - link "TicketRush" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - img [ref=e7]
+      - generic [ref=e9]: TicketRush
+    - navigation [ref=e10]:
+      - button "Khám phá" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+        - text: Khám phá
+        - img [ref=e16]
+      - button "Lịch sự kiện" [ref=e19] [cursor=pointer]:
+        - img [ref=e20]
+        - text: Lịch sự kiện
+        - img [ref=e22]
+      - link "Ưu đãi" [ref=e24] [cursor=pointer]:
+        - /url: /promotions
+        - img [ref=e25]
+        - text: Ưu đãi
+      - link "Tin tức" [ref=e28] [cursor=pointer]:
+        - /url: /news
+        - img [ref=e29]
+        - text: Tin tức
+    - generic [ref=e32]:
+      - button "Đổi ngôn ngữ" [ref=e34] [cursor=pointer]:
+        - img [ref=e35]
+        - generic [ref=e38]: vi
+        - img [ref=e39]
+      - button "Đăng nhập" [ref=e41] [cursor=pointer]
+  - generic [ref=e44]:
+    - navigation [ref=e45]:
+      - link "Trang chủ" [ref=e46] [cursor=pointer]:
+        - /url: /
+      - img [ref=e47]
+      - generic [ref=e49]: Sự kiện
+    - heading "Khám phá sự kiện" [level=1] [ref=e50]
+    - paragraph [ref=e51]: Tìm concert, sân khấu, thể thao và workshop đang mở bán. Lọc theo sở thích và đặt vé trong vài bước.
+    - generic [ref=e52]:
+      - img [ref=e53]
+      - textbox "Nhập tên sự kiện, địa điểm, nghệ sĩ..." [ref=e56]
+      - button "Tìm kiếm" [ref=e57] [cursor=pointer]
+  - generic [ref=e60]:
+    - generic [ref=e61]:
+      - img [ref=e62]
+      - text: "Lọc:"
+    - button "Âm nhạc" [ref=e63] [cursor=pointer]:
+      - generic [ref=e64]: 
+      - text: Âm nhạc
+    - button "Nghệ thuật" [ref=e65] [cursor=pointer]:
+      - generic [ref=e66]: 
+      - text: Nghệ thuật
+    - button "Thể thao" [ref=e67] [cursor=pointer]:
+      - generic [ref=e68]: 
+      - text: Thể thao
+    - button "Ẩm thực" [ref=e69] [cursor=pointer]:
+      - generic [ref=e70]: 
+      - text: Ẩm thực
+    - button "Giải trí" [ref=e71] [cursor=pointer]:
+      - generic [ref=e72]: 
+      - text: Giải trí
+    - button "Workshop" [ref=e73] [cursor=pointer]:
+      - generic [ref=e74]: 
+      - text: Workshop
+    - button "Sân khấu" [ref=e75] [cursor=pointer]:
+      - generic [ref=e76]: 
+      - text: Sân khấu
+    - button "Khác" [ref=e77] [cursor=pointer]:
+      - generic [ref=e78]: 
+      - text: Khác
+    - generic [ref=e79]: Chọn 1 danh mục, bấm lại để bỏ chọn
+  - generic [ref=e81]:
+    - complementary [ref=e82]:
+      - generic [ref=e83]:
+        - heading "Bộ lọc nâng cao" [level=3] [ref=e85]
+        - generic [ref=e86]:
+          - generic [ref=e87]: Thời gian
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - radio "Tất cả thời gian" [checked] [ref=e90]
+              - generic [ref=e91]: Tất cả thời gian
+            - generic [ref=e92]:
+              - radio "Hôm nay" [ref=e93]
+              - generic [ref=e94]: Hôm nay
+            - generic [ref=e95]:
+              - radio "Cuối tuần" [ref=e96]
+              - generic [ref=e97]: Cuối tuần
+            - generic [ref=e98]:
+              - radio "Tuần này" [ref=e99]
+              - generic [ref=e100]: Tuần này
+            - generic [ref=e101]:
+              - radio "Tháng này" [ref=e102]
+              - generic [ref=e103]: Tháng này
+        - generic [ref=e104]:
+          - generic [ref=e105]: Thành phố
+          - generic [ref=e106]:
+            - combobox [ref=e107]:
+              - option "Tất cả" [selected]
+              - option "Hà Nội"
+              - option "TP. HCM"
+              - option "Đà Nẵng"
+              - option "Hải Phòng"
+              - option "Huế"
+            - img
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]: Giá tối đa
+            - generic [ref=e111]: 5.000.000đ
+          - slider [ref=e112]: "5000000"
+          - generic [ref=e113]:
+            - generic [ref=e114]: 100K
+            - generic [ref=e115]: 5tr
+        - button "Đã áp dụng" [disabled] [ref=e117]:
+          - img [ref=e118]
+          - text: Đã áp dụng
+    - generic [ref=e124]:
+      - generic [ref=e125]:
+        - img
+        - combobox [ref=e126]:
+          - option "Phổ biến nhất" [selected]
+          - option "Mới nhất"
+          - option "Sắp diễn ra"
+          - 'option "Giá: Thấp đến cao"'
+          - 'option "Giá: Cao đến thấp"'
+        - img
+      - generic [ref=e127]:
+        - button "Xem dạng lưới" [ref=e128] [cursor=pointer]:
+          - img [ref=e129]
+        - button "Xem dạng danh sách" [ref=e131] [cursor=pointer]:
+          - img [ref=e132]
+  - generic [ref=e183]:
+    - generic [ref=e184]:
+      - generic [ref=e185]:
+        - generic [ref=e186]:
+          - img [ref=e188]
+          - text: TicketRush
+        - paragraph [ref=e190]: Nền tảng đặt vé sự kiện trực tuyến — giữ ghế realtime, xác nhận gọn, vé QR rõ ràng.
+        - generic [ref=e191]:
+          - generic [ref=e192]:
+            - img [ref=e193]
+            - text: Giữ ghế minh bạch
+          - generic [ref=e196]:
+            - img [ref=e197]
+            - text: Hỗ trợ rõ ràng
+      - generic [ref=e199]:
+        - heading "Về chúng tôi" [level=4] [ref=e200]
+        - list [ref=e201]:
+          - listitem [ref=e202]:
+            - link "Về TicketRush" [ref=e203] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e204]:
+            - link "Tin tức" [ref=e205] [cursor=pointer]:
+              - /url: /news
+          - listitem [ref=e206]:
+            - link "Liên hệ" [ref=e207] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=e208]:
+        - heading "Khám phá" [level=4] [ref=e209]
+        - list [ref=e210]:
+          - listitem [ref=e211]:
+            - link "Tất cả sự kiện" [ref=e212] [cursor=pointer]:
+              - /url: /events
+          - listitem [ref=e213]:
+            - link "Sự kiện hot" [ref=e214] [cursor=pointer]:
+              - /url: /events?sort=trending
+          - listitem [ref=e215]:
+            - link "Sắp diễn ra" [ref=e216] [cursor=pointer]:
+              - /url: /events?sort=upcoming
+          - listitem [ref=e217]:
+            - link "Vé giá rẻ" [ref=e218] [cursor=pointer]:
+              - /url: /events?sort=priceAsc
+      - generic [ref=e219]:
+        - heading "Hỗ trợ" [level=4] [ref=e220]
+        - list [ref=e221]:
+          - listitem [ref=e222]:
+            - link "Trung tâm trợ giúp" [ref=e223] [cursor=pointer]:
+              - /url: /help
+          - listitem [ref=e224]:
+            - link "Hướng dẫn mua vé" [ref=e225] [cursor=pointer]:
+              - /url: /help#buying
+          - listitem [ref=e226]:
+            - link "Chính sách hoàn vé" [ref=e227] [cursor=pointer]:
+              - /url: /refund-policy
+          - listitem [ref=e228]:
+            - link "Điều khoản dịch vụ" [ref=e229] [cursor=pointer]:
+              - /url: /terms
+    - generic [ref=e230]:
+      - generic [ref=e231]: © 2026 TicketRush · Đồ án môn INT3306 · UET, ĐHQGHN
+      - generic [ref=e232]:
+        - generic [ref=e233]: Giữ ghế realtime
+        - generic [ref=e234]: QR điện tử
+        - generic [ref=e235]: Hàng chờ ảo

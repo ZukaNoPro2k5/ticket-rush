@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { passwordChecks, strengthScore } from './authUtils';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   password: string;
@@ -10,11 +11,18 @@ interface Props {
 }
 
 export function PasswordStrength({ password, visible }: Props) {
+  const { messages } = useLocale();
   const checks = passwordChecks(password);
   const score = strengthScore(password);
 
   const strengthLabel =
-    score === 1 ? 'Yếu' : score === 2 ? 'Khá' : score === 3 ? 'Mạnh' : '';
+    score === 1
+      ? messages.auth.passwordStrengthWeak
+      : score === 2
+        ? messages.auth.passwordStrengthMedium
+        : score === 3
+          ? messages.auth.passwordStrengthStrong
+          : '';
   const strengthColor =
     score <= 1 ? 'bg-rose-500' : score === 2 ? 'bg-amber-500' : 'bg-emerald-500';
   const strengthTextColor =

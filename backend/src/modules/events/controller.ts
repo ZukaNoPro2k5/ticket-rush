@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../shared/asyncHandler';
 import { sendSuccess, sendCreated } from '../../shared/response';
+import { getIO } from '../../config/socket';
 import * as eventService from './service';
 import type { ListEventsQuery, CreateEventInput, UpdateEventInput, ChangeStatusInput } from './validation';
 
@@ -10,7 +11,12 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
     req.query as unknown as ListEventsQuery,
     includeUnpublished,
   );
-  res.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
+  res.set(
+    'Cache-Control',
+    includeUnpublished
+      ? 'no-store'
+      : 'public, max-age=30, s-maxage=60, stale-while-revalidate=120',
+  );
   sendSuccess(res, result);
 });
 
@@ -18,7 +24,12 @@ export const getOne = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id, 10);
   const includeUnpublished = req.user?.role === 'admin';
   const event = await eventService.getEventById(id, includeUnpublished);
-  res.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
+  res.set(
+    'Cache-Control',
+    includeUnpublished
+      ? 'no-store'
+      : 'public, max-age=30, s-maxage=60, stale-while-revalidate=120',
+  );
   sendSuccess(res, event);
 });
 
@@ -30,6 +41,9 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id, 10);
   const event = await eventService.updateEvent(id, req.body as UpdateEventInput);
+  if ('layout_config' in req.body || 'seating_mode' in req.body) {
+    getIO().to(`event:${id}`).emit('seat:layout_changed');
+  }
   sendSuccess(res, event);
 });
 

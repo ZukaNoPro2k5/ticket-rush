@@ -1,4 +1,7 @@
 'use client';
+import dynamic from "next/dynamic";
+const CategoryDonut = dynamic(() => import("@/components/admin/CategoryDonut"), { ssr: false });
+
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -62,16 +65,6 @@ function fmtCurrency(n: number) {
   return n.toLocaleString('vi-VN');
 }
 
-const CATEGORY_VI: Record<string, string> = {
-  music: 'Âm nhạc',
-  arts: 'Nghệ thuật',
-  sports: 'Thể thao',
-  food: 'Ẩm thực',
-  entertainment: 'Giải trí',
-  workshop: 'Hội thảo',
-  stage: 'Sân khấu',
-  other: 'Khác',
-};
 
 // Day-of-week label (Mon…Sun → T2…CN)
 function dayLabel(iso: string) {
@@ -102,63 +95,6 @@ function Delta({ pct }: { pct: number | null | undefined }) {
 }
 
 // ── Donut chart (pure CSS/SVG) ─────────────────────────────────────────────
-
-function CategoryDonut({ data }: { data: { category: string; revenue: number }[] }) {
-  const total = data.reduce((s, d) => s + d.revenue, 0) || 1;
-  const colors = ['#f59e0b','#10b981','#8b5cf6','#38bdf8','#a8a29e'];
-
-  let cumAngle = -90; // start from top
-  const slices = data.map((d, i) => {
-    const pct   = d.revenue / total;
-    const angle = pct * 360;
-    const start = cumAngle;
-    cumAngle += angle;
-    return { ...d, pct, angle, start, color: colors[i % colors.length] };
-  });
-
-  const r = 28, cx = 36, cy = 36, stroke = 10;
-  const circ = 2 * Math.PI * r;
-
-  return (
-    <div className="flex items-center gap-5">
-      {/* SVG donut */}
-      <svg width="72" height="72" viewBox="0 0 72 72" className="shrink-0 -rotate-90">
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f5f5f4" strokeWidth={stroke} />
-        {slices.map((s, i) => {
-          const dashLen = (s.pct * circ);
-          const offset  = slices.slice(0, i).reduce((a, x) => a + x.pct * circ, 0);
-          return (
-            <circle
-              key={i}
-              cx={cx} cy={cy} r={r}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={stroke}
-              strokeDasharray={`${dashLen} ${circ - dashLen}`}
-              strokeDashoffset={-offset}
-              strokeLinecap="butt"
-            />
-          );
-        })}
-      </svg>
-
-      {/* Legend */}
-      <div className="flex flex-col gap-1.5">
-        {slices.map((s, i) => (
-          <div key={i} className="flex items-center justify-between gap-4 text-xs">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
-              <span className="text-stone-600">{CATEGORY_VI[s.category] ?? s.category}</span>
-            </div>
-            <span className="font-semibold tabular-nums text-stone-800">
-              {Math.round(s.pct * 100)}%
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ── Stat tile ──────────────────────────────────────────────────────────────
 

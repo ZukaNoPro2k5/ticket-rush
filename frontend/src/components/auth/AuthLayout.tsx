@@ -4,12 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Ticket, ShieldCheck, Sparkles, Zap, Star } from 'lucide-react';
 import { EASE_OUT_EXPO } from '@/lib/motion';
-
-const BENEFITS = [
-  { icon: Zap,         title: 'Đặt vé trong 30 giây',    desc: 'Checkout nhanh, không lag, giữ ghế tức thì.' },
-  { icon: ShieldCheck, title: 'Đặt vé an toàn',          desc: 'Không bán trùng ghế, QR sinh ngay sau xác nhận.' },
-  { icon: Sparkles,    title: 'Gợi ý theo sở thích',     desc: 'Ưu tiên sự kiện hợp gu từ dữ liệu bạn chọn.' },
-];
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 /**
  * Split-screen layout for /login, /register, /onboarding.
@@ -27,6 +22,13 @@ export function AuthLayout({
   subtitle?: string;
   footer?: React.ReactNode;
 }) {
+  const { messages } = useLocale();
+  const benefits = [
+    { icon: Zap, title: messages.auth.benefitFast, desc: messages.auth.benefitFastDesc },
+    { icon: ShieldCheck, title: messages.auth.benefitSafe, desc: messages.auth.benefitSafeDesc },
+    { icon: Sparkles, title: messages.auth.benefitPersonal, desc: messages.auth.benefitPersonalDesc },
+  ];
+
   return (
     <main className="min-h-screen bg-stone-50 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       {/* ───── Left pane — warm, light, welcoming ───── */}
@@ -71,24 +73,24 @@ export function AuthLayout({
         >
           <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-white/70 px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" />
-            Nền tảng vé sự kiện #1 Việt Nam
+            {messages.auth.platform}
           </span>
 
           <h2 className="mt-5 font-display text-[2.5rem] font-bold leading-[1.1] tracking-tight text-stone-900">
-            Mọi sự kiện đỉnh nhất,
+            {messages.auth.heroLineOne}
             <br />
             <span className="bg-gradient-to-r from-amber-600 via-orange-500 to-rose-500 bg-clip-text text-transparent">
-              trong tầm tay bạn.
+              {messages.auth.heroLineTwo}
             </span>
           </h2>
 
           <p className="mt-4 max-w-md text-[15px] leading-relaxed text-stone-600">
-            Khám phá concert, workshop và trận đấu hot trong một luồng đặt vé gọn, rõ và cập nhật theo thời gian thực.
+            {messages.auth.heroDesc}
           </p>
 
           {/* Benefits */}
           <div className="mt-9 space-y-3.5">
-            {BENEFITS.map((b, i) => {
+            {benefits.map((b, i) => {
               const Icon = b.icon;
               return (
                 <motion.div
@@ -140,7 +142,7 @@ export function AuthLayout({
               ))}
               <span className="ml-1.5 text-xs font-bold text-stone-900">4.9</span>
             </div>
-            <span className="text-xs text-stone-600">+1,200 sự kiện đang mở bán</span>
+            <span className="text-xs text-stone-600">{messages.auth.saleCount}</span>
           </div>
         </motion.div>
       </aside>
@@ -155,7 +157,7 @@ export function AuthLayout({
             </span>
             TicketRush
           </Link>
-          <Link href="/" className="text-sm font-medium text-stone-500 hover:text-stone-900">← Về trang chủ</Link>
+          <Link href="/" className="text-sm font-medium text-stone-500 hover:text-stone-900">&larr; {messages.auth.homeLink}</Link>
         </header>
 
         <div className="flex flex-1 items-center justify-center px-4 pb-10 lg:px-8">

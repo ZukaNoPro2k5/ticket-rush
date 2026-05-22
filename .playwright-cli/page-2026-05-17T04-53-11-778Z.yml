@@ -1,0 +1,185 @@
+- main [ref=e2]:
+  - generic [ref=e4]:
+    - link "TicketRush" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - img [ref=e7]
+      - generic [ref=e9]: TicketRush
+    - navigation [ref=e10]:
+      - button "Khám phá" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+        - text: Khám phá
+        - img [ref=e16]
+      - button "Lịch sự kiện" [ref=e19] [cursor=pointer]:
+        - img [ref=e20]
+        - text: Lịch sự kiện
+        - img [ref=e22]
+      - link "Ưu đãi" [ref=e24] [cursor=pointer]:
+        - /url: /promotions
+        - img [ref=e25]
+        - text: Ưu đãi
+      - link "Tin tức" [ref=e28] [cursor=pointer]:
+        - /url: /news
+        - img [ref=e29]
+        - text: Tin tức
+    - generic [ref=e32]:
+      - button "Đổi ngôn ngữ" [ref=e34] [cursor=pointer]:
+        - img [ref=e35]
+        - generic [ref=e38]: vi
+        - img [ref=e39]
+      - button "Đăng nhập" [ref=e41] [cursor=pointer]
+  - generic [ref=e42]:
+    - 'img "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [ref=e43]'
+    - generic [ref=e45]:
+      - navigation [ref=e46]:
+        - link "Trang chủ" [ref=e47] [cursor=pointer]:
+          - /url: /
+        - img [ref=e48]
+        - link "Sự kiện" [ref=e50] [cursor=pointer]:
+          - /url: /events
+        - img [ref=e51]
+        - generic [ref=e53]: Sân khấu
+      - generic [ref=e55]:
+        - generic [ref=e56]: 
+        - text: Sân khấu
+      - 'heading "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [level=1] [ref=e57]'
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - img [ref=e60]
+          - text: CN, 17/05
+        - generic [ref=e62]:
+          - img [ref=e63]
+          - text: 19:30
+        - generic [ref=e66]:
+          - img [ref=e67]
+          - text: Nhà hát Kịch IDECAF, 28 Lê Lợi, Quận 1, TP. Hồ Chí Minh, TP. HCM
+  - generic [ref=e70]:
+    - generic [ref=e71]:
+      - generic [ref=e73]:
+        - button "Giới thiệu" [ref=e74] [cursor=pointer]: Giới thiệu
+        - button "Địa điểm" [ref=e76] [cursor=pointer]
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - heading "Giới thiệu sự kiện" [level=2] [ref=e79]
+          - paragraph [ref=e81]: Câu chuyện cổ tích quen thuộc "Tấm Cám" được đạo diễn NSND Thành Lộc dàn dựng theo phong cách hoàn toàn mới — hài kịch hiện đại kết hợp vũ đạo bùng nổ, âm nhạc sôi động và những thông điệp hóm hỉnh về cuộc sống đương đại. Không thể bỏ lỡ!
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - img [ref=e84]
+              - generic [ref=e89]: Sơ đồ ghế rõ ràng
+            - generic [ref=e90]:
+              - img [ref=e91]
+              - generic [ref=e94]: Giữ ghế 10 phút
+            - generic [ref=e95]:
+              - img [ref=e96]
+              - generic [ref=e100]: Cập nhật realtime
+            - generic [ref=e101]:
+              - img [ref=e102]
+              - generic [ref=e104]: QR sau xác nhận
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - heading "Hạng vé & giá" [level=2] [ref=e107]
+            - link "Xem sơ đồ ghế →" [ref=e108] [cursor=pointer]:
+              - /url: /events/14/seats
+          - generic [ref=e109]:
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - heading "Phổ thông" [level=4] [ref=e114]
+                - generic [ref=e115]: 250.000đ
+              - generic [ref=e116]: 7 hàng × 18 ghế, tổng 126 chỗ
+              - generic [ref=e118]: Còn 126/126
+            - generic [ref=e122]:
+              - generic [ref=e123]:
+                - heading "Hạng Nhất – Hàng D–H" [level=4] [ref=e124]
+                - generic [ref=e125]: 400.000đ
+              - generic [ref=e126]: 5 hàng × 18 ghế, tổng 90 chỗ
+              - generic [ref=e128]: Còn 90/90
+            - generic [ref=e132]:
+              - generic [ref=e133]:
+                - heading "VIP – Hàng A–C" [level=4] [ref=e134]
+                - generic [ref=e135]: 600.000đ
+              - generic [ref=e136]: 3 hàng × 18 ghế, tổng 54 chỗ
+              - generic [ref=e138]: Còn 51/54
+        - generic [ref=e141]:
+          - heading "Đơn vị tổ chức" [level=2] [ref=e142]
+          - generic [ref=e143]:
+            - generic [ref=e144]: T
+            - generic [ref=e145]:
+              - heading "TicketRush Events" [level=3] [ref=e146]
+              - generic [ref=e147]:
+                - generic [ref=e148]: Quản lý bán vé qua TicketRush
+                - generic [ref=e149]:
+                  - img [ref=e150]
+                  - text: Verified
+    - complementary [ref=e152]:
+      - generic [ref=e154]:
+        - generic [ref=e155]: Giá vé
+        - generic [ref=e156]:
+          - text: 250.000đ
+          - generic [ref=e157]: "- 600.000đ"
+        - generic [ref=e158]:
+          - generic [ref=e159]:
+            - img [ref=e160]
+            - text: Nhận QR ngay sau xác nhận
+          - generic [ref=e162]:
+            - img [ref=e163]
+            - text: Ghế được cập nhật realtime
+          - generic [ref=e165]:
+            - img [ref=e166]
+            - text: Có thể hủy giữ ghế trước khi xác nhận
+        - link "Chọn vé ngay" [ref=e168] [cursor=pointer]:
+          - /url: /events/14/seats
+          - text: Chọn vé ngay
+          - img [ref=e169]
+        - button "Lưu sự kiện" [ref=e171] [cursor=pointer]:
+          - img [ref=e172]
+          - text: Lưu sự kiện
+        - generic [ref=e174]:
+          - generic [ref=e175]: Tiến độ bán vé
+          - generic [ref=e177]: 1% đã bán
+  - generic [ref=e181]:
+    - generic [ref=e182]:
+      - generic [ref=e183]:
+        - heading "Sự kiện tương tự" [level=2] [ref=e184]
+        - paragraph [ref=e185]: Các sự kiện cùng mạch quan tâm
+      - link "Xem tất cả →" [ref=e186] [cursor=pointer]:
+        - /url: /events
+    - generic [ref=e187]:
+      - 'link "Nhà hát Tuổi Trẻ: Người Cầm Lái Sân khấu Nhà hát Tuổi Trẻ: Người Cầm Lái T3, 19/05 · 19:30 Từ 250.000đ" [ref=e188] [cursor=pointer]':
+        - /url: /events/34
+        - 'img "Nhà hát Tuổi Trẻ: Người Cầm Lái" [ref=e190]'
+        - generic [ref=e191]:
+          - generic [ref=e192]: Sân khấu
+          - 'heading "Nhà hát Tuổi Trẻ: Người Cầm Lái" [level=3] [ref=e193]'
+          - generic [ref=e194]:
+            - img [ref=e195]
+            - text: T3, 19/05 · 19:30
+          - generic [ref=e197]: Từ 250.000đ
+      - link "Show Thực Cảnh Anh Hùng Cờ Lau – Đinh Bộ Lĩnh Sân khấu Show Thực Cảnh Anh Hùng Cờ Lau – Đinh Bộ Lĩnh T7, 30/05 · 19:00 Từ 250.000đ" [ref=e198] [cursor=pointer]:
+        - /url: /events/18
+        - img "Show Thực Cảnh Anh Hùng Cờ Lau – Đinh Bộ Lĩnh" [ref=e200]
+        - generic [ref=e201]:
+          - generic [ref=e202]: Sân khấu
+          - heading "Show Thực Cảnh Anh Hùng Cờ Lau – Đinh Bộ Lĩnh" [level=3] [ref=e203]
+          - generic [ref=e204]:
+            - img [ref=e205]
+            - text: T7, 30/05 · 19:00
+          - generic [ref=e207]: Từ 250.000đ
+      - 'link "Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn Sân khấu Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn T7, 06/06 · 19:30 Từ 250.000đ" [ref=e208] [cursor=pointer]':
+        - /url: /events/36
+        - 'img "Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn" [ref=e210]'
+        - generic [ref=e211]:
+          - generic [ref=e212]: Sân khấu
+          - 'heading "Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn" [level=3] [ref=e213]'
+          - generic [ref=e214]:
+            - img [ref=e215]
+            - text: T7, 06/06 · 19:30
+          - generic [ref=e217]: Từ 250.000đ
+      - link "Vở Diễn \"Romeo và Juliet\" – Nhà hát Lớn Hà Nội Sân khấu Vở Diễn \"Romeo và Juliet\" – Nhà hát Lớn Hà Nội T7, 05/09 · 20:00 Từ 600.000đ" [ref=e218] [cursor=pointer]:
+        - /url: /events/2
+        - img "Vở Diễn \"Romeo và Juliet\" – Nhà hát Lớn Hà Nội" [ref=e220]
+        - generic [ref=e221]:
+          - generic [ref=e222]: Sân khấu
+          - heading "Vở Diễn \"Romeo và Juliet\" – Nhà hát Lớn Hà Nội" [level=3] [ref=e223]
+          - generic [ref=e224]:
+            - img [ref=e225]
+            - text: T7, 05/09 · 20:00
+          - generic [ref=e227]: Từ 600.000đ

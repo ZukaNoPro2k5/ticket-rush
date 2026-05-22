@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Eye, EyeOff, Lock, Mail, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -14,22 +13,24 @@ import {
 } from './AuthFormAtoms';
 import { OAuthButtons } from './OAuthButtons';
 import { PasswordStrength } from './PasswordStrength';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface RegisterResponse {
   success: boolean;
   data: {
     token: string;
     user: { id: number; email: string; full_name: string; role: string };
+    maintenance_mode: boolean;
   };
 }
 
 interface Props {
-  onSuccess: () => void;
+  onSuccess: (result?: RegisterResponse['data']) => void;
 }
 
 export function RegisterForm({ onSuccess }: Props) {
-  const router = useRouter();
   const { setAuth } = useAuthStore();
+  const { messages } = useLocale();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -51,16 +52,16 @@ export function RegisterForm({ onSuccess }: Props) {
 
   const validate = (): Record<string, string> => {
     const errs: Record<string, string> = {};
-    if (!name.trim() || name.trim().length < 2) errs.name = 'Họ tên tối thiểu 2 ký tự';
-    if (!email) errs.email = 'Vui lòng nhập email';
-    else if (!isValidEmail(email)) errs.email = 'Email không hợp lệ';
-    if (!password) errs.password = 'Vui lòng nhập mật khẩu';
-    else if (password.length < 8) errs.password = 'Tối thiểu 8 ký tự';
-    else if (!/[A-Z]/.test(password)) errs.password = 'Cần ít nhất 1 chữ HOA';
-    else if (!/[0-9]/.test(password)) errs.password = 'Cần ít nhất 1 chữ số';
-    if (!confirm) errs.confirm = 'Vui lòng xác nhận mật khẩu';
-    else if (confirm !== password) errs.confirm = 'Mật khẩu không khớp';
-    if (!agreed) errs.agree = 'Bạn cần đồng ý với điều khoản';
+    if (!name.trim() || name.trim().length < 2) errs.name = messages.auth.fullNameShort;
+    if (!email) errs.email = messages.auth.emailRequired;
+    else if (!isValidEmail(email)) errs.email = messages.auth.emailInvalid;
+    if (!password) errs.password = messages.auth.passwordRequired;
+    else if (password.length < 8) errs.password = messages.auth.passwordMin;
+    else if (!/[A-Z]/.test(password)) errs.password = messages.auth.passwordUpper;
+    else if (!/[0-9]/.test(password)) errs.password = messages.auth.passwordNumber;
+    if (!confirm) errs.confirm = messages.auth.confirmRequired;
+    else if (confirm !== password) errs.confirm = messages.auth.passwordMismatch;
+    if (!agreed) errs.agree = messages.auth.agreeRequired;
     return errs;
   };
 
@@ -69,7 +70,7 @@ export function RegisterForm({ onSuccess }: Props) {
     const errs = validate();
     if (Object.keys(errs).length) {
       setFieldErrors(errs);
-      setFormError('Vui lòng kiểm tra lại thông tin');
+      setFormError(messages.auth.checkInfo);
       setShakeKey((k) => k + 1);
       return;
     }
@@ -89,14 +90,10 @@ export function RegisterForm({ onSuccess }: Props) {
         role: data.data.user.role as 'customer' | 'admin',
       });
       setSucceeded(true);
-      toast.success('Tạo tài khoản thành công! Chào mừng bạn 🎉');
-      setTimeout(() => {
-        onSuccess();
-        router.push('/onboarding');
-        router.refresh();
-      }, 700);
+      toast.success(messages.auth.success);
+      onSuccess(data.data);
     } catch (err) {
-      setFormError(extractApiError(err, 'Đăng ký thất bại. Vui lòng thử lại.'));
+      setFormError(extractApiError(err, messages.auth.createAccountFailed));
       setShakeKey((k) => k + 1);
     } finally {
       setSubmitting(false);
@@ -107,7 +104,7 @@ export function RegisterForm({ onSuccess }: Props) {
     <div>
       <OAuthButtons mode="register" onSuccess={onSuccess} />
 
-      <AuthDivider label="hoặc đăng ký bằng email" />
+      <AuthDivider label={messages.auth.orRegisterEmail} />
 
       <motion.form
         key={shakeKey}
@@ -126,7 +123,7 @@ export function RegisterForm({ onSuccess }: Props) {
             <input
               type="text"
               autoComplete="name"
-              placeholder="Họ và tên"
+              placeholder={messages.auth.fullName}
               value={name}
               onChange={(e) => { setName(e.target.value); clearFieldError('name'); }}
               className={`${fieldClass(!!fieldErrors.name)} pl-10 pr-4`}
@@ -158,7 +155,7 @@ export function RegisterForm({ onSuccess }: Props) {
             <input
               type={showPw ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="Mật khẩu"
+              placeholder={messages.auth.password}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -170,7 +167,7 @@ export function RegisterForm({ onSuccess }: Props) {
             <button
               type="button"
               onClick={() => setShowPw((v) => !v)}
-              aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-label={showPw ? messages.auth.hidePassword : messages.auth.showPassword}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 transition-colors hover:text-stone-600"
             >
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -187,7 +184,7 @@ export function RegisterForm({ onSuccess }: Props) {
             <input
               type={showPw ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="Nhập lại mật khẩu"
+              placeholder={messages.auth.confirmPassword}
               value={confirm}
               onChange={(e) => { setConfirm(e.target.value); clearFieldError('confirm'); }}
               className={`${fieldClass(!!(fieldErrors.confirm || (confirm && confirm !== password)))} pl-10 pr-10`}
@@ -218,15 +215,15 @@ export function RegisterForm({ onSuccess }: Props) {
             className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded accent-amber-500"
           />
           <span className="text-xs leading-relaxed">
-            Tôi đồng ý với{' '}
-            <Link href="/terms" className="font-semibold text-amber-700 hover:underline">Điều khoản</Link>
-            {' '}và{' '}
-            <Link href="/privacy" className="font-semibold text-amber-700 hover:underline">Chính sách bảo mật</Link>
-            {fieldErrors.agree && <span className="ml-1 text-[11px] text-rose-500">— {fieldErrors.agree}</span>}
+            {messages.auth.agreePrefix}{' '}
+            <Link href="/terms" className="font-semibold text-amber-700 hover:underline">{messages.auth.terms}</Link>
+            {' '}{messages.auth.and}{' '}
+            <Link href="/privacy" className="font-semibold text-amber-700 hover:underline">{messages.auth.privacy}</Link>
+            {fieldErrors.agree && <span className="ml-1 text-[11px] text-rose-500">: {fieldErrors.agree}</span>}
           </span>
         </label>
 
-        <SubmitBtn submitting={submitting} succeeded={succeeded} label="Tạo tài khoản" />
+        <SubmitBtn submitting={submitting} succeeded={succeeded} label={messages.auth.createAccount} />
       </motion.form>
     </div>
   );

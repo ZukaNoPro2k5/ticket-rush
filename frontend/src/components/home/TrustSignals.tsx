@@ -3,8 +3,8 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Headphones, RotateCcw, ShieldCheck } from 'lucide-react';
-import { TRUST_SIGNALS } from '@/data/uiConfig';
 import { cardVariant, staggerContainer, useSectionInView } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 const ICON_MAP: Record<string, ReactNode> = {
   'shield-check': <ShieldCheck className="h-6 w-6" />,
@@ -14,6 +14,12 @@ const ICON_MAP: Record<string, ReactNode> = {
 
 export function TrustSignals() {
   const { ref, inView } = useSectionInView();
+  const { messages } = useLocale();
+  const trustSignals = [
+    { icon: 'shield-check', title: messages.trust.safeBooking, desc: messages.trust.safeBookingDesc },
+    { icon: 'rotate-ccw', title: messages.trust.transparentLifecycle, desc: messages.trust.transparentLifecycleDesc },
+    { icon: 'headphones', title: messages.trust.support, desc: messages.trust.supportDesc },
+  ];
   return (
     <section className="border-y border-stone-200 bg-white py-12">
       <motion.div
@@ -23,7 +29,7 @@ export function TrustSignals() {
         animate={inView ? 'visible' : 'hidden'}
         className="mx-auto grid max-w-7xl gap-6 px-4 sm:grid-cols-3 lg:px-8"
       >
-        {TRUST_SIGNALS.map((t) => (
+        {trustSignals.map((t) => (
           <motion.div key={t.title} variants={cardVariant} className="flex items-start gap-4 rounded-2xl p-2">
             <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-700 ring-4 ring-amber-50">
               {ICON_MAP[t.icon]}

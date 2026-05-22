@@ -1,0 +1,27 @@
+[   13113ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:38559
+[   13526ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/posts?limit=30' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/news:0
+[   13529ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/posts?limit=30:0
+[   13560ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/posts?sort=views&limit=3' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/news:0
+[   13560ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/posts?sort=views&limit=3:0
+[   13577ms] AxiosError: Network Error
+    at XMLHttpRequest.handleError (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/adapters/xhr.js:133:21)
+    at Axios.request (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/core/Axios.js:56:41)
+    at async listPosts (webpack-internal:///(app-pages-browser)/./src/lib/api/posts.ts:16:17)
+    at async Promise.all (index 0)
+[   13573ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/posts?limit=30' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/news:0
+[   13574ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/posts?limit=30:0
+[   13574ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/posts?sort=views&limit=3' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/news:0
+[   13581ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/posts?sort=views&limit=3:0
+[   13607ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=100&sort=event_date&order=asc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/news:0
+[   13608ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=100&sort=event_date&order=asc:0
+[   13608ms] [ERROR] Access to XMLHttpRequest at 'http://localhost:4000/api/events?limit=100&sort=event_date&order=asc' from origin 'http://localhost:3001' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://localhost:3000' that is not equal to the supplied origin. @ http://localhost:3001/news:0
+[   13608ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:4000/api/events?limit=100&sort=event_date&order=asc:0
+[   13614ms] AxiosError: Network Error
+    at XMLHttpRequest.handleError (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/adapters/xhr.js:133:21)
+    at Axios.request (webpack-internal:///(app-pages-browser)/./node_modules/axios/lib/core/Axios.js:56:41)
+    at async listPosts (webpack-internal:///(app-pages-browser)/./src/lib/api/posts.ts:16:17)
+    at async Promise.all (index 0)
+[   29995ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:186
+[   30747ms] [LOG] [Fast Refresh] done in 753ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:43
+[   30913ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:186
+[   32201ms] [LOG] [Fast Refresh] done in 1288ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:43

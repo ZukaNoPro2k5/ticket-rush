@@ -1,0 +1,23 @@
+[    4001ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/events?city=H%C3%A0%20N%E1%BB%99i&time=weekend&maxPrice=500000:0
+[    4496ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:29889
+[    4572ms] TypeError: Cannot read properties of undefined (reading 'call')
+    at Object.__webpack_require__ [as require] (file:///home/zukanopro/workspace/ticket-rush/frontend/.next/server/webpack-runtime.js:33:43)
+    at require (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:40:20064)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:108376)
+    at ea (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:108583)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:110813)
+    at Object._fromJSON (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:111370)
+    at JSON.parse (<anonymous>)
+    at ec (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:109078)
+    at eo (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:108123)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:115291)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:115308)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:115341)
+    at <unknown> (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:115358)
+    at t (file:///home/zukanopro/workspace/ticket-rush/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:115581)
+[    4561ms] [LOG] [HMR] connected @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:38
+[    8605ms] [WARNING] The resource http://localhost:3000/_next/static/media/00f4982f357db61e-s.p.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/events?city=H%C3%A0%20N%E1%BB%99i&time=weekend&maxPrice=500000:0
+[    8605ms] [WARNING] The resource http://localhost:3000/_next/static/media/2173e4bb28c315da-s.p.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/events?city=H%C3%A0%20N%E1%BB%99i&time=weekend&maxPrice=500000:0
+[    8605ms] [WARNING] The resource http://localhost:3000/_next/static/media/25ab8995c98996d7-s.p.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/events?city=H%C3%A0%20N%E1%BB%99i&time=weekend&maxPrice=500000:0
+[    8605ms] [WARNING] The resource http://localhost:3000/_next/static/media/5ab5267d02dae909-s.p.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/events?city=H%C3%A0%20N%E1%BB%99i&time=weekend&maxPrice=500000:0
+[    8605ms] [WARNING] The resource http://localhost:3000/_next/static/media/5662512df8b0ccdf-s.p.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/events?city=H%C3%A0%20N%E1%BB%99i&time=weekend&maxPrice=500000:0

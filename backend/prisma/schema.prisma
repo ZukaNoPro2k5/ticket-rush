@@ -109,6 +109,7 @@ model events {
   poster_url      String?             @db.VarChar(500)
   status          events_status       @default(draft)
   queue_enabled   Boolean             @default(false)
+  layout_config   Json?
   created_by      Int
   created_at      DateTime?           @default(now()) @db.Timestamp(0)
   bookings        bookings[]
@@ -123,6 +124,21 @@ model events {
   @@index([event_date], map: "idx_events_event_date")
   @@index([status], map: "idx_events_status")
   @@index([status, event_date], map: "idx_events_status_date")
+}
+
+model event_layout_patterns {
+  id           Int                                @id @default(autoincrement())
+  label        String                             @db.VarChar(120)
+  seating_mode event_layout_patterns_seating_mode
+  diagram      event_layout_patterns_diagram
+  zones        Json
+  positions    Json
+  fixtures     Json
+  created_at   DateTime?                          @default(now()) @db.Timestamp(0)
+  updated_at   DateTime?                          @default(now()) @db.Timestamp(0)
+
+  @@index([seating_mode], map: "idx_event_layout_patterns_mode")
+  @@index([updated_at], map: "idx_event_layout_patterns_updated")
 }
 
 model newsletter_subscriptions {
@@ -355,6 +371,18 @@ enum events_seating_mode {
   seated
   zoned
   admission
+}
+
+enum event_layout_patterns_seating_mode {
+  seated
+  zoned
+}
+
+enum event_layout_patterns_diagram {
+  rows
+  bands
+  concert
+  quadrant
 }
 
 enum payments_status {

@@ -6,9 +6,11 @@ import { ArrowRight } from 'lucide-react';
 import { CATEGORIES } from '@/data/uiConfig';
 import { cardVariant, fadeIn, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import type { DisplayEvent } from '@/types';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export function CategoriesGrid({ events = [] }: { events?: DisplayEvent[] }) {
   const { ref, inView } = useSectionInView();
+  const { messages, formatNumber } = useLocale();
   const counts = events.reduce<Record<string, number>>((acc, event) => {
     acc[event.categoryKey] = (acc[event.categoryKey] ?? 0) + 1;
     return acc;
@@ -24,12 +26,12 @@ export function CategoriesGrid({ events = [] }: { events?: DisplayEvent[] }) {
           className="mb-8 flex items-end justify-between"
         >
           <motion.div variants={fadeUp}>
-            <h2 className="font-display text-2xl font-bold md:text-3xl">Khám phá theo chủ đề</h2>
-            <p className="mt-1 text-sm text-stone-500 md:text-base">Chọn lĩnh vực bạn yêu thích để tìm sự kiện nhanh hơn</p>
+            <h2 className="font-display text-2xl font-bold md:text-3xl">{messages.home.categoriesTitle}</h2>
+            <p className="mt-1 text-sm text-stone-500 md:text-base">{messages.home.categoriesDesc}</p>
           </motion.div>
           <motion.div variants={fadeIn}>
             <Link href="/events" className="hidden items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800 md:inline-flex">
-              Xem tất cả <ArrowRight className="h-4 w-4" />
+              {messages.common.viewAll} <ArrowRight className="h-4 w-4" />
             </Link>
           </motion.div>
         </motion.div>
@@ -49,8 +51,8 @@ export function CategoriesGrid({ events = [] }: { events?: DisplayEvent[] }) {
                 <div className={`mx-auto grid h-14 w-14 place-items-center rounded-2xl ring-4 transition-transform duration-300 group-hover:scale-110 ${c.accent} ${c.ring}`}>
                   <i className={`${c.icon} text-xl`} aria-hidden />
                 </div>
-                <div className="mt-3 font-semibold text-stone-900">{c.label}</div>
-                <div className="mt-0.5 text-xs text-stone-500">{counts[c.key] ?? 0} sự kiện</div>
+                <div className="mt-3 font-semibold text-stone-900">{messages.categories[c.key]}</div>
+                <div className="mt-0.5 text-xs text-stone-500">{formatNumber(counts[c.key] ?? 0)} {messages.common.events}</div>
               </Link>
             </motion.div>
           ))}

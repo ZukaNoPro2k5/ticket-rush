@@ -1,18 +1,11 @@
-import { RowDataPacket } from 'mysql2';
-import pool from '../../config/database';
-
-interface PaymentMethodRow extends RowDataPacket {
-  id: string;
-  name: string;
-  description: string;
-}
+import prisma from '../../config/prisma';
 
 export async function listEnabledPaymentMethods() {
-  const [rows] = await pool.execute<PaymentMethodRow[]>(
-    `SELECT id, name, description
-     FROM payment_gateways
-     WHERE enabled = TRUE
-     ORDER BY FIELD(id, 'vnpay', 'momo', 'stripe'), name`,
-  );
-  return rows;
+  const methods = await prisma.payment_gateways.findMany({
+    where: { enabled: true },
+    select: { id: true, name: true, description: true },
+    orderBy: { name: 'asc' },
+  });
+  const priority = new Map([['vnpay', 0], ['momo', 1], ['stripe', 2]]);
+  return methods.sort((a, b) => (priority.get(a.id) ?? 99) - (priority.get(b.id) ?? 99) || a.name.localeCompare(b.name));
 }

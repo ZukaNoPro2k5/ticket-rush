@@ -13,7 +13,14 @@ import {
 import { fadeUp } from '@/lib/motion';
 import api from '@/lib/api/client';
 import { createEvent, updateEvent } from '@/lib/api/events';
-import type { EventCategory, SeatingMode, SeatZone } from '@/types';
+import type {
+  EventCategory,
+  EventLayoutConfig,
+  EventLayoutFixture,
+  EventLayoutPosition,
+  SeatingMode,
+  SeatZone,
+} from '@/types';
 import type { EventFormPayload } from '@/lib/api/events';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -74,6 +81,17 @@ interface LayoutPattern {
   id: string; label: string; sub: string; Icon: React.ElementType;
   diagram: DiagramType; zones: ZoneTemplate[];
   savedPositions?: ZonePos[]; // for user-saved custom layouts
+  savedFixtures?: CanvasFixture[];
+}
+
+interface SavedLayoutPatternDto {
+  id: number;
+  label: string;
+  seating_mode: 'seated' | 'zoned';
+  diagram: DiagramType;
+  zones: ZoneTemplate[];
+  positions: ZonePos[];
+  fixtures: CanvasFixture[];
 }
 
 const SEATED_PATTERNS: LayoutPattern[] = [
@@ -121,10 +139,8 @@ const ZONED_PATTERNS: LayoutPattern[] = [
   { id: 'custom', label: 'Tuỳ chỉnh', sub: 'Tự thiết kế', Icon: Plus, diagram: 'bands', zones: [] },
 ];
 
-// ── Canvas zone position data (visual-only, not persisted) ─────────────────
-interface ZonePos {
-  x: number; y: number; w: number; h: number; // percentage of canvas
-}
+// ── Canvas zone position data ──────────────────────────────────────────────
+type ZonePos = EventLayoutPosition;
 
 const DEFAULT_ZONE_POS = { x: 5, y: 14, w: 28, h: 32 };
 const MAX_SEATED_ROWS = 26;
@@ -165,6 +181,25 @@ function fitZoneIntoCanvas(pos: ZonePos): ZonePos {
     x: clamp(pos.x, 0, Math.max(0, 100 - pos.w)),
     y: clamp(pos.y, 0, Math.max(0, 100 - pos.h)),
   };
+}
+
+function getDefaultZonePos(index: number): ZonePos {
+  return {
+    ...DEFAULT_ZONE_POS,
+    x: DEFAULT_ZONE_POS.x + (index % 3) * 32,
+    y: DEFAULT_ZONE_POS.y + Math.floor(index / 3) * 38,
+  };
+}
+
+function getVisibleZonePos(mode: SeatingMode, zone: SeatZoneForm, index: number, positions: ZonePos[]): ZonePos {
+  const base = positions[index] ?? getDefaultZonePos(index);
+  if (mode !== 'seated') return base;
+  const size = deriveSeatedZoneSize(zone, base);
+  return fitZoneIntoCanvas({
+    ...base,
+    ...size,
+    x: base.x + (base.w - size.w) / 2,
+  });
 }
 
 const PATTERN_POSITIONS: Record<string, ZonePos[]> = {
@@ -358,7 +393,7 @@ function Step1({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <FieldLabel>Danh mục <span className="text-red-400">*</span></FieldLabel>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {CATEGORY_OPTIONS.map(({ value, label, Icon, accent, ring }) => {
               const selected = form.category === value;
               return (
@@ -557,9 +592,7 @@ function PatternPicker({
 }
 
 // ── Canvas fixture (stage, field, screen, podium) ─────────────────────────
-interface CanvasFixture {
-  id: string; label: string; color: string; textColor: string; pos: ZonePos;
-}
+type CanvasFixture = EventLayoutFixture;
 
 const PATTERN_FIXTURES: Record<string, CanvasFixture[]> = {
   'stage-simple': [{ id: 'stage',  label: 'Sân khấu',     color: '#57534e', textColor: 'white',   pos: { x: 27, y: 0, w: 46, h: 12 } }],
@@ -639,22 +672,7 @@ function VenueCanvas({
   }, []);
 
   const getZonePos = useCallback((i: number): ZonePos => {
-    const base = positions[i] ?? {
-      ...DEFAULT_ZONE_POS,
-      x: DEFAULT_ZONE_POS.x + (i % 3) * 32,
-      y: DEFAULT_ZONE_POS.y + Math.floor(i / 3) * 38,
-    };
-
-    if (mode !== 'seated') return base;
-
-    const size = deriveSeatedZoneSize(zones[i], base);
-    return fitZoneIntoCanvas({
-      ...base,
-      ...size,
-      // Mẫu cũ từng lưu chiều rộng tuỳ ý. Khi chuyển sang kích thước theo ma trận,
-      // giữ tâm ngang để khu vẫn nằm đúng trục sân khấu thay vì dạt sang trái.
-      x: base.x + (base.w - size.w) / 2,
-    });
+    return getVisibleZonePos(mode, zones[i], i, positions);
   }, [mode, positions, zones]);
 
   const getFixPos = (i: number): ZonePos => fixtures[i]?.pos ?? { x: 30, y: 0, w: 40, h: 10 };
@@ -1082,26 +1100,63 @@ function ZoneCardAdmission({
 }
 
 function Step2({
-  mode, zones, onModeChange, onChange,
+  mode, zones, layout, onModeChange, onChange, onLayoutChange,
 }: {
   mode: SeatingMode;
   zones: SeatZoneForm[];
+  layout: EventLayoutConfig;
   onModeChange: (m: SeatingMode) => void;
   onChange: (zones: SeatZoneForm[]) => void;
+  onLayoutChange: React.Dispatch<React.SetStateAction<EventLayoutConfig>>;
 }) {
-  const [patternId, setPatternId] = useState<string | null>(null);
-  const [positions, setPositions] = useState<ZonePos[]>([]);
+  const patternId = layout.pattern_id ?? null;
+  const positions = layout.positions;
+  const fixtures = layout.fixtures;
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [savedPatterns, setSavedPatterns] = useState<LayoutPattern[]>([]);
+  const [savingPattern, setSavingPattern] = useState(false);
   const [showSaveInput, setShowSaveInput] = useState(false);
   const [saveName, setSaveName] = useState('');
-  const [fixtures, setFixtures] = useState<CanvasFixture[]>([]);
   const [showGrid, setShowGrid] = useState(false);
   const [snapGrid, setSnapGrid] = useState(false);
   const [showSeatZoneCreate, setShowSeatZoneCreate] = useState(false);
   const [newZoneRows, setNewZoneRows] = useState('');
   const [newZoneCols, setNewZoneCols] = useState('');
+
+  const setPatternId = (nextPatternId: string | null) => {
+    onLayoutChange((current) => ({ ...current, pattern_id: nextPatternId }));
+  };
+  const setPositions = (nextPositions: ZonePos[]) => {
+    onLayoutChange((current) => ({ ...current, positions: nextPositions }));
+  };
+  const setFixtures = (nextFixtures: CanvasFixture[]) => {
+    onLayoutChange((current) => ({ ...current, fixtures: nextFixtures }));
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    api.get<{ data: SavedLayoutPatternDto[] }>('/admin/layout-patterns')
+      .then((response) => {
+        if (!mounted) return;
+        setSavedPatterns(response.data.data.map((pattern) => ({
+          id: `saved-${pattern.id}`,
+          label: pattern.label,
+          sub: pattern.seating_mode === 'seated'
+            ? `${pattern.zones.length} khu ghế đã lưu`
+            : `${pattern.zones.length} khu vực đã lưu`,
+          Icon: Tag,
+          diagram: pattern.diagram,
+          zones: pattern.zones,
+          savedPositions: pattern.positions,
+          savedFixtures: pattern.fixtures,
+        })));
+      })
+      .catch(() => {
+        // Built-in patterns remain usable even if the pattern endpoint is unavailable.
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const handlePatternSelect = (p: LayoutPattern) => {
     setPatternId(p.id);
@@ -1114,7 +1169,13 @@ function Step2({
     }));
     onChange(newZones);
     setPositions(p.savedPositions ?? PATTERN_POSITIONS[p.id] ?? []);
-    setFixtures(PATTERN_FIXTURES[p.id] ? [...PATTERN_FIXTURES[p.id]] : []);
+    setFixtures(
+      p.savedFixtures
+        ? p.savedFixtures.map((fixture) => ({ ...fixture, pos: { ...fixture.pos } }))
+        : PATTERN_FIXTURES[p.id]
+          ? PATTERN_FIXTURES[p.id].map((fixture) => ({ ...fixture, pos: { ...fixture.pos } }))
+          : [],
+    );
     setSelectedIdx(newZones.length > 0 ? 0 : null);
   };
 
@@ -1159,29 +1220,49 @@ function Step2({
 
   const resetLayout = () => { setPatternId(null); onChange([]); setPositions([]); setSelectedIdx(null); setFixtures([]); };
 
-  const savePattern = () => {
-    if (!saveName.trim() || zones.length === 0) return;
+  const savePattern = async () => {
+    if (!saveName.trim() || zones.length === 0 || mode === 'admission') return;
     const total = zones.reduce((a, z) => {
       if (mode === 'seated') return a + Number(z.total_rows || 0) * Number(z.total_cols || 0);
       return a + Number(z.capacity || 0);
     }, 0);
-    const pat: LayoutPattern = {
-      id: `saved-${Date.now()}`,
+    const patternPayload = {
       label: saveName.trim(),
-      sub: mode === 'seated'
-        ? `${zones.length} khu · ${total.toLocaleString()} ghế`
-        : `${zones.length} khu · ${total.toLocaleString()} chỗ`,
-      Icon: Tag,
-      diagram: mode === 'seated' ? 'rows' : 'bands',
+      seating_mode: mode,
+      diagram: mode === 'seated' ? 'rows' as const : 'bands' as const,
       zones: zones.map(z => ({
         name: z.name, color: z.color,
         total_rows: z.total_rows, total_cols: z.total_cols, capacity: z.capacity,
       })),
-      savedPositions: [...positions],
+      positions: zones.map((zone, index) => getVisibleZonePos(mode, zone, index, positions)),
+      fixtures: fixtures.map((fixture) => ({ ...fixture, pos: { ...fixture.pos } })),
     };
-    setSavedPatterns(prev => [...prev, pat]);
-    setSaveName('');
-    setShowSaveInput(false);
+    setSavingPattern(true);
+    try {
+      const response = await api.post<{ data: SavedLayoutPatternDto }>('/admin/layout-patterns', patternPayload);
+      const saved = response.data.data;
+      const pat: LayoutPattern = {
+        id: `saved-${saved.id}`,
+        label: saved.label,
+        sub: mode === 'seated'
+          ? `${zones.length} khu · ${total.toLocaleString()} ghế`
+          : `${zones.length} khu · ${total.toLocaleString()} chỗ`,
+        Icon: Tag,
+        diagram: saved.diagram,
+        zones: saved.zones,
+        savedPositions: saved.positions,
+        savedFixtures: saved.fixtures,
+      };
+      setSavedPatterns((current) => [pat, ...current]);
+      setPatternId(pat.id);
+      setSaveName('');
+      setShowSaveInput(false);
+      toast.success('Đã lưu mẫu sơ đồ.');
+    } catch {
+      toast.error('Không thể lưu mẫu sơ đồ.');
+    } finally {
+      setSavingPattern(false);
+    }
   };
 
   const selFixIdx = selectedIdx !== null && selectedIdx < 0 ? -selectedIdx - 1 : null;
@@ -1252,9 +1333,9 @@ function Step2({
             }}
             className="h-7 rounded-lg border border-stone-200 px-2 text-xs outline-none focus:border-amber-400"
           />
-          <button type="button" onClick={savePattern} disabled={!saveName.trim()}
+          <button type="button" onClick={savePattern} disabled={!saveName.trim() || savingPattern}
             className="rounded-lg bg-amber-500 px-2 py-1 text-[11px] font-semibold text-white disabled:opacity-40 hover:bg-amber-600">
-            Lưu
+            {savingPattern ? 'Đang lưu…' : 'Lưu'}
           </button>
           <button type="button" onClick={() => { setShowSaveInput(false); setSaveName(''); }}
             className="text-[11px] text-stone-400 hover:text-stone-600">Huỷ</button>
@@ -1296,6 +1377,16 @@ function Step2({
               }`}>
               <Link2 className="h-3 w-3" /> Căn lưới
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFixtures([...fixtures, { id: `fix-${Date.now()}`, label: 'SÂN KHẤU', color: '#1c1c1c', textColor: '#ffffff', pos: { x: 30, y: 5, w: 40, h: 10 } }]);
+                setSelectedIdx(-1 - fixtures.length);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100"
+            >
+              <Plus className="h-3.5 w-3.5" /> Thêm điểm cố định
+            </button>
             <button type="button" onClick={addZone}
               className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-stone-800">
               <Plus className="h-3.5 w-3.5" /> {addBtnLabel}
@@ -1318,9 +1409,17 @@ function Step2({
         <div className="w-[188px] shrink-0">
           {selFix ? (
             <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-md" style={{ backgroundColor: selFix.color }} />
-                <span className="text-sm font-semibold text-stone-700">Điểm cố định</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-md" style={{ backgroundColor: selFix.color }} />
+                  <span className="text-sm font-semibold text-stone-700">Điểm cố định</span>
+                </div>
+                <button type="button" onClick={() => {
+                  setFixtures(fixtures.filter((_, idx) => idx !== selFixIdx));
+                  setSelectedIdx(null);
+                }} className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
               <div>
                 <FieldLabel>Nhãn</FieldLabel>
@@ -1506,6 +1605,16 @@ function Step2({
                   >
                     <Maximize2 className="h-3 w-3" /> Phóng to
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFixtures([...fixtures, { id: `fix-${Date.now()}`, label: 'SÂN KHẤU', color: '#1c1c1c', textColor: '#ffffff', pos: { x: 30, y: 5, w: 40, h: 10 } }]);
+                      setSelectedIdx(-1 - fixtures.length);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Thêm điểm cố định
+                  </button>
                   <button type="button" onClick={addZone}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-stone-800">
                     <Plus className="h-3.5 w-3.5" /> {addBtnLabel}
@@ -1679,6 +1788,11 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
       capacity:   defaultForm.seating_mode === 'seated' ? '' : String(z.total_cols),
     })),
   );
+  const [layout, setLayout] = useState<EventLayoutConfig>(() => initialForm?.layout_config ?? {
+    pattern_id: initialZones.length > 0 ? 'custom' : null,
+    positions: [],
+    fixtures: [],
+  });
 
   // Validate step 1 before proceeding
   function validateStep1(): boolean {
@@ -1751,6 +1865,14 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
 
     setSaving(true);
     try {
+      const baseLayoutConfig: EventLayoutConfig = (form.seating_mode ?? 'seated') === 'admission'
+        ? { pattern_id: null, zone_ids: [], positions: [], fixtures: [] }
+        : {
+            pattern_id: layout.pattern_id ?? null,
+            positions: zones.map((zone, index) => getVisibleZonePos(form.seating_mode ?? 'seated', zone, index, layout.positions)),
+            fixtures: layout.fixtures.map((fixture) => ({ ...fixture, pos: { ...fixture.pos } })),
+          };
+
       const payload: EventFormPayload = {
         title:        form.title.trim(),
         description:  form.description?.trim() || undefined,
@@ -1759,17 +1881,16 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
         venue:        form.venue.trim(),
         event_date:   new Date(form.event_date).toISOString(),
         poster_url:   form.poster_url?.trim() || undefined,
+        layout_config: baseLayoutConfig,
       };
 
       let savedId = eventId;
 
       if (isEdit && eventId) {
         await updateEvent(eventId, payload);
-        toast.success('Đã cập nhật sự kiện.');
       } else {
         const created = await createEvent(payload);
         savedId = created.id;
-        toast.success('Đã tạo sự kiện nháp!');
       }
 
       // Create / update / delete seat zones so backend stays identical to the admin editor.
@@ -1777,34 +1898,55 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
         const seatingMode = form.seating_mode ?? 'seated';
         const currentIds = new Set(zones.flatMap((zone) => zone.id ? [zone.id] : []));
         const removedIds = initialZoneIds.current.filter((id) => !currentIds.has(id));
+        for (const id of removedIds) {
+          await api.delete(`/events/${savedId}/seat-zones/${id}`);
+        }
 
-        await Promise.all([
-          ...removedIds.map((id) => api.delete(`/events/${savedId}/seat-zones/${id}`)),
-          zones.map(async (z) => {
-            // For zoned/admission: encode capacity as total_rows=1, total_cols=capacity
-            const isSeated = seatingMode === 'seated';
-            const zPayload = {
-              name:       z.name.trim(),
-              price:      Number(z.price),
-              color:      z.color,
-              total_rows: isSeated ? Number(z.total_rows) : 1,
-              total_cols: isSeated ? Number(z.total_cols) : Number(z.capacity),
-            };
+        const savedZones: SeatZoneForm[] = [];
+        for (const z of zones) {
+          // For zoned/admission: encode capacity as total_rows=1, total_cols=capacity
+          const isSeated = seatingMode === 'seated';
+          const zPayload = {
+            name:       z.name.trim(),
+            price:      Number(z.price),
+            color:      z.color,
+            total_rows: isSeated ? Number(z.total_rows) : 1,
+            total_cols: isSeated ? Number(z.total_cols) : Number(z.capacity),
+          };
 
-            if (z.id) {
-              // Update existing zone
-              await api.put(`/events/${savedId}/seat-zones/${z.id}`, zPayload);
-            } else {
-              // Create new zone
-              await api.post(`/events/${savedId}/seat-zones`, zPayload);
-            }
-          }),
-        ].flat());
+          const response = z.id
+            ? await api.put<{ data: SeatZone }>(`/events/${savedId}/seat-zones/${z.id}`, zPayload)
+            : await api.post<{ data: SeatZone }>(`/events/${savedId}/seat-zones`, zPayload);
+          const persisted = response.data.data;
+          savedZones.push({
+            id: persisted.id,
+            name: persisted.name,
+            price: String(persisted.price),
+            color: persisted.color,
+            total_rows: String(persisted.total_rows),
+            total_cols: String(persisted.total_cols),
+            capacity: isSeated ? '' : String(persisted.total_cols),
+          });
+        }
+        setZones(savedZones);
+        initialZoneIds.current = savedZones.flatMap((zone) => zone.id ? [zone.id] : []);
+
+        if (seatingMode !== 'admission') {
+          await updateEvent(savedId, {
+            layout_config: {
+              ...baseLayoutConfig,
+              zone_ids: savedZones.flatMap((zone) => zone.id ? [zone.id] : []),
+            },
+          });
+        }
       }
 
+      toast.success(isEdit ? 'Đã cập nhật sự kiện và khu vé.' : 'Đã tạo sự kiện nháp!');
       router.push('/admin/events');
-    } catch {
-      toast.error('Không thể lưu. Kiểm tra lại dữ liệu và thử lại.');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message
+        || 'Không thể lưu. Kiểm tra lại dữ liệu và thử lại.';
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -1856,8 +1998,10 @@ export function EventWizard({ eventId, initialForm, initialZones = [] }: EventWi
             <Step2
               mode={form.seating_mode ?? 'seated'}
               zones={zones}
+              layout={layout}
               onModeChange={m => setForm({ ...form, seating_mode: m })}
               onChange={setZones}
+              onLayoutChange={setLayout}
             />
           )}
           {step === 3 && <Step3 form={form} zones={zones} />}

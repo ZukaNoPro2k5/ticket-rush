@@ -51,6 +51,28 @@ export type EventCategory = 'music' | 'arts' | 'sports' | 'food' | 'entertainmen
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
 export type SeatingMode = 'seated' | 'zoned' | 'admission';
 
+export interface EventLayoutPosition {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface EventLayoutFixture {
+  id: string;
+  label: string;
+  color: string;
+  textColor: string;
+  pos: EventLayoutPosition;
+}
+
+export interface EventLayoutConfig {
+  pattern_id?: string | null;
+  zone_ids?: number[];
+  positions: EventLayoutPosition[];
+  fixtures: EventLayoutFixture[];
+}
+
 /** Matches backend GET /api/events list item */
 export interface Event {
   id: number;
@@ -63,6 +85,7 @@ export interface Event {
   poster_url: string | null;
   status: EventStatus;
   queue_enabled?: boolean;
+  layout_config?: EventLayoutConfig | null;
   created_by: number;
   created_at: string;
   min_price: number | null;

@@ -1,0 +1,76 @@
+- main [ref=e2]:
+  - complementary [ref=e3]:
+    - link "TicketRush" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - img [ref=e7]
+      - text: TicketRush
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - img [ref=e11]
+        - text: "Nền tảng vé sự kiện #1 Việt Nam"
+      - heading "Mọi sự kiện đỉnh nhất, trong tầm tay bạn." [level=2] [ref=e14]:
+        - text: Mọi sự kiện đỉnh nhất,
+        - text: trong tầm tay bạn.
+      - paragraph [ref=e15]: Khám phá concert, workshop và trận đấu hot trong một luồng đặt vé gọn, rõ và cập nhật theo thời gian thực.
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - img [ref=e19]
+          - generic [ref=e21]:
+            - generic [ref=e22]: Đặt vé trong 30 giây
+            - generic [ref=e23]: Checkout nhanh, không lag, giữ ghế tức thì.
+        - generic [ref=e24]:
+          - img [ref=e26]
+          - generic [ref=e29]:
+            - generic [ref=e30]: Đặt vé an toàn
+            - generic [ref=e31]: Không bán trùng ghế, QR sinh ngay sau xác nhận.
+        - generic [ref=e32]:
+          - img [ref=e34]
+          - generic [ref=e37]:
+            - generic [ref=e38]: Gợi ý theo sở thích
+            - generic [ref=e39]: Ưu tiên sự kiện hợp gu từ dữ liệu bạn chọn.
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]: T
+        - generic [ref=e43]: M
+        - generic [ref=e44]: L
+        - generic [ref=e45]: H
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - img [ref=e48]
+          - img [ref=e50]
+          - img [ref=e52]
+          - img [ref=e54]
+          - img [ref=e56]
+          - generic [ref=e58]: "4.9"
+        - generic [ref=e59]: +1,200 sự kiện đang mở bán
+  - generic [ref=e62]:
+    - generic [ref=e63]:
+      - heading "Đăng nhập" [level=1] [ref=e64]
+      - paragraph [ref=e65]: Vào đúng không gian của bạn ngay sau khi xác thực.
+    - generic [ref=e66]:
+      - generic [ref=e67]:
+        - button "Tiếp tục với Facebook" [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]:
+            - img [ref=e70]
+            - text: Tiếp tục với Facebook
+        - button "Tiếp tục với Google" [ref=e72] [cursor=pointer]:
+          - generic [ref=e73]:
+            - img [ref=e74]
+            - text: Tiếp tục với Google
+      - generic [ref=e79]: hoặc đăng nhập bằng email
+      - generic [ref=e82]:
+        - generic [ref=e84]:
+          - img
+          - textbox "Email" [ref=e85]
+        - generic [ref=e87]:
+          - img
+          - textbox "Mật khẩu" [ref=e88]
+          - button "Hiện mật khẩu" [ref=e89] [cursor=pointer]:
+            - img [ref=e90]
+        - button "Quên mật khẩu?" [ref=e94] [cursor=pointer]
+        - button "Đăng nhập" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]: Đăng nhập
+    - generic [ref=e97]:
+      - text: Chưa có tài khoản?
+      - link "Đăng ký" [ref=e98] [cursor=pointer]:
+        - /url: /register

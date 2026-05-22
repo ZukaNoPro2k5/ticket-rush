@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, ChevronDown, Compass } from 'lucide-react';
 import { CATEGORIES } from '@/data/uiConfig';
 import { EASE_OUT_EXPO } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   isActive: boolean;
@@ -15,6 +16,7 @@ interface Props {
 
 export function ExploreDropdown({ isActive, scrolled, linkCls }: Props) {
   const [open, setOpen] = useState(false);
+  const { messages } = useLocale();
 
   return (
     <div className="relative">
@@ -24,7 +26,7 @@ export function ExploreDropdown({ isActive, scrolled, linkCls }: Props) {
         className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors
           ${isActive ? (scrolled ? 'text-amber-700 bg-amber-50' : 'text-white bg-white/10') : linkCls}`}
       >
-        <Compass className="h-4 w-4" /> Khám phá <ChevronDown className="h-4 w-4" />
+        <Compass className="h-4 w-4" /> {messages.nav.explore} <ChevronDown className="h-4 w-4" />
       </button>
       <AnimatePresence>
         {open && (
@@ -42,7 +44,7 @@ export function ExploreDropdown({ isActive, scrolled, linkCls }: Props) {
                   href={`/events?category=${c.key}`}
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-700 hover:bg-stone-100"
                 >
-                  <i className={`${c.icon} text-stone-500 w-4`} aria-hidden /> {c.label}
+                  <i className={`${c.icon} text-stone-500 w-4`} aria-hidden /> {messages.categories[c.key]}
                 </Link>
               ))}
             </div>
@@ -51,7 +53,7 @@ export function ExploreDropdown({ isActive, scrolled, linkCls }: Props) {
                 href="/events"
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50"
               >
-                Tất cả sự kiện <ArrowRight className="h-4 w-4" />
+                {messages.common.allEvents} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </motion.div>

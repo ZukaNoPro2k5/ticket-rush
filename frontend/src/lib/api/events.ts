@@ -5,6 +5,7 @@ import type {
   Event,
   EventCategory,
   EventDetail,
+  EventLayoutConfig,
   EventStatus,
   PaginatedResponse,
   SeatZone,
@@ -31,6 +32,7 @@ export interface EventFormPayload {
   venue: string;
   event_date: string;
   poster_url?: string;
+  layout_config?: EventLayoutConfig | null;
 }
 
 export async function listEvents(params: ListEventsParams = {}): Promise<{

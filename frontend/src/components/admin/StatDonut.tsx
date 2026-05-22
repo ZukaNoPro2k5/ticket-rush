@@ -11,15 +11,16 @@ export interface StatDonutItem {
 interface Props {
   data: StatDonutItem[];
   valueFormatter?: (v: number) => string;
+  compact?: boolean;
 }
 
-export default function StatDonut({ data, valueFormatter }: Props) {
+export default function StatDonut({ data, valueFormatter, compact = false }: Props) {
   const fmtV  = valueFormatter ?? ((v: number) => v.toLocaleString('vi-VN'));
   const total = data.reduce((s, d) => s + d.value, 0) || 1;
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={180}>
+      <ResponsiveContainer width="100%" height={compact ? 108 : 180}>
         <PieChart>
           <Pie
             data={data}
@@ -27,8 +28,8 @@ export default function StatDonut({ data, valueFormatter }: Props) {
             nameKey="label"
             cx="50%"
             cy="50%"
-            innerRadius={52}
-            outerRadius={76}
+            innerRadius={compact ? 31 : 52}
+            outerRadius={compact ? 46 : 76}
             paddingAngle={2}
             strokeWidth={0}
           >
@@ -47,7 +48,7 @@ export default function StatDonut({ data, valueFormatter }: Props) {
           />
         </PieChart>
       </ResponsiveContainer>
-      <div className="mt-3 space-y-2">
+      <div className={`mt-3 ${compact ? 'space-y-1.5' : 'space-y-2'}`}>
         {data.map((d, i) => {
           const pct = Math.round((d.value / total) * 100);
           return (

@@ -37,8 +37,10 @@ export default function SeatsPage() {
   const [bookingRules, setBookingRules] = useState<BookingRules | null>(null);
   const [entryExpiresAt, setEntryExpiresAt] = useState<string | null>(null);
   const bookingRef = useRef<PendingBooking | null>(null);
+  const layoutRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const zones = useMemo(() => groupSeatsByZone(seats), [seats]);
+  const zoneOrder = useMemo(() => event?.seat_zones.map((zone) => zone.id) ?? [], [event]);
+  const zones = useMemo(() => groupSeatsByZone(seats, zoneOrder), [seats, zoneOrder]);
   const countdown = useCountdown(booking?.expires_at ?? null);
   const entryCountdown = useCountdown(entryExpiresAt);
   const toPendingBooking = useCallback((detail: {
@@ -63,22 +65,28 @@ export default function SeatsPage() {
     bookingRef.current = booking;
   }, [booking]);
 
+  const refreshSeatLayout = useCallback(async () => {
+    const [seatsRes, eventRes] = await Promise.all([
+      api.get<{ success: boolean; data: Seat[] }>(`/events/${eventId}/seats`),
+      api.get<{ success: boolean; data: EventDetail }>(`/events/${eventId}`),
+    ]);
+    setSeats(seatsRes.data.data ?? []);
+    setEvent(eventRes.data.data);
+  }, [eventId]);
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      api.get<{ success: boolean; data: Seat[] }>(`/events/${eventId}/seats`),
-      api.get<{ success: boolean; data: EventDetail }>(`/events/${eventId}`),
+      refreshSeatLayout(),
       api.get<{ success: boolean; data: BookingRules }>('/bookings/rules'),
     ])
-      .then(([seatsRes, eventRes, rulesRes]) => {
-        setSeats(seatsRes.data.data ?? []);
-        setEvent(eventRes.data.data);
+      .then(([, rulesRes]) => {
         setBookingRules(rulesRes.data.data);
         setEntryExpiresAt(new Date(Date.now() + rulesRes.data.data.ticket_hold_minutes * 60_000).toISOString());
       })
       .catch(() => toast.error('Không thể tải sơ đồ ghế'))
       .finally(() => setLoading(false));
-  }, [eventId]);
+  }, [refreshSeatLayout]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -128,9 +136,18 @@ export default function SeatsPage() {
       }
 
     };
+    const handleLayoutChange = () => {
+      if (layoutRefreshTimerRef.current) clearTimeout(layoutRefreshTimerRef.current);
+      layoutRefreshTimerRef.current = setTimeout(() => {
+        refreshSeatLayout()
+          .then(() => toast('Sơ đồ ghế vừa được cập nhật.'))
+          .catch(() => toast.error('Không thể tải bản cập nhật sơ đồ ghế.'));
+      }, 180);
+    };
 
     socket.on('connect', joinRoom);
     socket.on('seat:status_changed', handleSeatChange);
+    socket.on('seat:layout_changed', handleLayoutChange);
 
     if (socket.connected) {
       joinRoom();
@@ -142,8 +159,18 @@ export default function SeatsPage() {
       socket.emit('leave:event', String(eventId));
       socket.off('connect', joinRoom);
       socket.off('seat:status_changed', handleSeatChange);
+      socket.off('seat:layout_changed', handleLayoutChange);
+      if (layoutRefreshTimerRef.current) clearTimeout(layoutRefreshTimerRef.current);
     };
-  }, [eventId]);
+  }, [eventId, refreshSeatLayout]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      refreshSeatLayout().catch(() => {});
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshSeatLayout]);
 
   useEffect(() => {
     const bookingExpired = booking ? new Date(booking.expires_at).getTime() <= Date.now() : false;
@@ -197,9 +224,6 @@ export default function SeatsPage() {
           await api.post(`/bookings/${currentBooking.id}/cancel`);
           setBooking(null);
           setSelectedIds(new Set());
-          if (bookingRules) {
-            setEntryExpiresAt(new Date(Date.now() + bookingRules.ticket_hold_minutes * 60_000).toISOString());
-          }
           setSeats((prev) => prev.map((item) => item.id === seat.id ? { ...item, status: 'available' } : item));
           return;
         }
@@ -299,7 +323,13 @@ export default function SeatsPage() {
 
       <div className="mx-auto flex max-w-[1440px] flex-col items-start gap-4 p-4 lg:flex-row">
         {event?.seating_mode === 'seated' ? (
-          <SeatMap zones={zones} selectedIds={selectedIds} booking={booking} onToggleSeat={toggleSeat} />
+          <SeatMap
+            zones={zones}
+            layoutConfig={event.layout_config}
+            selectedIds={selectedIds}
+            booking={booking}
+            onToggleSeat={toggleSeat}
+          />
         ) : (
           <TicketTypePicker
             zones={zones}

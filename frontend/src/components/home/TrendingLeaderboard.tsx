@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Calendar, Flame, MapPin, TrendingUp } from 'lucide-react';
-import { formatVnd } from '@/data/uiConfig';
 import type { DisplayEvent } from '@/types';
 import { cardVariant, fadeUp, staggerContainer, useSectionInView } from '@/lib/motion';
 import EmptyState from '@/components/ui/EmptyState';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface RankStyle {
   num: string;
@@ -26,14 +26,14 @@ function getSellThroughGradient(soldPercent: number): string {
   return 'from-amber-300 to-amber-500';
 }
 
-const COLUMN_HEADERS = ['Hạng', 'Sự kiện', 'Thời gian', 'Tỷ lệ bán', 'Giá từ'] as const;
-
 function SectionHeader() {
+  const { messages } = useLocale();
+
   return (
     <div>
       <div className="flex items-center gap-2.5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-rose-700">
-          <Flame className="h-3.5 w-3.5" /> Bảng xếp hạng
+          <Flame className="h-3.5 w-3.5" /> {messages.home.ranking}
         </span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 ring-1 ring-emerald-200">
           <span className="relative flex h-2 w-2">
@@ -43,8 +43,8 @@ function SectionHeader() {
           Live
         </span>
       </div>
-      <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Được quan tâm nhất</h2>
-      <p className="mt-1 text-sm text-stone-500 md:text-base">Xếp theo tỷ lệ vé đã bán từ dữ liệu đang mở bán</p>
+      <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">{messages.home.mostWanted}</h2>
+      <p className="mt-1 text-sm text-stone-500 md:text-base">{messages.home.rankingDesc}</p>
     </div>
   );
 }
@@ -72,6 +72,7 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
   const change = ev.rankChange ?? 0;
   const soldPercent = Math.min(ev.soldPercent, 100);
   const sellThroughGradient = getSellThroughGradient(soldPercent);
+  const { messages, formatCurrency } = useLocale();
 
   return (
     <motion.div variants={cardVariant}>
@@ -106,7 +107,7 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
             <div className="mt-1.5 flex items-center gap-3 text-[11px] text-stone-500 md:hidden">
               <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{ev.dateLabel}</span>
               <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-600">
-                <TrendingUp className="h-3 w-3" />{soldPercent}% đã bán
+                <TrendingUp className="h-3 w-3" />{soldPercent}% {messages.common.sold.toLowerCase()}
               </span>
             </div>
           </div>
@@ -124,7 +125,7 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
             <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
               <TrendingUp className="h-3.5 w-3.5" /> {soldPercent}%
             </span>
-            <span className="text-[11px] text-stone-400">đã bán</span>
+            <span className="text-[11px] text-stone-400">{messages.common.sold.toLowerCase()}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-stone-100">
             <div
@@ -137,11 +138,11 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
         {/* Price — desktop */}
         <div className="flex flex-col items-end gap-1">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-stone-400">Từ</div>
-            <div className="font-display text-base font-bold text-amber-700">{formatVnd(ev.priceFrom)}</div>
+            <div className="text-[10px] uppercase tracking-wider text-stone-400">{messages.common.from}</div>
+            <div className="font-display text-base font-bold text-amber-700">{formatCurrency(ev.priceFrom)}</div>
           </div>
           <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-stone-600 transition-colors group-hover:bg-amber-500 group-hover:text-white">
-            Chi tiết
+            {messages.common.details}
           </span>
         </div>
       </Link>
@@ -151,9 +152,17 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
 
 export function TrendingLeaderboard({ events, loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
   const { ref, inView } = useSectionInView(0.1);
+  const { messages } = useLocale();
   const data = [...(events ?? [])]
     .sort((a, b) => b.soldPercent - a.soldPercent)
     .slice(0, 10);
+  const columnHeaders = [
+    messages.home.rank,
+    messages.common.event,
+    messages.home.time,
+    messages.home.sellThrough,
+    messages.common.from,
+  ];
 
   return (
     <section className="bg-stone-50 py-12 lg:py-16">
@@ -166,7 +175,7 @@ export function TrendingLeaderboard({ events, loading = false }: { events?: Disp
         >
           <SectionHeader />
           <Link href="/events?sort=trending" className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800">
-            Xem đầy đủ <ArrowRight className="h-4 w-4" />
+            {messages.home.rankingFull} <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
 
@@ -175,8 +184,8 @@ export function TrendingLeaderboard({ events, loading = false }: { events?: Disp
         ) : data.length === 0 ? (
           <EmptyState
             variant="events"
-            headline="Chưa có dữ liệu xếp hạng"
-            subtext="Khi vé bắt đầu bán, bảng xếp hạng sẽ tự cập nhật."
+            headline={messages.home.noRanking}
+            subtext={messages.home.noRankingDesc}
             className="rounded-3xl border border-stone-200 bg-white shadow-soft"
           />
         ) : (
@@ -188,7 +197,7 @@ export function TrendingLeaderboard({ events, loading = false }: { events?: Disp
         >
           {/* Desktop column headers */}
           <div className="hidden border-b border-stone-100 bg-stone-50/70 px-6 py-3 md:grid md:grid-cols-[56px_1fr_160px_200px_130px] md:gap-4">
-            {COLUMN_HEADERS.map((h, i) => (
+            {columnHeaders.map((h, i) => (
               <span key={h} className={`text-[11px] font-bold uppercase tracking-wider text-stone-400 ${i === 4 ? 'text-right' : ''}`}>
                 {h}
               </span>

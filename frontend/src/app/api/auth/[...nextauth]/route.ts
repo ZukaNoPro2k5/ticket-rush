@@ -47,6 +47,7 @@ const authOptions: NextAuthOptions = {
             name: u.full_name ?? u.name,
             email: u.email,
             image: u.avatar_url ?? null,
+            role: u.role ?? 'customer',
             backendToken: data.data?.token ?? null,
           } as any;
         } catch {
@@ -83,6 +84,8 @@ const authOptions: NextAuthOptions = {
             const data = await res.json();
             if (data?.data?.token) (user as any).backendToken = data.data.token;
             if (data?.data?.user?.id) (user as any).id = String(data.data.user.id);
+            if (data?.data?.user?.role) (user as any).role = data.data.user.role;
+            if (typeof data?.data?.maintenance_mode === 'boolean') (user as any).maintenanceMode = data.data.maintenance_mode;
             if (data?.data?.isNewUser) (user as any).isNewUser = true;
           }
         } catch (e) {
@@ -94,16 +97,20 @@ const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = (user as any).id;
+        token.role = (user as any).role ?? 'customer';
         token.backendToken = (user as any).backendToken ?? null;
         token.isNewUser = (user as any).isNewUser ?? false;
+        token.maintenanceMode = (user as any).maintenanceMode ?? false;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id;
+        (session.user as any).role = token.role ?? 'customer';
         (session as any).backendToken = token.backendToken;
         (session as any).isNewUser = token.isNewUser;
+        (session as any).maintenanceMode = token.maintenanceMode ?? false;
       }
       return session;
     },

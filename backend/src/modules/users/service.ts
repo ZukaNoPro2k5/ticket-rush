@@ -1,94 +1,83 @@
 import bcrypt from 'bcryptjs';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
-import pool from '../../config/database';
+import prisma from '../../config/prisma';
 import { config } from '../../config/env';
 import { AppError } from '../../shared/AppError';
 import type { UpdateProfileInput, ChangePasswordInput, UpdateAvatarInput } from './validation';
 
-interface UserRow extends RowDataPacket {
-  id: number;
-  email: string;
-  password_hash: string;
-  full_name: string;
-  phone: string | null;
-  gender: string | null;
-  birth_date: string | null;
-  role: string;
-  avatar_url: string | null;
-  category_preferences: string[] | string | null;
-  preferred_city: string | null;
-  created_at: string;
-}
+const profileSelect = {
+  id: true,
+  email: true,
+  full_name: true,
+  phone: true,
+  gender: true,
+  birth_date: true,
+  role: true,
+  avatar_url: true,
+  category_preferences: true,
+  preferred_city: true,
+  password_hash: true,
+  created_at: true,
+} as const;
 
 export async function getProfile(userId: number) {
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, category_preferences, preferred_city, password_hash, created_at FROM users WHERE id = ? LIMIT 1',
-    [userId],
-  );
-  if (rows.length === 0) {
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: profileSelect,
+  });
+  if (!user) {
     throw AppError.notFound('Người dùng không tồn tại');
   }
-  const { password_hash, ...rest } = rows[0];
+  const { password_hash, ...rest } = user;
   return { ...rest, has_password: !!password_hash };
 }
 
 export async function updateProfile(userId: number, input: UpdateProfileInput) {
-  const fields: string[] = [];
-  const values: (string | number | boolean | null)[] = [];
-
-  if (input.full_name !== undefined) { fields.push('full_name = ?'); values.push(input.full_name); }
-  if (input.phone !== undefined) { fields.push('phone = ?'); values.push(input.phone); }
-  if (input.gender !== undefined) { fields.push('gender = ?'); values.push(input.gender); }
-  if (input.birth_date !== undefined) { fields.push('birth_date = ?'); values.push(input.birth_date); }
-
-  if (fields.length === 0) {
+  if (Object.keys(input).length === 0) {
     throw AppError.badRequest('Không có dữ liệu cập nhật');
   }
 
-  values.push(userId);
-  await pool.execute<ResultSetHeader>(
-    `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
-    values,
-  );
-
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, email, full_name, phone, gender, birth_date, role, avatar_url, category_preferences, preferred_city, password_hash, created_at FROM users WHERE id = ? LIMIT 1',
-    [userId],
-  );
-
-  const { password_hash, ...rest } = rows[0];
+  const updated = await prisma.users.update({
+    where: { id: userId },
+    data: {
+      ...(input.full_name !== undefined && { full_name: input.full_name }),
+      ...(input.phone !== undefined && { phone: input.phone }),
+      ...(input.gender !== undefined && { gender: input.gender }),
+      ...(input.birth_date !== undefined && { birth_date: input.birth_date ? new Date(input.birth_date) : null }),
+    },
+    select: profileSelect,
+  });
+  const { password_hash, ...rest } = updated;
   return { ...rest, has_password: !!password_hash };
 }
 
 export async function changePassword(userId: number, input: ChangePasswordInput) {
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, password_hash FROM users WHERE id = ?',
-    [userId],
-  );
-
-  if (rows.length === 0) {
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: { id: true, password_hash: true },
+  });
+  if (!user) {
     throw AppError.notFound('Người dùng không tồn tại');
   }
 
-  const valid = await bcrypt.compare(input.current_password, rows[0].password_hash);
+  const valid = await bcrypt.compare(input.current_password, user.password_hash);
   if (!valid) {
     throw AppError.unauthorized('Sai mật khẩu hiện tại', 'WRONG_PASSWORD');
   }
 
   const newHash = await bcrypt.hash(input.new_password, 10);
-  await pool.execute<ResultSetHeader>(
-    'UPDATE users SET password_hash = ? WHERE id = ?',
-    [newHash, userId],
-  );
+  await prisma.users.update({ where: { id: userId }, data: { password_hash: newHash } });
 }
 
 export async function savePreferences(userId: number, input: { categories: string[]; preferred_city?: string }) {
-  await pool.execute<ResultSetHeader>(
-    'UPDATE users SET category_preferences = ?, preferred_city = ? WHERE id = ?',
-    [JSON.stringify(input.categories), input.preferred_city ?? null, userId],
-  );
+  await prisma.users.update({
+    where: { id: userId },
+    data: {
+      category_preferences: input.categories,
+      preferred_city: input.preferred_city ?? null,
+    },
+  });
 }
 
 function parseAvatarDataUrl(dataUrl: string) {
@@ -112,10 +101,7 @@ export async function updateAvatar(userId: number, input: UpdateAvatarInput) {
   await writeFile(path.join(avatarDir, fileName), buffer);
   const avatarUrl = `${config.publicUrl}/uploads/avatars/${fileName}`;
 
-  await pool.execute<ResultSetHeader>(
-    'UPDATE users SET avatar_url = ? WHERE id = ?',
-    [avatarUrl, userId],
-  );
+  await prisma.users.update({ where: { id: userId }, data: { avatar_url: avatarUrl } });
 
   return getProfile(userId);
 }

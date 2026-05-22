@@ -3,24 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { DEFAULT_PRICE_MAX, type TimeRangeKey } from '@/lib/utils/eventsFilters';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 const CITY_OPTIONS = ['Tất cả', 'Hà Nội', 'TP. HCM', 'Đà Nẵng', 'Hải Phòng', 'Huế', 'Khác'] as const;
-
-const TIME_OPTIONS: { key: TimeRangeKey; label: string }[] = [
-  { key: 'all', label: 'Tất cả thời gian' },
-  { key: 'today', label: 'Hôm nay' },
-  { key: 'weekend', label: 'Cuối tuần' },
-  { key: 'week', label: 'Tuần này' },
-  { key: 'month', label: 'Tháng này' },
-  { key: 'next_month', label: 'Tháng sau' },
-  { key: 'other', label: 'Khác' },
-];
-
-function formatVnd(value: number): string {
-  return value >= DEFAULT_PRICE_MAX
-    ? `${DEFAULT_PRICE_MAX.toLocaleString('vi-VN')}đ+`
-    : `${value.toLocaleString('vi-VN')}đ`;
-}
 
 interface Props {
   stagedTime: TimeRangeKey;
@@ -51,6 +36,24 @@ export function EventsFilterSidebar({
 }: Props) {
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceInput, setPriceInput] = useState(String(stagedPriceMax));
+  const { messages, formatCurrency } = useLocale();
+  const timeOptions: { key: TimeRangeKey; label: string }[] = [
+    { key: 'all', label: messages.events.timeAll },
+    { key: 'today', label: messages.home.today },
+    { key: 'weekend', label: messages.home.weekend },
+    { key: 'week', label: messages.home.week },
+    { key: 'month', label: messages.home.month },
+    { key: 'next_month', label: messages.events.nextMonth },
+    { key: 'other', label: messages.events.other },
+  ];
+  const cityLabel = (city: typeof CITY_OPTIONS[number]) => {
+    if (city === 'Tất cả') return messages.common.all;
+    if (city === 'Khác') return messages.events.other;
+    return city;
+  };
+  const priceLabel = (value: number) => value >= DEFAULT_PRICE_MAX
+    ? `${formatCurrency(DEFAULT_PRICE_MAX)}+`
+    : formatCurrency(value);
 
   useEffect(() => {
     if (!editingPrice) setPriceInput(String(stagedPriceMax));
@@ -72,17 +75,17 @@ export function EventsFilterSidebar({
   const renderContent = (radioName: string) => (
     <>
       <div className="flex items-center justify-between">
-        <h3 className="font-display font-bold text-stone-900">Bộ lọc nâng cao</h3>
+        <h3 className="font-display font-bold text-stone-900">{messages.events.advancedFilters}</h3>
         {activeFilterCount > 0 && (
           <button onClick={onResetAll} className="text-xs font-medium text-amber-700 hover:text-amber-800">
-            Xóa tất cả
+            {messages.common.clearAll}
           </button>
         )}
       </div>
 
       <div>
         <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">
-          Thời gian
+          {messages.events.time}
         </label>
         <div className="relative">
           <select
@@ -91,7 +94,7 @@ export function EventsFilterSidebar({
             onChange={(e) => onStagedTimeChange(e.target.value as TimeRangeKey)}
             className="w-full appearance-none rounded-lg border border-stone-200 bg-white px-3 py-2 pr-8 text-sm focus:border-amber-500 focus:outline-none"
           >
-            {TIME_OPTIONS.map((t) => (
+            {timeOptions.map((t) => (
               <option key={t.key} value={t.key}>{t.label}</option>
             ))}
           </select>
@@ -101,7 +104,7 @@ export function EventsFilterSidebar({
 
       <div>
         <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">
-          Thành phố
+          {messages.events.city}
         </label>
         <div className="relative">
           <select
@@ -110,7 +113,7 @@ export function EventsFilterSidebar({
             className="w-full appearance-none rounded-lg border border-stone-200 bg-white px-3 py-2 pr-8 text-sm focus:border-amber-500 focus:outline-none"
           >
             {CITY_OPTIONS.map((c) => (
-              <option key={c}>{c}</option>
+              <option key={c} value={c}>{cityLabel(c)}</option>
             ))}
           </select>
           <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
@@ -120,7 +123,7 @@ export function EventsFilterSidebar({
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label className="text-xs font-bold uppercase tracking-wider text-stone-500">
-            Giá tối đa
+            {messages.events.maxPrice}
           </label>
           {editingPrice ? (
             <input
@@ -144,7 +147,7 @@ export function EventsFilterSidebar({
               onClick={() => setEditingPrice(true)}
               className="rounded-md px-1 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-50"
             >
-              {formatVnd(stagedPriceMax)}
+              {priceLabel(stagedPriceMax)}
             </button>
           )}
         </div>
@@ -167,20 +170,20 @@ export function EventsFilterSidebar({
         {pendingChanges > 0 ? (
           <>
             <p className="mb-2 text-xs text-stone-500">
-              Có <span className="font-semibold text-amber-700">{pendingChanges}</span> thay đổi chưa áp dụng
+              <span className="font-semibold text-amber-700">{pendingChanges}</span> {messages.events.pendingChanges}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={onApply}
                 className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-lift"
               >
-                <Check className="h-4 w-4" /> Áp dụng
+                <Check className="h-4 w-4" /> {messages.common.apply}
               </button>
               <button
                 onClick={onDiscard}
                 className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900"
               >
-                Hủy
+                {messages.common.cancel}
               </button>
             </div>
           </>
@@ -189,7 +192,7 @@ export function EventsFilterSidebar({
             disabled
             className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-400"
           >
-            <Check className="h-4 w-4" /> Đã áp dụng
+            <Check className="h-4 w-4" /> {messages.events.applied}
           </button>
         )}
       </div>
@@ -200,7 +203,7 @@ export function EventsFilterSidebar({
     <aside>
       <details className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft lg:hidden">
         <summary className="cursor-pointer list-none font-display font-bold text-stone-900">
-          Bộ lọc nâng cao
+          {messages.events.advancedFilters}
         </summary>
         <div className="mt-5 space-y-6">{renderContent('time-mobile')}</div>
       </details>

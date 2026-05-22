@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { CATEGORIES } from '@/data/uiConfig';
 import { EASE_OUT_EXPO } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
+import { NAVBAR_LANGUAGES } from './constants';
 
 interface UserLike {
   full_name: string;
@@ -25,24 +27,23 @@ interface Props {
   onLogout: () => void;
 }
 
-const MAIN_LINKS = [
-  { href: '/events', icon: Compass, label: 'Khám phá' },
-  { href: '/promotions', icon: Tag, label: 'Ưu đãi' },
-  { href: '/news', icon: Newspaper, label: 'Tin tức' },
-];
-
-const USER_LINKS = [
-  { href: '/profile', icon: UserIcon, label: 'Tài khoản của tôi' },
-  { href: '/saved-events', icon: Heart, label: 'Sự kiện đã lưu' },
-  { href: '/my-tickets', icon: Ticket, label: 'Vé của tôi' },
-  { href: '/order-history', icon: History, label: 'Lịch sử đặt vé' },
-];
-
 export function MobileDrawer({
   open, onClose, isAuthenticated, user, onLogin, onLogout,
 }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const { locale, messages, setLocale } = useLocale();
+  const mainLinks = [
+    { href: '/events', icon: Compass, label: messages.nav.explore },
+    { href: '/promotions', icon: Tag, label: messages.nav.promotions },
+    { href: '/news', icon: Newspaper, label: messages.nav.news },
+  ];
+  const userLinks = [
+    { href: '/profile', icon: UserIcon, label: messages.nav.account },
+    { href: '/saved-events', icon: Heart, label: messages.nav.savedEvents },
+    { href: '/my-tickets', icon: Ticket, label: messages.nav.myTickets },
+    { href: '/order-history', icon: History, label: messages.nav.orderHistory },
+  ];
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,10 +71,10 @@ export function MobileDrawer({
             className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-white p-6 shadow-lift overflow-y-auto"
           >
             <div className="mb-6 flex items-center justify-between">
-              <span className="font-display text-lg font-bold">Menu</span>
+              <span className="font-display text-lg font-bold">{messages.nav.menu}</span>
               <button
                 onClick={onClose}
-                aria-label="Đóng"
+                aria-label={messages.common.close}
                 className="grid h-9 w-9 place-items-center rounded-lg hover:bg-stone-100"
               >
                 <X className="h-5 w-5" />
@@ -85,13 +86,13 @@ export function MobileDrawer({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Tìm sự kiện…"
+                placeholder={messages.nav.searchEvents}
                 className="flex-1 bg-transparent text-sm outline-none"
               />
             </form>
 
             <nav className="space-y-1 text-sm font-medium">
-              {MAIN_LINKS.map((l) => (
+              {mainLinks.map((l) => (
                 <Link
                   key={l.href}
                   href={l.href}
@@ -103,7 +104,7 @@ export function MobileDrawer({
               ))}
               <div className="my-2 h-px bg-stone-200" />
               <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                Danh mục sự kiện
+                {messages.nav.eventCategories}
               </p>
               {CATEGORIES.map((c) => (
                 <Link
@@ -112,10 +113,27 @@ export function MobileDrawer({
                   onClick={onClose}
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-stone-700 hover:bg-stone-100"
                 >
-                  <i className={`${c.icon} w-5 text-stone-500`} aria-hidden /> {c.label}
+                  <i className={`${c.icon} w-5 text-stone-500`} aria-hidden /> {messages.categories[c.key]}
                 </Link>
               ))}
             </nav>
+
+            <div className="mt-4 grid grid-cols-2 gap-2" aria-label={messages.nav.language}>
+              {NAVBAR_LANGUAGES.map((item) => (
+                <button
+                  key={item.code}
+                  onClick={() => setLocale(item.code)}
+                  aria-pressed={locale === item.code}
+                  className={`rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                    locale === item.code
+                      ? 'border-amber-300 bg-amber-50 text-amber-800'
+                      : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                  }`}
+                >
+                  <span aria-hidden>{item.flag}</span> {item.code.toUpperCase()}
+                </button>
+              ))}
+            </div>
 
             {!isAuthenticated ? (
               <div className="mt-6">
@@ -123,7 +141,7 @@ export function MobileDrawer({
                   onClick={() => { onClose(); onLogin(); }}
                   className="block w-full rounded-full bg-amber-500 py-2.5 text-center text-sm font-semibold text-white shadow-soft hover:bg-amber-600"
                 >
-                  Đăng nhập
+                  {messages.nav.login}
                 </button>
               </div>
             ) : user ? (
@@ -151,7 +169,7 @@ export function MobileDrawer({
                 </div>
 
                 <div className="mt-2 space-y-1">
-                  {USER_LINKS.map((l) => (
+                  {userLinks.map((l) => (
                     <Link
                       key={l.href}
                       href={l.href}
@@ -167,7 +185,7 @@ export function MobileDrawer({
                   onClick={() => { onClose(); onLogout(); }}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-rose-200 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50"
                 >
-                  <LogOut className="h-4 w-4" /> Đăng xuất
+                  <LogOut className="h-4 w-4" /> {messages.nav.logout}
                 </button>
               </div>
             ) : null}

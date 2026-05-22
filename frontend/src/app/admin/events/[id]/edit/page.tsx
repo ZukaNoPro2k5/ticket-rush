@@ -51,6 +51,7 @@ export default function EditEventPage() {
       return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
     })(),
     poster_url: event.poster_url ?? '',
+    layout_config: event.layout_config ?? undefined,
   };
 
   return (

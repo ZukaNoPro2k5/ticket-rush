@@ -6,7 +6,7 @@ interface CategoryStat {
   category: string;
   bookings: number;
   revenue: number;
-  event_count: number;
+  event_count?: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {

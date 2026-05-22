@@ -1,0 +1,855 @@
+- generic [active] [ref=e94]:
+  - main [ref=e95]:
+    - generic [ref=e97]:
+      - link "TicketRush" [ref=e98] [cursor=pointer]:
+        - /url: /
+        - img [ref=e100]
+        - generic [ref=e102]: TicketRush
+      - navigation [ref=e103]:
+        - button "Khám phá" [ref=e105] [cursor=pointer]:
+          - img [ref=e106]
+          - text: Khám phá
+          - img [ref=e109]
+        - button "Lịch sự kiện" [ref=e112] [cursor=pointer]:
+          - img [ref=e113]
+          - text: Lịch sự kiện
+          - img [ref=e115]
+        - link "Ưu đãi" [ref=e117] [cursor=pointer]:
+          - /url: /promotions
+          - img [ref=e118]
+          - text: Ưu đãi
+        - link "Tin tức" [ref=e121] [cursor=pointer]:
+          - /url: /news
+          - img [ref=e122]
+          - text: Tin tức
+      - generic [ref=e125]:
+        - button "Đổi ngôn ngữ" [ref=e127] [cursor=pointer]:
+          - img [ref=e128]
+          - generic [ref=e131]: vi
+          - img [ref=e132]
+        - button "B User" [ref=e1189] [cursor=pointer]:
+          - generic [ref=e1190]: B
+          - generic [ref=e1191]: User
+          - img [ref=e1192]
+    - generic [ref=e135]:
+      - 'img "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [ref=e136]'
+      - 'img "Nhà hát Tuổi Trẻ: Người Cầm Lái" [ref=e137]'
+      - img "tlinh \"GLOW\" Mini Concert – TP.HCM" [ref=e138]
+      - img "UX/UI Design Masterclass 2026 – Google x FPT Software" [ref=e139]
+      - 'img "SPARK NITE: S.T Sơn Thạch x Neko Lê" [ref=e140]'
+      - img "Show Thực Cảnh Anh Hùng Cờ Lau – Đinh Bộ Lĩnh" [ref=e141]
+      - generic [ref=e1194]:
+        - generic [ref=e1195]:
+          - img [ref=e1196]
+          - text: NỔI BẬT
+        - 'heading "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [level=1] [ref=e1198]'
+        - paragraph [ref=e1199]: CN, 17/05 · 19:30
+        - paragraph [ref=e1200]: Nhà hát Kịch IDECAF, 28 Lê Lợi, Quận 1, TP. Hồ Chí Minh
+        - generic [ref=e1201]:
+          - generic [ref=e1202]:
+            - img [ref=e1203]
+            - text: CN, 17/05 · 19:30
+          - generic [ref=e1205]:
+            - img [ref=e1206]
+            - text: TP. HCM
+        - link "Chi tiết" [ref=e1210] [cursor=pointer]:
+          - /url: /events/14
+          - text: Chi tiết
+          - img [ref=e1211]
+      - button "Slide trước" [ref=e164] [cursor=pointer]:
+        - img [ref=e165]
+      - button "Slide sau" [ref=e167] [cursor=pointer]:
+        - img [ref=e168]
+      - generic [ref=e170]:
+        - button "Đến slide 1" [ref=e171] [cursor=pointer]
+        - button "Đến slide 2" [ref=e172] [cursor=pointer]
+        - button "Đến slide 3" [ref=e173] [cursor=pointer]
+        - button "Đến slide 4" [ref=e174] [cursor=pointer]
+        - button "Đến slide 5" [ref=e175] [cursor=pointer]
+        - button "Đến slide 6" [ref=e176] [cursor=pointer]
+    - generic [ref=e178]:
+      - generic [ref=e179]:
+        - generic [ref=e180]:
+          - heading "Khám phá theo chủ đề" [level=2] [ref=e181]
+          - paragraph [ref=e182]: Chọn lĩnh vực bạn yêu thích để tìm sự kiện nhanh hơn
+        - link "Xem tất cả" [ref=e184] [cursor=pointer]:
+          - /url: /events
+          - text: Xem tất cả
+          - img [ref=e185]
+      - generic [ref=e187]:
+        - link "Âm nhạc 12 sự kiện" [ref=e189] [cursor=pointer]:
+          - /url: /events?category=music
+          - generic [ref=e191]: 
+          - generic [ref=e192]: Âm nhạc
+          - generic [ref=e193]: 12 sự kiện
+        - link "Nghệ thuật 0 sự kiện" [ref=e195] [cursor=pointer]:
+          - /url: /events?category=arts
+          - generic [ref=e197]: 
+          - generic [ref=e198]: Nghệ thuật
+          - generic [ref=e199]: 0 sự kiện
+        - link "Thể thao 5 sự kiện" [ref=e201] [cursor=pointer]:
+          - /url: /events?category=sports
+          - generic [ref=e203]: 
+          - generic [ref=e204]: Thể thao
+          - generic [ref=e205]: 5 sự kiện
+        - link "Ẩm thực 0 sự kiện" [ref=e207] [cursor=pointer]:
+          - /url: /events?category=food
+          - generic [ref=e209]: 
+          - generic [ref=e210]: Ẩm thực
+          - generic [ref=e211]: 0 sự kiện
+        - link "Giải trí 0 sự kiện" [ref=e213] [cursor=pointer]:
+          - /url: /events?category=entertainment
+          - generic [ref=e215]: 
+          - generic [ref=e216]: Giải trí
+          - generic [ref=e217]: 0 sự kiện
+        - link "Hội thảo 1 sự kiện" [ref=e219] [cursor=pointer]:
+          - /url: /events?category=workshop
+          - generic [ref=e221]: 
+          - generic [ref=e222]: Hội thảo
+          - generic [ref=e223]: 1 sự kiện
+        - link "Sân khấu 5 sự kiện" [ref=e225] [cursor=pointer]:
+          - /url: /events?category=stage
+          - generic [ref=e227]: 
+          - generic [ref=e228]: Sân khấu
+          - generic [ref=e229]: 5 sự kiện
+        - link "Khác 0 sự kiện" [ref=e231] [cursor=pointer]:
+          - /url: /events?category=other
+          - generic [ref=e233]: 
+          - generic [ref=e234]: Khác
+          - generic [ref=e235]: 0 sự kiện
+    - generic [ref=e237]:
+      - generic [ref=e238]:
+        - generic [ref=e239]:
+          - generic [ref=e240]:
+            - img [ref=e241]
+            - text: Sẽ diễn ra
+          - heading "Sự kiện sắp diễn ra" [level=2] [ref=e243]
+          - paragraph [ref=e244]: Đặt vé sớm — giá tốt nhất, chỗ đẹp nhất
+        - link "Xem tất cả" [ref=e245] [cursor=pointer]:
+          - /url: /events
+          - text: Xem tất cả
+          - img [ref=e246]
+      - generic [ref=e248]:
+        - button "Hôm nay" [ref=e249] [cursor=pointer]
+        - button "Cuối tuần" [ref=e250] [cursor=pointer]
+        - button "Tuần này" [ref=e251] [cursor=pointer]
+        - button "Tháng này" [ref=e252] [cursor=pointer]
+      - generic [ref=e253]:
+        - 'link "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến! Sân khấu CN, 17/05 19:30 Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến! Nhà hát Kịch IDECAF, 28 Lê Lợi, Quận 1, TP. Hồ Chí Minh Đã bán 1%" [ref=e256] [cursor=pointer]':
+          - /url: /events/14
+          - generic [ref=e257]:
+            - 'img "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [ref=e258]'
+            - generic [ref=e260]:
+              - generic [ref=e261]: 
+              - text: Sân khấu
+            - generic [ref=e262]:
+              - generic [ref=e263]:
+                - img [ref=e264]
+                - text: CN, 17/05
+              - generic [ref=e266]:
+                - img [ref=e267]
+                - text: 19:30
+          - generic [ref=e270]:
+            - 'heading "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [level=3] [ref=e271]'
+            - generic [ref=e272]:
+              - img [ref=e273]
+              - text: Nhà hát Kịch IDECAF, 28 Lê Lợi, Quận 1, TP. Hồ Chí Minh
+            - generic [ref=e278]: Đã bán 1%
+        - 'link "Nhà hát Tuổi Trẻ: Người Cầm Lái Sân khấu T3, 19/05 19:30 Nhà hát Tuổi Trẻ: Người Cầm Lái Nhà hát Tuổi Trẻ, 11 Ngô Thì Nhậm, Hai Bà Trưng, Hà Nội Đã bán 0%" [ref=e283] [cursor=pointer]':
+          - /url: /events/34
+          - generic [ref=e284]:
+            - 'img "Nhà hát Tuổi Trẻ: Người Cầm Lái" [ref=e285]'
+            - generic [ref=e287]:
+              - generic [ref=e288]: 
+              - text: Sân khấu
+            - generic [ref=e289]:
+              - generic [ref=e290]:
+                - img [ref=e291]
+                - text: T3, 19/05
+              - generic [ref=e293]:
+                - img [ref=e294]
+                - text: 19:30
+          - generic [ref=e297]:
+            - 'heading "Nhà hát Tuổi Trẻ: Người Cầm Lái" [level=3] [ref=e298]'
+            - generic [ref=e299]:
+              - img [ref=e300]
+              - text: Nhà hát Tuổi Trẻ, 11 Ngô Thì Nhậm, Hai Bà Trưng, Hà Nội
+            - generic [ref=e305]: Đã bán 0%
+        - link "tlinh \"GLOW\" Mini Concert – TP.HCM Âm nhạc T7, 23/05 20:30 tlinh \"GLOW\" Mini Concert – TP.HCM Nhà máy Bia Sài Gòn – Bến Thành, 187 Nguyễn Chí Thanh, Quận 5, TP. Hồ Chí Minh Đã bán 0%" [ref=e309] [cursor=pointer]:
+          - /url: /events/27
+          - generic [ref=e310]:
+            - img "tlinh \"GLOW\" Mini Concert – TP.HCM" [ref=e311]
+            - generic [ref=e313]:
+              - generic [ref=e314]: 
+              - text: Âm nhạc
+            - generic [ref=e315]:
+              - generic [ref=e316]:
+                - img [ref=e317]
+                - text: T7, 23/05
+              - generic [ref=e319]:
+                - img [ref=e320]
+                - text: 20:30
+          - generic [ref=e323]:
+            - heading "tlinh \"GLOW\" Mini Concert – TP.HCM" [level=3] [ref=e324]
+            - generic [ref=e325]:
+              - img [ref=e326]
+              - text: Nhà máy Bia Sài Gòn – Bến Thành, 187 Nguyễn Chí Thanh, Quận 5, TP. Hồ Chí Minh
+            - generic [ref=e331]: Đã bán 0%
+    - generic [ref=e334]:
+      - generic [ref=e335]:
+        - generic [ref=e336]:
+          - generic [ref=e337]:
+            - generic [ref=e338]:
+              - img [ref=e339]
+              - text: Bảng xếp hạng
+            - generic [ref=e341]: Live
+          - heading "Được quan tâm nhất" [level=2] [ref=e345]
+          - paragraph [ref=e346]: Xếp theo tỷ lệ vé đã bán từ dữ liệu đang mở bán
+        - link "Xem đầy đủ" [ref=e347] [cursor=pointer]:
+          - /url: /events?sort=trending
+          - text: Xem đầy đủ
+          - img [ref=e348]
+      - generic [ref=e350]:
+        - generic [ref=e351]:
+          - generic [ref=e352]: Hạng
+          - generic [ref=e353]: Sự kiện
+          - generic [ref=e354]: Thời gian
+          - generic [ref=e355]: Tỷ lệ bán
+          - generic [ref=e356]: Giá từ
+        - 'link "1 Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến! Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến! TP. HCM CN, 17/05 19:30 · TP. HCM 1% đã bán Từ 250.000đ Xem vé" [ref=e358] [cursor=pointer]':
+          - /url: /events/14
+          - generic [ref=e361]: "1"
+          - generic [ref=e362]:
+            - 'img "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [ref=e364]'
+            - generic [ref=e365]:
+              - 'heading "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [level=3] [ref=e366]'
+              - generic [ref=e368]:
+                - img [ref=e369]
+                - text: TP. HCM
+          - generic [ref=e372]:
+            - generic [ref=e373]: CN, 17/05
+            - generic [ref=e374]: 19:30 · TP. HCM
+          - generic [ref=e376]:
+            - generic [ref=e377]:
+              - img [ref=e378]
+              - text: 1%
+            - generic [ref=e381]: đã bán
+          - generic [ref=e384]:
+            - generic [ref=e385]:
+              - generic [ref=e386]: Từ
+              - generic [ref=e387]: 250.000đ
+            - generic [ref=e388]: Xem vé
+        - link "2 VCT Pacific Kickoff 2026 – Chung Kết Khu Vực VCT Pacific Kickoff 2026 – Chung Kết Khu Vực TP. HCM CN, 14/06 13:00 · TP. HCM 0% đã bán Từ 350.000đ Xem vé" [ref=e390] [cursor=pointer]:
+          - /url: /events/39
+          - generic [ref=e393]: "2"
+          - generic [ref=e394]:
+            - img "VCT Pacific Kickoff 2026 – Chung Kết Khu Vực" [ref=e396]
+            - generic [ref=e397]:
+              - heading "VCT Pacific Kickoff 2026 – Chung Kết Khu Vực" [level=3] [ref=e398]
+              - generic [ref=e400]:
+                - img [ref=e401]
+                - text: TP. HCM
+          - generic [ref=e404]:
+            - generic [ref=e405]: CN, 14/06
+            - generic [ref=e406]: 13:00 · TP. HCM
+          - generic [ref=e408]:
+            - generic [ref=e409]:
+              - img [ref=e410]
+              - text: 0%
+            - generic [ref=e413]: đã bán
+          - generic [ref=e415]:
+            - generic [ref=e416]:
+              - generic [ref=e417]: Từ
+              - generic [ref=e418]: 350.000đ
+            - generic [ref=e419]: Xem vé
+        - link "3 Indie Music Festival – Hanoi Open Air 2026 Indie Music Festival – Hanoi Open Air 2026 Hà Nội T7, 19/09 15:00 · Hà Nội 0% đã bán Từ 400.000đ Xem vé" [ref=e421] [cursor=pointer]:
+          - /url: /events/32
+          - generic [ref=e424]: "3"
+          - generic [ref=e425]:
+            - img "Indie Music Festival – Hanoi Open Air 2026" [ref=e427]
+            - generic [ref=e428]:
+              - heading "Indie Music Festival – Hanoi Open Air 2026" [level=3] [ref=e429]
+              - generic [ref=e431]:
+                - img [ref=e432]
+                - text: Hà Nội
+          - generic [ref=e435]:
+            - generic [ref=e436]: T7, 19/09
+            - generic [ref=e437]: 15:00 · Hà Nội
+          - generic [ref=e439]:
+            - generic [ref=e440]:
+              - img [ref=e441]
+              - text: 0%
+            - generic [ref=e444]: đã bán
+          - generic [ref=e446]:
+            - generic [ref=e447]:
+              - generic [ref=e448]: Từ
+              - generic [ref=e449]: 400.000đ
+            - generic [ref=e450]: Xem vé
+        - link "4 Lê Cát Trọng Lý \"Giữa Hai Khoảng Lặng\" Concert Lê Cát Trọng Lý \"Giữa Hai Khoảng Lặng\" Concert Hà Nội T7, 25/07 20:00 · Hà Nội 0% đã bán Từ 400.000đ Xem vé" [ref=e452] [cursor=pointer]:
+          - /url: /events/33
+          - generic [ref=e455]: "4"
+          - generic [ref=e456]:
+            - img "Lê Cát Trọng Lý \"Giữa Hai Khoảng Lặng\" Concert" [ref=e458]
+            - generic [ref=e459]:
+              - heading "Lê Cát Trọng Lý \"Giữa Hai Khoảng Lặng\" Concert" [level=3] [ref=e460]
+              - generic [ref=e462]:
+                - img [ref=e463]
+                - text: Hà Nội
+          - generic [ref=e466]:
+            - generic [ref=e467]: T7, 25/07
+            - generic [ref=e468]: 20:00 · Hà Nội
+          - generic [ref=e470]:
+            - generic [ref=e471]:
+              - img [ref=e472]
+              - text: 0%
+            - generic [ref=e475]: đã bán
+          - generic [ref=e477]:
+            - generic [ref=e478]:
+              - generic [ref=e479]: Từ
+              - generic [ref=e480]: 400.000đ
+            - generic [ref=e481]: Xem vé
+        - 'link "5 Nhà hát Tuổi Trẻ: Người Cầm Lái Nhà hát Tuổi Trẻ: Người Cầm Lái Hà Nội T3, 19/05 19:30 · Hà Nội 0% đã bán Từ 250.000đ Xem vé" [ref=e483] [cursor=pointer]':
+          - /url: /events/34
+          - generic [ref=e486]: "5"
+          - generic [ref=e487]:
+            - 'img "Nhà hát Tuổi Trẻ: Người Cầm Lái" [ref=e489]'
+            - generic [ref=e490]:
+              - 'heading "Nhà hát Tuổi Trẻ: Người Cầm Lái" [level=3] [ref=e491]'
+              - generic [ref=e493]:
+                - img [ref=e494]
+                - text: Hà Nội
+          - generic [ref=e497]:
+            - generic [ref=e498]: T3, 19/05
+            - generic [ref=e499]: 19:30 · Hà Nội
+          - generic [ref=e501]:
+            - generic [ref=e502]:
+              - img [ref=e503]
+              - text: 0%
+            - generic [ref=e506]: đã bán
+          - generic [ref=e508]:
+            - generic [ref=e509]:
+              - generic [ref=e510]: Từ
+              - generic [ref=e511]: 250.000đ
+            - generic [ref=e512]: Xem vé
+        - 'link "6 Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn TP. HCM T7, 06/06 19:30 · TP. HCM 0% đã bán Từ 250.000đ Xem vé" [ref=e514] [cursor=pointer]':
+          - /url: /events/36
+          - generic [ref=e517]: "6"
+          - generic [ref=e518]:
+            - 'img "Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn" [ref=e520]'
+            - generic [ref=e521]:
+              - 'heading "Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn" [level=3] [ref=e522]'
+              - generic [ref=e524]:
+                - img [ref=e525]
+                - text: TP. HCM
+          - generic [ref=e528]:
+            - generic [ref=e529]: T7, 06/06
+            - generic [ref=e530]: 19:30 · TP. HCM
+          - generic [ref=e532]:
+            - generic [ref=e533]:
+              - img [ref=e534]
+              - text: 0%
+            - generic [ref=e537]: đã bán
+          - generic [ref=e539]:
+            - generic [ref=e540]:
+              - generic [ref=e541]: Từ
+              - generic [ref=e542]: 250.000đ
+            - generic [ref=e543]: Xem vé
+        - link "7 AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B) AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B) Hà Nội T5, 10/12 19:30 · Hà Nội 0% đã bán Từ 350.000đ Xem vé" [ref=e545] [cursor=pointer]:
+          - /url: /events/38
+          - generic [ref=e548]: "7"
+          - generic [ref=e549]:
+            - img "AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B)" [ref=e551]
+            - generic [ref=e552]:
+              - heading "AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B)" [level=3] [ref=e553]
+              - generic [ref=e555]:
+                - img [ref=e556]
+                - text: Hà Nội
+          - generic [ref=e559]:
+            - generic [ref=e560]: T5, 10/12
+            - generic [ref=e561]: 19:30 · Hà Nội
+          - generic [ref=e563]:
+            - generic [ref=e564]:
+              - img [ref=e565]
+              - text: 0%
+            - generic [ref=e568]: đã bán
+          - generic [ref=e570]:
+            - generic [ref=e571]:
+              - generic [ref=e572]: Từ
+              - generic [ref=e573]: 350.000đ
+            - generic [ref=e574]: Xem vé
+        - 'link "8 ONE Championship: Vietnam Warriors ONE Championship: Vietnam Warriors TP. HCM CN, 31/05 18:00 · TP. HCM 0% đã bán Từ 350.000đ Xem vé" [ref=e576] [cursor=pointer]':
+          - /url: /events/41
+          - generic [ref=e579]: "8"
+          - generic [ref=e580]:
+            - 'img "ONE Championship: Vietnam Warriors" [ref=e582]'
+            - generic [ref=e583]:
+              - 'heading "ONE Championship: Vietnam Warriors" [level=3] [ref=e584]'
+              - generic [ref=e586]:
+                - img [ref=e587]
+                - text: TP. HCM
+          - generic [ref=e590]:
+            - generic [ref=e591]: CN, 31/05
+            - generic [ref=e592]: 18:00 · TP. HCM
+          - generic [ref=e594]:
+            - generic [ref=e595]:
+              - img [ref=e596]
+              - text: 0%
+            - generic [ref=e599]: đã bán
+          - generic [ref=e601]:
+            - generic [ref=e602]:
+              - generic [ref=e603]: Từ
+              - generic [ref=e604]: 350.000đ
+            - generic [ref=e605]: Xem vé
+        - link "9 UX/UI Design Masterclass 2026 – Google x FPT Software UX/UI Design Masterclass 2026 – Google x FPT Software Hà Nội CN, 24/05 09:00 · Hà Nội 0% đã bán Từ 600.000đ Xem vé" [ref=e607] [cursor=pointer]:
+          - /url: /events/43
+          - generic [ref=e610]: "9"
+          - generic [ref=e611]:
+            - img "UX/UI Design Masterclass 2026 – Google x FPT Software" [ref=e613]
+            - generic [ref=e614]:
+              - heading "UX/UI Design Masterclass 2026 – Google x FPT Software" [level=3] [ref=e615]
+              - generic [ref=e617]:
+                - img [ref=e618]
+                - text: Hà Nội
+          - generic [ref=e621]:
+            - generic [ref=e622]: CN, 24/05
+            - generic [ref=e623]: 09:00 · Hà Nội
+          - generic [ref=e625]:
+            - generic [ref=e626]:
+              - img [ref=e627]
+              - text: 0%
+            - generic [ref=e630]: đã bán
+          - generic [ref=e632]:
+            - generic [ref=e633]:
+              - generic [ref=e634]: Từ
+              - generic [ref=e635]: 600.000đ
+            - generic [ref=e636]: Xem vé
+        - link "10 Vietnam Open Tennis 2026 – Chung Kết Đơn Nam/Nữ Vietnam Open Tennis 2026 – Chung Kết Đơn Nam/Nữ Hà Nội CN, 05/07 10:00 · Hà Nội 0% đã bán Từ 350.000đ Xem vé" [ref=e638] [cursor=pointer]:
+          - /url: /events/42
+          - generic [ref=e641]: "10"
+          - generic [ref=e642]:
+            - img "Vietnam Open Tennis 2026 – Chung Kết Đơn Nam/Nữ" [ref=e644]
+            - generic [ref=e645]:
+              - heading "Vietnam Open Tennis 2026 – Chung Kết Đơn Nam/Nữ" [level=3] [ref=e646]
+              - generic [ref=e648]:
+                - img [ref=e649]
+                - text: Hà Nội
+          - generic [ref=e652]:
+            - generic [ref=e653]: CN, 05/07
+            - generic [ref=e654]: 10:00 · Hà Nội
+          - generic [ref=e656]:
+            - generic [ref=e657]:
+              - img [ref=e658]
+              - text: 0%
+            - generic [ref=e661]: đã bán
+          - generic [ref=e663]:
+            - generic [ref=e664]:
+              - generic [ref=e665]: Từ
+              - generic [ref=e666]: 350.000đ
+            - generic [ref=e667]: Xem vé
+    - generic [ref=e669]:
+      - generic [ref=e670]:
+        - generic [ref=e671]:
+          - generic [ref=e672]:
+            - img [ref=e673]
+            - text: Dành cho bạn
+          - heading "User, có thể bạn sẽ thích" [level=2] [ref=e1213]
+          - paragraph [ref=e677]: Gợi ý từ các sự kiện đang mở bán
+        - link "Xem tất cả" [ref=e678] [cursor=pointer]:
+          - /url: /events
+          - text: Xem tất cả
+          - img [ref=e679]
+      - generic [ref=e694]:
+        - 'link "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến! Sân khấu CN, 17/05 19:30 Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến! Nhà hát Kịch IDECAF, 28 Lê Lợi, Quận 1, TP. Hồ Chí Minh Đã bán 1%" [ref=e697] [cursor=pointer]':
+          - /url: /events/14
+          - generic [ref=e698]:
+            - 'img "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [ref=e699]'
+            - generic [ref=e701]:
+              - generic [ref=e702]: 
+              - text: Sân khấu
+            - generic [ref=e703]:
+              - generic [ref=e704]:
+                - img [ref=e705]
+                - text: CN, 17/05
+              - generic [ref=e707]:
+                - img [ref=e708]
+                - text: 19:30
+          - generic [ref=e711]:
+            - 'heading "Nhà hát Kịch IDECAF: Tấm Cám Đại Chiến!" [level=3] [ref=e712]'
+            - generic [ref=e713]:
+              - img [ref=e714]
+              - text: Nhà hát Kịch IDECAF, 28 Lê Lợi, Quận 1, TP. Hồ Chí Minh
+            - generic [ref=e719]: Đã bán 1%
+        - 'link "Nhà hát Tuổi Trẻ: Người Cầm Lái Sân khấu T3, 19/05 19:30 Nhà hát Tuổi Trẻ: Người Cầm Lái Nhà hát Tuổi Trẻ, 11 Ngô Thì Nhậm, Hai Bà Trưng, Hà Nội Đã bán 0%" [ref=e724] [cursor=pointer]':
+          - /url: /events/34
+          - generic [ref=e725]:
+            - 'img "Nhà hát Tuổi Trẻ: Người Cầm Lái" [ref=e726]'
+            - generic [ref=e728]:
+              - generic [ref=e729]: 
+              - text: Sân khấu
+            - generic [ref=e730]:
+              - generic [ref=e731]:
+                - img [ref=e732]
+                - text: T3, 19/05
+              - generic [ref=e734]:
+                - img [ref=e735]
+                - text: 19:30
+          - generic [ref=e738]:
+            - 'heading "Nhà hát Tuổi Trẻ: Người Cầm Lái" [level=3] [ref=e739]'
+            - generic [ref=e740]:
+              - img [ref=e741]
+              - text: Nhà hát Tuổi Trẻ, 11 Ngô Thì Nhậm, Hai Bà Trưng, Hà Nội
+            - generic [ref=e746]: Đã bán 0%
+        - link "tlinh \"GLOW\" Mini Concert – TP.HCM Âm nhạc T7, 23/05 20:30 tlinh \"GLOW\" Mini Concert – TP.HCM Nhà máy Bia Sài Gòn – Bến Thành, 187 Nguyễn Chí Thanh, Quận 5, TP. Hồ Chí Minh Đã bán 0%" [ref=e750] [cursor=pointer]:
+          - /url: /events/27
+          - generic [ref=e751]:
+            - img "tlinh \"GLOW\" Mini Concert – TP.HCM" [ref=e752]
+            - generic [ref=e754]:
+              - generic [ref=e755]: 
+              - text: Âm nhạc
+            - generic [ref=e756]:
+              - generic [ref=e757]:
+                - img [ref=e758]
+                - text: T7, 23/05
+              - generic [ref=e760]:
+                - img [ref=e761]
+                - text: 20:30
+          - generic [ref=e764]:
+            - heading "tlinh \"GLOW\" Mini Concert – TP.HCM" [level=3] [ref=e765]
+            - generic [ref=e766]:
+              - img [ref=e767]
+              - text: Nhà máy Bia Sài Gòn – Bến Thành, 187 Nguyễn Chí Thanh, Quận 5, TP. Hồ Chí Minh
+            - generic [ref=e772]: Đã bán 0%
+        - link "UX/UI Design Masterclass 2026 – Google x FPT Software Hội thảo CN, 24/05 09:00 UX/UI Design Masterclass 2026 – Google x FPT Software FPT Tower, 10 Phạm Văn Bạch, Cầu Giấy, Hà Nội Đã bán 0%" [ref=e776] [cursor=pointer]:
+          - /url: /events/43
+          - generic [ref=e777]:
+            - img "UX/UI Design Masterclass 2026 – Google x FPT Software" [ref=e778]
+            - generic [ref=e780]:
+              - generic [ref=e781]: 
+              - text: Hội thảo
+            - generic [ref=e782]:
+              - generic [ref=e783]:
+                - img [ref=e784]
+                - text: CN, 24/05
+              - generic [ref=e786]:
+                - img [ref=e787]
+                - text: 09:00
+          - generic [ref=e790]:
+            - heading "UX/UI Design Masterclass 2026 – Google x FPT Software" [level=3] [ref=e791]
+            - generic [ref=e792]:
+              - img [ref=e793]
+              - text: FPT Tower, 10 Phạm Văn Bạch, Cầu Giấy, Hà Nội
+            - generic [ref=e798]: Đã bán 0%
+    - generic [ref=e801]:
+      - generic [ref=e802]:
+        - generic [ref=e803]:
+          - generic [ref=e804]:
+            - img [ref=e805]
+            - text: Mới mở bán
+          - heading "Vé mới lên sàn" [level=2] [ref=e808]
+          - paragraph [ref=e809]: Đặt sớm để săn ưu đãi early-bird
+        - link "Xem tất cả" [ref=e810] [cursor=pointer]:
+          - /url: /events?sort=newest
+          - text: Xem tất cả
+          - img [ref=e811]
+      - generic [ref=e813]:
+        - link "AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B) Thể thao T5, 10/12 19:30 AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B) Sân vận động Mỹ Đình, Phạm Hùng, Nam Từ Liêm, Hà Nội Đã bán 0%" [ref=e816] [cursor=pointer]:
+          - /url: /events/38
+          - generic [ref=e817]:
+            - img "AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B)" [ref=e818]
+            - generic [ref=e820]:
+              - generic [ref=e821]: 
+              - text: Thể thao
+            - generic [ref=e822]:
+              - generic [ref=e823]:
+                - img [ref=e824]
+                - text: T5, 10/12
+              - generic [ref=e826]:
+                - img [ref=e827]
+                - text: 19:30
+          - generic [ref=e830]:
+            - heading "AFF Cup 2026 – Việt Nam vs. Thái Lan (Vòng Bảng Bảng B)" [level=3] [ref=e831]
+            - generic [ref=e832]:
+              - img [ref=e833]
+              - text: Sân vận động Mỹ Đình, Phạm Hùng, Nam Từ Liêm, Hà Nội
+            - generic [ref=e838]: Đã bán 0%
+        - link "SOOBIN \"I Said I Love You\" Concert Tour – TP.HCM Âm nhạc T7, 27/06 19:30 SOOBIN \"I Said I Love You\" Concert Tour – TP.HCM Nhà hát Hòa Bình, 240 3 Tháng 2, Quận 10, TP. Hồ Chí Minh Đã bán 0%" [ref=e842] [cursor=pointer]:
+          - /url: /events/31
+          - generic [ref=e843]:
+            - img "SOOBIN \"I Said I Love You\" Concert Tour – TP.HCM" [ref=e844]
+            - generic [ref=e846]:
+              - generic [ref=e847]: 
+              - text: Âm nhạc
+            - generic [ref=e848]:
+              - generic [ref=e849]:
+                - img [ref=e850]
+                - text: T7, 27/06
+              - generic [ref=e852]:
+                - img [ref=e853]
+                - text: 19:30
+          - generic [ref=e856]:
+            - heading "SOOBIN \"I Said I Love You\" Concert Tour – TP.HCM" [level=3] [ref=e857]
+            - generic [ref=e858]:
+              - img [ref=e859]
+              - text: Nhà hát Hòa Bình, 240 3 Tháng 2, Quận 10, TP. Hồ Chí Minh
+            - generic [ref=e864]: Đã bán 0%
+        - link "Indie Music Festival – Hanoi Open Air 2026 Âm nhạc T7, 19/09 15:00 Indie Music Festival – Hanoi Open Air 2026 Công viên Thống Nhất, Hai Bà Trưng, Hà Nội Đã bán 0%" [ref=e868] [cursor=pointer]:
+          - /url: /events/32
+          - generic [ref=e869]:
+            - img "Indie Music Festival – Hanoi Open Air 2026" [ref=e870]
+            - generic [ref=e872]:
+              - generic [ref=e873]: 
+              - text: Âm nhạc
+            - generic [ref=e874]:
+              - generic [ref=e875]:
+                - img [ref=e876]
+                - text: T7, 19/09
+              - generic [ref=e878]:
+                - img [ref=e879]
+                - text: 15:00
+          - generic [ref=e882]:
+            - heading "Indie Music Festival – Hanoi Open Air 2026" [level=3] [ref=e883]
+            - generic [ref=e884]:
+              - img [ref=e885]
+              - text: Công viên Thống Nhất, Hai Bà Trưng, Hà Nội
+            - generic [ref=e890]: Đã bán 0%
+        - link "Lê Cát Trọng Lý \"Giữa Hai Khoảng Lặng\" Concert Âm nhạc T7, 25/07 20:00 Lê Cát Trọng Lý \"Giữa Hai Khoảng Lặng\" Concert Nhà hát Lớn Hà Nội, 1 Tràng Tiền, Hoàn Kiếm, Hà Nội Đã bán 0%" [ref=e894] [cursor=pointer]:
+          - /url: /events/33
+          - generic [ref=e895]:
+            - img "Lê Cát Trọng Lý \"Giữa Hai Khoảng Lặng\" Concert" [ref=e896]
+            - generic [ref=e898]:
+              - generic [ref=e899]: 
+              - text: Âm nhạc
+            - generic [ref=e900]:
+              - generic [ref=e901]:
+                - img [ref=e902]
+                - text: T7, 25/07
+              - generic [ref=e904]:
+                - img [ref=e905]
+                - text: 20:00
+          - generic [ref=e908]:
+            - heading "Lê Cát Trọng Lý \"Giữa Hai Khoảng Lặng\" Concert" [level=3] [ref=e909]
+            - generic [ref=e910]:
+              - img [ref=e911]
+              - text: Nhà hát Lớn Hà Nội, 1 Tràng Tiền, Hoàn Kiếm, Hà Nội
+            - generic [ref=e916]: Đã bán 0%
+        - 'link "Nhà hát Tuổi Trẻ: Người Cầm Lái Sân khấu T3, 19/05 19:30 Nhà hát Tuổi Trẻ: Người Cầm Lái Nhà hát Tuổi Trẻ, 11 Ngô Thì Nhậm, Hai Bà Trưng, Hà Nội Đã bán 0%" [ref=e920] [cursor=pointer]':
+          - /url: /events/34
+          - generic [ref=e921]:
+            - 'img "Nhà hát Tuổi Trẻ: Người Cầm Lái" [ref=e922]'
+            - generic [ref=e924]:
+              - generic [ref=e925]: 
+              - text: Sân khấu
+            - generic [ref=e926]:
+              - generic [ref=e927]:
+                - img [ref=e928]
+                - text: T3, 19/05
+              - generic [ref=e930]:
+                - img [ref=e931]
+                - text: 19:30
+          - generic [ref=e934]:
+            - 'heading "Nhà hát Tuổi Trẻ: Người Cầm Lái" [level=3] [ref=e935]'
+            - generic [ref=e936]:
+              - img [ref=e937]
+              - text: Nhà hát Tuổi Trẻ, 11 Ngô Thì Nhậm, Hai Bà Trưng, Hà Nội
+            - generic [ref=e942]: Đã bán 0%
+        - 'link "Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn Sân khấu T7, 06/06 19:30 Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn Nhà hát Kịch TP.HCM, 7 Trần Hưng Đạo, Quận 1, TP. Hồ Chí Minh Đã bán 0%" [ref=e946] [cursor=pointer]':
+          - /url: /events/36
+          - generic [ref=e947]:
+            - 'img "Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn" [ref=e948]'
+            - generic [ref=e950]:
+              - generic [ref=e951]: 
+              - text: Sân khấu
+            - generic [ref=e952]:
+              - generic [ref=e953]:
+                - img [ref=e954]
+                - text: T7, 06/06
+              - generic [ref=e956]:
+                - img [ref=e957]
+                - text: 19:30
+          - generic [ref=e960]:
+            - 'heading "Nhà hát Kịch TP.HCM: Ký Ức Sài Gòn" [level=3] [ref=e961]'
+            - generic [ref=e962]:
+              - img [ref=e963]
+              - text: Nhà hát Kịch TP.HCM, 7 Trần Hưng Đạo, Quận 1, TP. Hồ Chí Minh
+            - generic [ref=e968]: Đã bán 0%
+        - 'link "ONE Championship: Vietnam Warriors Thể thao CN, 31/05 18:00 ONE Championship: Vietnam Warriors Nhà thi đấu Tinh Võ, 248 Nơ Trang Long, Bình Thạnh, TP. Hồ Chí Minh Đã bán 0%" [ref=e972] [cursor=pointer]':
+          - /url: /events/41
+          - generic [ref=e973]:
+            - 'img "ONE Championship: Vietnam Warriors" [ref=e974]'
+            - generic [ref=e976]:
+              - generic [ref=e977]: 
+              - text: Thể thao
+            - generic [ref=e978]:
+              - generic [ref=e979]:
+                - img [ref=e980]
+                - text: CN, 31/05
+              - generic [ref=e982]:
+                - img [ref=e983]
+                - text: 18:00
+          - generic [ref=e986]:
+            - 'heading "ONE Championship: Vietnam Warriors" [level=3] [ref=e987]'
+            - generic [ref=e988]:
+              - img [ref=e989]
+              - text: Nhà thi đấu Tinh Võ, 248 Nơ Trang Long, Bình Thạnh, TP. Hồ Chí Minh
+            - generic [ref=e994]: Đã bán 0%
+        - link "UX/UI Design Masterclass 2026 – Google x FPT Software Hội thảo CN, 24/05 09:00 UX/UI Design Masterclass 2026 – Google x FPT Software FPT Tower, 10 Phạm Văn Bạch, Cầu Giấy, Hà Nội Đã bán 0%" [ref=e998] [cursor=pointer]:
+          - /url: /events/43
+          - generic [ref=e999]:
+            - img "UX/UI Design Masterclass 2026 – Google x FPT Software" [ref=e1000]
+            - generic [ref=e1002]:
+              - generic [ref=e1003]: 
+              - text: Hội thảo
+            - generic [ref=e1004]:
+              - generic [ref=e1005]:
+                - img [ref=e1006]
+                - text: CN, 24/05
+              - generic [ref=e1008]:
+                - img [ref=e1009]
+                - text: 09:00
+          - generic [ref=e1012]:
+            - heading "UX/UI Design Masterclass 2026 – Google x FPT Software" [level=3] [ref=e1013]
+            - generic [ref=e1014]:
+              - img [ref=e1015]
+              - text: FPT Tower, 10 Phạm Văn Bạch, Cầu Giấy, Hà Nội
+            - generic [ref=e1020]: Đã bán 0%
+    - generic [ref=e1023]:
+      - generic [ref=e1024]:
+        - generic [ref=e1025]:
+          - generic [ref=e1026]:
+            - img [ref=e1027]
+            - text: Tin tức
+          - heading "Điểm tin sự kiện & nghệ sĩ" [level=2] [ref=e1030]
+          - paragraph [ref=e1031]: Cập nhật trực tiếp từ newsroom TicketRush
+        - link "Xem tất cả" [ref=e1032] [cursor=pointer]:
+          - /url: /news
+          - text: Xem tất cả
+          - img [ref=e1033]
+      - generic [ref=e1035]:
+        - 'link "EXO PLANET #6 \"EXhOrizon\" — đêm diễn lịch sử tại TP.HCM sau 7 năm vắng bóng Showbiz EXO PLANET #6 \"EXhOrizon\" — đêm diễn lịch sử tại TP.HCM sau 7 năm vắng bóng EXO chính thức trở lại Việt Nam với tour \"EXhOrizon\" — vòng lưu diễn thế giới đầu tiên kể từ 2019. Đêm 26/04 tại Sân vận động Phú Thọ hứa hẹn là sự kiện K-pop lớn nhất năm với setlist 25 ca khúc và sân khấu LED 800m². 25/04/2026 5 phút đọc" [ref=e1037] [cursor=pointer]':
+          - /url: /news/n1
+          - generic [ref=e1038]:
+            - 'img "EXO PLANET #6 \"EXhOrizon\" — đêm diễn lịch sử tại TP.HCM sau 7 năm vắng bóng" [ref=e1039]'
+            - generic [ref=e1041]:
+              - generic [ref=e1042]: Showbiz
+              - 'heading "EXO PLANET #6 \"EXhOrizon\" — đêm diễn lịch sử tại TP.HCM sau 7 năm vắng bóng" [level=3] [ref=e1043]'
+              - paragraph [ref=e1044]: EXO chính thức trở lại Việt Nam với tour "EXhOrizon" — vòng lưu diễn thế giới đầu tiên kể từ 2019. Đêm 26/04 tại Sân vận động Phú Thọ hứa hẹn là sự kiện K-pop lớn nhất năm với setlist 25 ca khúc và sân khấu LED 800m².
+              - generic [ref=e1045]:
+                - generic [ref=e1046]: 25/04/2026
+                - generic [ref=e1048]: 5 phút đọc
+        - generic [ref=e1049]:
+          - link "Sơn Tùng M-TP công bố \"SKY TOUR\" World Tour 2026 — lần đầu tiên ra nước ngoài Showbiz Sơn Tùng M-TP công bố \"SKY TOUR\" World Tour 2026 — lần đầu tiên ra nước ngoài 21/04/2026 6 phút đọc" [ref=e1051] [cursor=pointer]:
+            - /url: /news/n6
+            - img "Sơn Tùng M-TP công bố \"SKY TOUR\" World Tour 2026 — lần đầu tiên ra nước ngoài" [ref=e1053]
+            - generic [ref=e1054]:
+              - text: Showbiz
+              - heading "Sơn Tùng M-TP công bố \"SKY TOUR\" World Tour 2026 — lần đầu tiên ra nước ngoài" [level=3] [ref=e1055]
+              - generic [ref=e1056]:
+                - generic [ref=e1057]: 21/04/2026
+                - generic [ref=e1059]: 6 phút đọc
+          - 'link "Bình luận Vũ. \"Vũ-Verse 2026\" tại Hà Nội: âm nhạc như một cuộc hành hương Bình luận Bình luận Vũ. \"Vũ-Verse 2026\" tại Hà Nội: âm nhạc như một cuộc hành hương 14/06/2026 8 phút đọc" [ref=e1061] [cursor=pointer]':
+            - /url: /news/n10
+            - 'img "Bình luận Vũ. \"Vũ-Verse 2026\" tại Hà Nội: âm nhạc như một cuộc hành hương" [ref=e1063]'
+            - generic [ref=e1064]:
+              - text: Bình luận
+              - 'heading "Bình luận Vũ. \"Vũ-Verse 2026\" tại Hà Nội: âm nhạc như một cuộc hành hương" [level=3] [ref=e1065]'
+              - generic [ref=e1066]:
+                - generic [ref=e1067]: 14/06/2026
+                - generic [ref=e1069]: 8 phút đọc
+          - link "Bùi Công Nam \"The Story\" Livetour — hành trình kể chuyện bằng âm nhạc đầu tiên Showbiz Bùi Công Nam \"The Story\" Livetour — hành trình kể chuyện bằng âm nhạc đầu tiên 24/04/2026 5 phút đọc" [ref=e1071] [cursor=pointer]:
+            - /url: /news/n2
+            - img "Bùi Công Nam \"The Story\" Livetour — hành trình kể chuyện bằng âm nhạc đầu tiên" [ref=e1073]
+            - generic [ref=e1074]:
+              - text: Showbiz
+              - heading "Bùi Công Nam \"The Story\" Livetour — hành trình kể chuyện bằng âm nhạc đầu tiên" [level=3] [ref=e1075]
+              - generic [ref=e1076]:
+                - generic [ref=e1077]: 24/04/2026
+                - generic [ref=e1079]: 5 phút đọc
+          - 'link "Hậu trường EXO \"EXhOrizon\": 3 đêm, 120 nhân công, 2,5 tấn thiết bị bay từ Seoul Hậu trường Hậu trường EXO \"EXhOrizon\": 3 đêm, 120 nhân công, 2,5 tấn thiết bị bay từ Seoul 24/04/2026 7 phút đọc" [ref=e1081] [cursor=pointer]':
+            - /url: /news/n9
+            - 'img "Hậu trường EXO \"EXhOrizon\": 3 đêm, 120 nhân công, 2,5 tấn thiết bị bay từ Seoul" [ref=e1083]'
+            - generic [ref=e1084]:
+              - text: Hậu trường
+              - 'heading "Hậu trường EXO \"EXhOrizon\": 3 đêm, 120 nhân công, 2,5 tấn thiết bị bay từ Seoul" [level=3] [ref=e1085]'
+              - generic [ref=e1086]:
+                - generic [ref=e1087]: 24/04/2026
+                - generic [ref=e1089]: 7 phút đọc
+    - generic [ref=e1091]:
+      - generic [ref=e1092]:
+        - img [ref=e1094]
+        - generic [ref=e1097]:
+          - generic [ref=e1098]: Đặt vé an toàn
+          - generic [ref=e1099]: Giữ ghế rõ ràng · không bán trùng · QR sau xác nhận
+      - generic [ref=e1100]:
+        - img [ref=e1102]
+        - generic [ref=e1105]:
+          - generic [ref=e1106]: Vòng đời minh bạch
+          - generic [ref=e1107]: Ghế tự nhả khi hết hạn, trạng thái cập nhật realtime
+      - generic [ref=e1108]:
+        - img [ref=e1110]
+        - generic [ref=e1112]:
+          - generic [ref=e1113]: Hỗ trợ 24/7
+          - generic [ref=e1114]: Đội ngũ CSKH phản hồi trong 5 phút
+    - generic [ref=e1116]:
+      - generic [ref=e1117]:
+        - generic [ref=e1118]:
+          - generic [ref=e1119]:
+            - img [ref=e1121]
+            - text: TicketRush
+          - paragraph [ref=e1123]: Nền tảng đặt vé sự kiện trực tuyến — giữ ghế realtime, xác nhận gọn, vé QR rõ ràng.
+          - generic [ref=e1124]:
+            - generic [ref=e1125]:
+              - img [ref=e1126]
+              - text: Giữ ghế minh bạch
+            - generic [ref=e1129]:
+              - img [ref=e1130]
+              - text: Hỗ trợ rõ ràng
+        - generic [ref=e1132]:
+          - heading "Về chúng tôi" [level=4] [ref=e1133]
+          - list [ref=e1134]:
+            - listitem [ref=e1135]:
+              - link "Về TicketRush" [ref=e1136] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e1137]:
+              - link "Tin tức" [ref=e1138] [cursor=pointer]:
+                - /url: /news
+            - listitem [ref=e1139]:
+              - link "Liên hệ" [ref=e1140] [cursor=pointer]:
+                - /url: /help
+        - generic [ref=e1141]:
+          - heading "Khám phá" [level=4] [ref=e1142]
+          - list [ref=e1143]:
+            - listitem [ref=e1144]:
+              - link "Tất cả sự kiện" [ref=e1145] [cursor=pointer]:
+                - /url: /events
+            - listitem [ref=e1146]:
+              - link "Sự kiện hot" [ref=e1147] [cursor=pointer]:
+                - /url: /events?sort=trending
+            - listitem [ref=e1148]:
+              - link "Sắp diễn ra" [ref=e1149] [cursor=pointer]:
+                - /url: /events?sort=upcoming
+            - listitem [ref=e1150]:
+              - link "Vé giá rẻ" [ref=e1151] [cursor=pointer]:
+                - /url: /events?sort=priceAsc
+        - generic [ref=e1152]:
+          - heading "Hỗ trợ" [level=4] [ref=e1153]
+          - list [ref=e1154]:
+            - listitem [ref=e1155]:
+              - link "Trung tâm trợ giúp" [ref=e1156] [cursor=pointer]:
+                - /url: /help
+            - listitem [ref=e1157]:
+              - link "Hướng dẫn mua vé" [ref=e1158] [cursor=pointer]:
+                - /url: /help#buying
+            - listitem [ref=e1159]:
+              - link "Chính sách hoàn vé" [ref=e1160] [cursor=pointer]:
+                - /url: /refund-policy
+            - listitem [ref=e1161]:
+              - link "Điều khoản dịch vụ" [ref=e1162] [cursor=pointer]:
+                - /url: /terms
+      - generic [ref=e1163]:
+        - generic [ref=e1164]: © 2026 TicketRush · Đồ án môn INT3306 · UET, ĐHQGHN
+        - generic [ref=e1165]:
+          - generic [ref=e1166]: Giữ ghế realtime
+          - generic [ref=e1167]: QR điện tử
+          - generic [ref=e1168]: Hàng chờ ảo
+  - status [ref=e1219]: Chào mừng trở lại, User!
+  - alert [ref=e93]

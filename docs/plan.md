@@ -226,7 +226,7 @@ main              ← production (stable, merge từ develop sau mỗi sprint)
 | State | Zustand |
 | Real-time | Socket.io client |
 | Backend | Express.js + TypeScript |
-| Database | MySQL 8.0 (raw mysql2, không ORM) |
+| Database | MySQL 8.0 qua Prisma ORM; chỉ dùng raw SQL có chủ đích cho row locking/transaction đặc thù |
 | Cache/Queue | Redis (ioredis) |
 | Auth | JWT + bcryptjs |
 | Validation | Zod |
