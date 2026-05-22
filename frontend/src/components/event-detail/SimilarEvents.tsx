@@ -1,16 +1,14 @@
 import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar } from 'lucide-react';
-
-function formatVnd(value: number): string {
-  return `${value.toLocaleString('vi-VN')}đ`;
-}
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   events: DisplayEvent[];
 }
 
 export function SimilarEvents({ events }: Props) {
+  const { formatCurrency, messages } = useLocale();
   if (events.length === 0) return null;
 
   return (
@@ -18,11 +16,11 @@ export function SimilarEvents({ events }: Props) {
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-2xl font-bold">Sự kiện tương tự</h2>
-            <p className="mt-1 text-sm text-stone-500">Các sự kiện cùng mạch quan tâm</p>
+            <h2 className="font-display text-2xl font-bold">{messages.eventDetail.similar}</h2>
+            <p className="mt-1 text-sm text-stone-500">{messages.eventDetail.similarDesc}</p>
           </div>
           <Link href="/events" className="text-sm font-semibold text-amber-700 hover:text-amber-800">
-            Xem tất cả →
+            {messages.common.viewAll} →
           </Link>
         </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -51,7 +49,7 @@ export function SimilarEvents({ events }: Props) {
                   <Calendar className="mr-0.5 inline h-3 w-3" /> {ev.dateLabel} · {ev.timeLabel}
                 </div>
                 <div className="mt-auto pt-3 font-display text-sm font-bold text-amber-700">
-                  Từ {formatVnd(ev.priceFrom)}
+                  {messages.common.from} {formatCurrency(ev.priceFrom)}
                 </div>
               </div>
             </Link>

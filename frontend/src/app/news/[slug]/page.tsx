@@ -8,13 +8,15 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { getPostBySlug, listPosts } from '@/lib/api/posts';
 import { getPostBookmark, removePostBookmark, savePostBookmark } from '@/lib/api/engagement';
-import { authorInitials, formatPostDate } from '@/lib/utils/posts';
+import { authorInitials, formatPostDate, postCategoryLabel } from '@/lib/utils/posts';
 import type { Post } from '@/types';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import toast from 'react-hot-toast';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export default function ArticlePage() {
+  const { locale, messages } = useLocale();
   const { slug } = useParams<{ slug: string }>();
   const [article, setArticle] = useState<Post | null>(null);
   const [related, setRelated] = useState<Post[]>([]);
@@ -52,7 +54,7 @@ export default function ArticlePage() {
         await navigator.share({ title: article?.title, url });
       } else {
         await navigator.clipboard.writeText(url);
-        toast.success('Đã sao chép liên kết');
+        toast.success(messages.news.copiedLink);
       }
     } catch {
       // User cancelled share sheet or clipboard unavailable.
@@ -71,9 +73,9 @@ export default function ArticlePage() {
         ? await removePostBookmark(article.id)
         : await savePostBookmark(article.id);
       setSaved(result.saved);
-      toast.success(result.saved ? 'Đã lưu bài' : 'Đã bỏ lưu bài');
+      toast.success(result.saved ? messages.news.articleSaved : messages.news.articleUnsaved);
     } catch {
-      toast.error('Chưa thể cập nhật bài đã lưu');
+      toast.error(messages.news.articleSaveFailed);
     } finally {
       setSaving(false);
     }
@@ -85,7 +87,7 @@ export default function ArticlePage() {
         <Navbar variant="solid" />
         <div className="flex min-h-[60vh] items-center justify-center gap-2 text-stone-400">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">Đang tải bài viết…</span>
+          <span className="text-sm">{messages.news.loadingArticle}</span>
         </div>
         <Footer />
       </>
@@ -97,9 +99,9 @@ export default function ArticlePage() {
       <>
         <Navbar variant="solid" />
         <div className="mx-auto max-w-2xl px-4 py-24 text-center">
-          <h1 className="font-display text-2xl font-bold text-stone-900">Không tìm thấy bài viết</h1>
+          <h1 className="font-display text-2xl font-bold text-stone-900">{messages.news.articleMissing}</h1>
           <Link href="/news" className="mt-4 inline-flex text-sm font-semibold text-amber-700">
-            Quay lại newsroom
+            {messages.news.backNewsroom}
           </Link>
         </div>
         <Footer />
@@ -125,16 +127,16 @@ export default function ArticlePage() {
             href="/news"
             className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold text-white/80 backdrop-blur-sm transition-colors hover:bg-white/20"
           >
-            <ArrowLeft className="h-4 w-4" /> Quay lại tin tức
+            <ArrowLeft className="h-4 w-4" /> {messages.news.backNews}
           </Link>
 
           <div className="mt-5 flex flex-wrap items-center gap-2.5">
             <span className="rounded-full bg-amber-500 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">
-              {article.category}
+              {postCategoryLabel(locale, article.category)}
             </span>
-            <span className="text-xs text-white/60">{formatPostDate(article.published_at)}</span>
+            <span className="text-xs text-white/60">{formatPostDate(article.published_at, locale, messages.news.unpublished)}</span>
             <span className="inline-flex items-center gap-1 text-xs text-white/60">
-              <Clock className="h-3 w-3" /> {article.read_time_min} phút đọc
+              <Clock className="h-3 w-3" /> {article.read_time_min} {messages.news.minuteRead}
             </span>
           </div>
 
@@ -155,14 +157,14 @@ export default function ArticlePage() {
             </div>
             <div className="flex items-center gap-2">
               <button onClick={handleShare} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition-colors hover:bg-white/20">
-                <Share2 className="h-3.5 w-3.5" /> Chia sẻ
+                <Share2 className="h-3.5 w-3.5" /> {messages.news.share}
               </button>
               <button
                 onClick={handleBookmark}
                 disabled={saving}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition-colors hover:bg-white/20 disabled:opacity-60"
               >
-                <Bookmark className={`h-3.5 w-3.5 ${saved ? 'fill-white text-white' : ''}`} /> {saved ? 'Đã lưu' : 'Lưu bài'}
+                <Bookmark className={`h-3.5 w-3.5 ${saved ? 'fill-white text-white' : ''}`} /> {saved ? messages.news.saved : messages.news.save}
               </button>
             </div>
           </div>
@@ -188,7 +190,7 @@ export default function ArticlePage() {
 
         <div className="mt-10 flex flex-wrap gap-2 border-t border-stone-200 pt-6">
           <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700">
-            #{article.category}
+            #{postCategoryLabel(locale, article.category)}
           </span>
           <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700">
             #TicketRush
@@ -201,16 +203,16 @@ export default function ArticlePage() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-stone-900">{article.author_name}</p>
-            <p className="text-xs text-stone-500">Đội ngũ biên tập, viết vì người yêu show.</p>
+            <p className="text-xs text-stone-500">{messages.news.editorBio}</p>
           </div>
           <Link href="/news" className="shrink-0 text-xs font-semibold text-amber-700 hover:text-amber-800">
-            Xem thêm bài →
+            {messages.news.morePosts} →
           </Link>
         </div>
 
         {related.length > 0 && (
           <section className="mt-14 border-t border-stone-200 pt-10">
-            <h2 className="font-display text-xl font-bold text-stone-900 md:text-2xl">Đọc thêm cùng chủ đề</h2>
+            <h2 className="font-display text-xl font-bold text-stone-900 md:text-2xl">{messages.news.related}</h2>
             <ul className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-3">
               {related.map((post) => (
                 <li key={post.id}>
@@ -223,7 +225,7 @@ export default function ArticlePage() {
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
-                    <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-amber-700">{post.category}</p>
+                    <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-amber-700">{postCategoryLabel(locale, post.category)}</p>
                     <p className="mt-1 line-clamp-2 font-display text-sm font-bold leading-snug text-stone-900 group-hover:text-amber-700">
                       {post.title}
                     </p>

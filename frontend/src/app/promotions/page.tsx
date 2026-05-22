@@ -10,20 +10,20 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { listPublicPromoCodes } from '@/lib/api/promoCodes';
 import { fadeUp, staggerContainer, cardVariant, useSectionInView } from '@/lib/motion';
-import { formatVnd } from '@/data/uiConfig';
 import type { EventCategory, PublicPromoCode } from '@/types';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 const FILTERS = [
-  { key: 'all',      label: 'Tất cả' },
-  { key: 'global',   label: 'Toàn hệ thống' },
-  { key: 'music',    label: 'Âm nhạc' },
-  { key: 'arts',     label: 'Nghệ thuật' },
-  { key: 'sports',   label: 'Thể thao' },
-  { key: 'food',     label: 'Ẩm thực' },
-  { key: 'entertainment', label: 'Giải trí' },
-  { key: 'workshop', label: 'Hội thảo' },
-  { key: 'stage',    label: 'Sân khấu' },
-  { key: 'other',    label: 'Khác' },
+  { key: 'all' },
+  { key: 'global' },
+  { key: 'music' },
+  { key: 'arts' },
+  { key: 'sports' },
+  { key: 'food' },
+  { key: 'entertainment' },
+  { key: 'workshop' },
+  { key: 'stage' },
+  { key: 'other' },
 ] as const;
 
 type FilterKey = typeof FILTERS[number]['key'];
@@ -56,21 +56,25 @@ const CATEGORY_COLORS: Partial<Record<EventCategory, string>> = {
   other: 'bg-stone-600',
 };
 
-function toPromotionView(p: PublicPromoCode): PromotionView {
+function toPromotionView(
+  p: PublicPromoCode,
+  copy: ReturnType<typeof useLocale>['messages']['promotions'],
+  formatCurrency: (value: number) => string,
+): PromotionView {
   const usedPercent = p.max_uses
     ? Math.min(100, Math.round((p.used_count / p.max_uses) * 100))
     : 0;
   const scoped = Boolean(p.event_id && p.event_title);
   const discountText = p.discount_type === 'percent'
-    ? `Giảm ${p.discount_value}%`
-    : `Giảm ${formatVnd(p.discount_value)}`;
+    ? `${copy.discount} ${p.discount_value}%`
+    : `${copy.discount} ${formatCurrency(p.discount_value)}`;
 
   return {
     id: p.id,
-    title: scoped ? `Ưu đãi ${p.event_title}` : 'Ưu đãi toàn hệ thống',
+    title: scoped ? `${copy.scopedTitle} ${p.event_title}` : copy.globalTitle,
     subtitle: scoped
-      ? `${discountText} khi đặt vé sự kiện này`
-      : `${discountText} cho mọi sự kiện đủ điều kiện`,
+      ? `${discountText} ${copy.scopedSubtitle}`
+      : `${discountText} ${copy.globalSubtitle}`,
     code: p.code,
     type: p.discount_type,
     value: p.discount_value,
@@ -84,22 +88,23 @@ function toPromotionView(p: PublicPromoCode): PromotionView {
   };
 }
 
-function useCountdown(iso: string) {
+function useCountdown(iso: string, copy: ReturnType<typeof useLocale>['messages']['promotions']) {
   const target = new Date(iso).getTime();
   const diff = target - Date.now();
-  if (diff <= 0) return { expired: true, label: 'Đã hết hạn' };
+  if (diff <= 0) return { expired: true, label: copy.expired };
   const days = Math.floor(diff / 86_400_000);
   const hours = Math.floor((diff % 86_400_000) / 3_600_000);
-  if (days >= 2) return { expired: false, label: `Còn ${days} ngày` };
-  if (days === 1) return { expired: false, label: `Còn 1 ngày ${hours}h` };
-  return { expired: false, label: `Còn ${hours}h — sắp hết!`, urgent: true };
+  if (days >= 2) return { expired: false, label: copy.remainingDays(days) };
+  if (days === 1) return { expired: false, label: copy.remainingDayHours(hours) };
+  return { expired: false, label: copy.remainingHours(hours), urgent: true };
 }
 
 function TagPill({ tag }: { tag?: PromoTag }) {
+  const { messages } = useLocale();
   if (!tag) return null;
   const map = {
     hot:   { bg: 'bg-rose-500',    Icon: Flame,    label: 'HOT' },
-    new:   { bg: 'bg-emerald-600', Icon: Sparkles, label: 'NGƯỜI MỚI' },
+    new:   { bg: 'bg-emerald-600', Icon: Sparkles, label: messages.promotions.newcomer },
     flash: { bg: 'bg-orange-600',  Icon: Zap,      label: 'FLASH' },
   } as const;
   const { bg, Icon, label } = map[tag];
@@ -111,21 +116,22 @@ function TagPill({ tag }: { tag?: PromoTag }) {
 }
 
 function VoucherCard({ p }: { p: PromotionView }) {
+  const { formatCurrency, messages } = useLocale();
   const [copied, setCopied] = useState(false);
-  const countdown = useCountdown(p.expiresAt);
+  const countdown = useCountdown(p.expiresAt, messages.promotions);
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(p.code);
       setCopied(true);
-      toast.success(`Đã sao chép: ${p.code}`);
+      toast.success(`${messages.promotions.copied}: ${p.code}`);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Không sao chép được. Hãy copy thủ công.');
+      toast.error(messages.promotions.copyFailed);
     }
   };
 
-  const valueLabel = p.type === 'percent' ? `${p.value}%` : formatVnd(p.value);
+  const valueLabel = p.type === 'percent' ? `${p.value}%` : formatCurrency(p.value);
 
   return (
     <motion.article
@@ -139,7 +145,7 @@ function VoucherCard({ p }: { p: PromotionView }) {
         <TicketPercent className="absolute right-2 top-2 h-4 w-4 opacity-30" />
         <span className="font-display text-2xl font-extrabold leading-none sm:text-3xl">{valueLabel}</span>
         <span className="mt-1 text-[10px] font-semibold uppercase tracking-wider opacity-90">
-          giảm ngay
+          {messages.promotions.saveNow}
         </span>
         {/* Punch holes */}
         <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-stone-50" />
@@ -162,7 +168,7 @@ function VoucherCard({ p }: { p: PromotionView }) {
 
           {p.minSpend > 0 && (
             <p className="mt-2 text-[11px] text-stone-500">
-              Đơn tối thiểu <span className="font-semibold text-stone-700">{formatVnd(p.minSpend)}</span>
+              {messages.promotions.minOrder} <span className="font-semibold text-stone-700">{formatCurrency(p.minSpend)}</span>
             </p>
           )}
         </div>
@@ -181,18 +187,18 @@ function VoucherCard({ p }: { p: PromotionView }) {
                 style={{ width: `${p.usedPercent}%` }}
               />
             </div>
-            <p className="mt-0.5 text-[10px] text-stone-400">Đã dùng {p.usedPercent}%</p>
+            <p className="mt-0.5 text-[10px] text-stone-400">{messages.promotions.used} {p.usedPercent}%</p>
           </div>
 
           <button
             onClick={copy}
-            aria-label={`Sao chép mã ${p.code}`}
+            aria-label={`${messages.promotions.copyCode} ${p.code}`}
             className={`inline-flex items-center gap-1 rounded-lg border-2 border-dashed px-3 py-2 text-xs font-bold transition-colors
               ${copied
                 ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                 : 'border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white'}`}
           >
-            {copied ? <><Check className="h-3.5 w-3.5" /> Đã copy</> : <><Copy className="h-3.5 w-3.5" /> {p.code}</>}
+            {copied ? <><Check className="h-3.5 w-3.5" /> {messages.promotions.copiedShort}</> : <><Copy className="h-3.5 w-3.5" /> {p.code}</>}
           </button>
         </div>
       </div>
@@ -201,6 +207,7 @@ function VoucherCard({ p }: { p: PromotionView }) {
 }
 
 export default function PromotionsPage() {
+  const { formatCurrency, messages } = useLocale();
   const [filter, setFilter] = useState<FilterKey>('all');
   const [query, setQuery] = useState('');
   const [pendingQuery, setPendingQuery] = useState('');
@@ -214,7 +221,7 @@ export default function PromotionsPage() {
     setLoading(true);
     listPublicPromoCodes()
       .then((rows) => {
-        if (alive) setPromos(rows.map(toPromotionView));
+        if (alive) setPromos(rows.map((row) => toPromotionView(row, messages.promotions, formatCurrency)));
       })
       .catch(() => {
         if (alive) setPromos([]);
@@ -223,7 +230,7 @@ export default function PromotionsPage() {
         if (alive) setLoading(false);
       });
     return () => { alive = false; };
-  }, []);
+  }, [formatCurrency, messages.promotions]);
 
   const list = useMemo(() => {
     return promos.filter((p) => {
@@ -252,13 +259,13 @@ export default function PromotionsPage() {
         <div className="relative mx-auto max-w-7xl px-4 lg:px-8">
           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="max-w-2xl text-white">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-300">
-              <Sparkles className="h-3.5 w-3.5" /> Ưu đãi mới nhất
+              <Sparkles className="h-3.5 w-3.5" /> {messages.promotions.latest}
             </span>
             <h1 className="mt-4 font-display text-3xl font-bold leading-tight md:text-5xl">
-              Săn mã giảm giá — <span className="text-amber-400">tiết kiệm tới 50%</span>
+              {messages.promotions.heroLead} - <span className="text-amber-400">{messages.promotions.heroAccent}</span>
             </h1>
             <p className="mt-3 max-w-xl text-base text-stone-300 md:text-lg">
-              Kho ưu đãi cập nhật hàng ngày. Chọn mã, sao chép và nhập ở bước xác nhận để giảm ngay.
+              {messages.promotions.heroIntro}
             </p>
 
             <form onSubmit={handleSearch} className="mt-6 flex max-w-md gap-2">
@@ -268,12 +275,12 @@ export default function PromotionsPage() {
                   type="search"
                   value={pendingQuery}
                   onChange={(e) => setPendingQuery(e.target.value)}
-                  placeholder="Tìm theo mã hoặc tiêu đề…"
+                  placeholder={messages.promotions.searchPlaceholder}
                   className="h-12 w-full rounded-full border border-white/10 bg-white/10 pl-11 pr-4 text-sm text-white placeholder:text-stone-400 backdrop-blur focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                 />
               </div>
               <button type="submit" className="h-12 rounded-full bg-amber-500 px-5 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-lift">
-                Tìm
+                {messages.promotions.search}
               </button>
             </form>
           </motion.div>
@@ -292,7 +299,11 @@ export default function PromotionsPage() {
                 className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors
                   ${active ? 'bg-stone-900 text-white' : 'bg-white text-stone-700 hover:bg-stone-100'}`}
               >
-                {f.label}
+                {f.key === 'all'
+                  ? messages.promotions.all
+                  : f.key === 'global'
+                    ? messages.promotions.global
+                    : messages.categories[f.key]}
               </button>
             );
           })}
@@ -304,10 +315,10 @@ export default function PromotionsPage() {
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h2 className="font-display text-2xl font-bold text-stone-900 md:text-3xl">
-              {list.length} ưu đãi đang hoạt động
+              {messages.promotions.activeCount(list.length)}
             </h2>
             <p className="mt-1 text-sm text-stone-500">
-              Nhấp vào mã để sao chép, sau đó dán ở bước xác nhận đặt vé.
+              {messages.promotions.pasteHint}
             </p>
           </div>
         </div>
@@ -321,8 +332,8 @@ export default function PromotionsPage() {
         ) : list.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-12 text-center">
             <TicketPercent className="mx-auto h-10 w-10 text-stone-300" />
-            <p className="mt-3 font-semibold text-stone-700">Không tìm thấy ưu đãi phù hợp</p>
-            <p className="mt-1 text-sm text-stone-500">Thử bỏ bớt bộ lọc hoặc quay lại sau nhé.</p>
+            <p className="mt-3 font-semibold text-stone-700">{messages.promotions.empty}</p>
+            <p className="mt-1 text-sm text-stone-500">{messages.promotions.emptyHint}</p>
           </div>
         ) : (
           <motion.div
@@ -337,12 +348,12 @@ export default function PromotionsPage() {
 
         {/* How it works */}
         <div className="mt-14 rounded-3xl border border-stone-200 bg-white p-6 md:p-8">
-          <h3 className="font-display text-lg font-bold text-stone-900 md:text-xl">Cách sử dụng mã ưu đãi</h3>
+          <h3 className="font-display text-lg font-bold text-stone-900 md:text-xl">{messages.promotions.howTo}</h3>
           <ol className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
             {[
-              { n: 1, t: 'Sao chép mã', d: 'Nhấp nút mã ở thẻ ưu đãi bạn thích.' },
-              { n: 2, t: 'Chọn vé', d: 'Vào sự kiện và chọn vé như bình thường.' },
-              { n: 3, t: 'Dán khi xác nhận', d: 'Nhập mã ở ô "Mã ưu đãi" để được giảm ngay.' },
+              { n: 1, t: messages.promotions.howCopy, d: messages.promotions.howCopyDesc },
+              { n: 2, t: messages.promotions.howSelect, d: messages.promotions.howSelectDesc },
+              { n: 3, t: messages.promotions.howPaste, d: messages.promotions.howPasteDesc },
             ].map((s) => (
               <li key={s.n} className="flex items-start gap-3">
                 <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-amber-500 font-display text-base font-bold text-white">{s.n}</span>
@@ -354,7 +365,7 @@ export default function PromotionsPage() {
             ))}
           </ol>
           <a href="/events" className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 hover:text-amber-800">
-            Khám phá sự kiện ngay <ArrowRight className="h-4 w-4" />
+            {messages.promotions.explore} <ArrowRight className="h-4 w-4" />
           </a>
         </div>
       </section>

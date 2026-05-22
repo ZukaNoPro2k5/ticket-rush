@@ -12,6 +12,8 @@ import {
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { TicketRowSkeleton } from '@/components/ui/Skeleton';
 import { fadeUp } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
+import { localeTag } from '@/lib/i18n';
 
 interface BookingItem {
   id: number;
@@ -22,33 +24,25 @@ interface BookingItem {
   confirmed_at: string | null;
 }
 
-const STATUS_TABS = [
-  { key: '',           label: 'Tất cả' },
-  { key: 'confirmed',  label: 'Đã xác nhận' },
-  { key: 'pending',    label: 'Chờ xác nhận' },
-  { key: 'cancelled',  label: 'Đã hủy' },
-];
-
-const STATUS_CONFIG = {
-  confirmed: {
-    icon: CheckCircle2,
-    label: 'Đã xác nhận',
-    cls: 'bg-emerald-50 text-emerald-700',
-  },
-  pending: {
-    icon: Clock,
-    label: 'Chờ xác nhận',
-    cls: 'bg-amber-50 text-amber-700',
-  },
-  cancelled: {
-    icon: XCircle,
-    label: 'Đã hủy',
-    cls: 'bg-rose-50 text-rose-600',
-  },
-};
-
 function StatusBadge({ status }: { status: BookingItem['status'] }) {
-  const cfg = STATUS_CONFIG[status];
+  const { messages } = useLocale();
+  const cfg = {
+    confirmed: {
+      icon: CheckCircle2,
+      label: messages.orders.confirmed,
+      cls: 'bg-emerald-50 text-emerald-700',
+    },
+    pending: {
+      icon: Clock,
+      label: messages.orders.pending,
+      cls: 'bg-amber-50 text-amber-700',
+    },
+    cancelled: {
+      icon: XCircle,
+      label: messages.orders.cancelled,
+      cls: 'bg-rose-50 text-rose-600',
+    },
+  }[status];
   const Icon = cfg.icon;
   return (
     <span className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.cls}`}>
@@ -57,18 +51,21 @@ function StatusBadge({ status }: { status: BookingItem['status'] }) {
   );
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('vi-VN', {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 }
 
-function formatMoney(amount: number) {
-  return amount.toLocaleString('vi-VN') + 'đ';
-}
-
 export default function OrderHistoryPage() {
+  const { formatCurrency, locale, messages } = useLocale();
   const [status, setStatus] = useState('');
+  const statusTabs = [
+    { key: '', label: messages.orders.all },
+    { key: 'confirmed', label: messages.orders.confirmed },
+    { key: 'pending', label: messages.orders.pending },
+    { key: 'cancelled', label: messages.orders.cancelled },
+  ];
 
   const params = new URLSearchParams({ limit: '20' });
   if (status) params.set('status', status);
@@ -84,15 +81,15 @@ export default function OrderHistoryPage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-display text-2xl font-bold text-stone-900">Lịch sử đặt vé</h1>
+          <h1 className="font-display text-2xl font-bold text-stone-900">{messages.orders.title}</h1>
           <p className="mt-1 text-sm text-stone-500">
-            {total > 0 ? `${total} đơn đặt vé` : 'Chưa có đơn nào'}
+            {total > 0 ? messages.orders.count(total) : messages.orders.emptyCount}
           </p>
         </div>
 
         {/* Status filter */}
         <div className="flex flex-wrap gap-2">
-          {STATUS_TABS.map(tab => (
+          {statusTabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setStatus(tab.key)}
@@ -115,14 +112,14 @@ export default function OrderHistoryPage() {
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-stone-200 bg-white py-20 text-center shadow-soft">
             <History className="h-12 w-12 text-stone-200" />
             <div>
-              <p className="font-semibold text-stone-700">Chưa có đơn đặt vé nào</p>
-              <p className="mt-1 text-sm text-stone-400">Hãy đặt vé sự kiện yêu thích của bạn</p>
+              <p className="font-semibold text-stone-700">{messages.orders.emptyTitle}</p>
+              <p className="mt-1 text-sm text-stone-400">{messages.orders.emptyDesc}</p>
             </div>
             <Link
               href="/events"
               className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
             >
-              Khám phá sự kiện
+              {messages.orders.explore}
             </Link>
           </div>
         ) : (
@@ -163,15 +160,15 @@ export default function OrderHistoryPage() {
                   <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3 shrink-0" />
-                      {formatDate(booking.event.event_date)}
+                      {formatDate(booking.event.event_date, localeTag(locale))}
                     </span>
                     <span className="flex items-center gap-1">
                       <Ticket className="h-3 w-3 shrink-0" />
-                      {booking.seat_count} ghế
+                      {booking.seat_count} {messages.orders.seats}
                     </span>
                     <span className="flex items-center gap-1 font-medium text-stone-700">
                       <Banknote className="h-3 w-3 shrink-0" />
-                      {formatMoney(booking.total_amount)}
+                      {formatCurrency(booking.total_amount)}
                     </span>
                   </div>
                 </div>
@@ -180,7 +177,7 @@ export default function OrderHistoryPage() {
                 <Link
                   href={`/order-history/${booking.id}`}
                   className="flex shrink-0 items-center self-center rounded-xl border border-stone-200 p-2 text-stone-400 hover:bg-stone-50 hover:text-stone-600 transition-colors"
-                  aria-label="Xem chi tiết"
+                  aria-label={messages.orders.details}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Link>

@@ -8,12 +8,14 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { listPosts } from '@/lib/api/posts';
 import { subscribeNewsletter } from '@/lib/api/engagement';
-import { POST_CATEGORIES, formatPostDate } from '@/lib/utils/posts';
+import { POST_CATEGORIES, formatPostDate, postCategoryLabel } from '@/lib/utils/posts';
 import { fadeUp, staggerContainer, cardVariant, useSectionInView } from '@/lib/motion';
 import type { Post } from '@/types';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export default function NewsPage() {
-  const [category, setCategory] = useState('Tất cả');
+  const { locale, messages } = useLocale();
+  const [category, setCategory] = useState<string>(POST_CATEGORIES[0]);
   const [pendingQuery, setPendingQuery] = useState('');
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
@@ -28,7 +30,7 @@ export default function NewsPage() {
     setLoading(true);
     Promise.all([
       listPosts({
-        category: category === 'Tất cả' ? undefined : category,
+        category: category === POST_CATEGORIES[0] ? undefined : category,
         search: query || undefined,
         limit: 30,
       }),
@@ -79,10 +81,10 @@ export default function NewsPage() {
               <BookOpen className="h-3.5 w-3.5" /> TicketRush · Newsroom
             </span>
             <h1 className="mt-3 font-display text-4xl font-extrabold leading-[1.05] text-stone-900 md:text-6xl">
-              Đằng sau những đêm <span className="italic text-amber-600">bùng nổ</span>.
+              {messages.news.titleStart} <span className="italic text-amber-600">{messages.news.titleAccent}</span>.
             </h1>
             <p className="mt-4 max-w-2xl text-base text-stone-600 md:text-lg">
-              Tin tức, phỏng vấn, bình luận thẳng thắn và hậu trường sự kiện, viết cho những người xem show không chỉ để giải trí.
+              {messages.news.intro}
             </p>
           </motion.div>
 
@@ -93,12 +95,12 @@ export default function NewsPage() {
                 type="search"
                 value={pendingQuery}
                 onChange={(e) => setPendingQuery(e.target.value)}
-                placeholder="Tìm bài viết, nghệ sĩ, sự kiện…"
+                placeholder={messages.news.searchPlaceholder}
                 className="h-11 w-full rounded-full border border-stone-200 bg-white pl-11 pr-4 text-sm text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
             <button type="submit" className="h-11 rounded-full bg-stone-900 px-5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-stone-800">
-              Tìm
+              {messages.news.search}
             </button>
           </form>
         </div>
@@ -114,7 +116,7 @@ export default function NewsPage() {
                   className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors
                     ${active ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}
                 >
-                  {item}
+                  {postCategoryLabel(locale, item)}
                 </button>
               );
             })}
@@ -126,13 +128,13 @@ export default function NewsPage() {
         {loading ? (
           <div className="flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-white py-20 text-stone-400">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Đang tải newsroom…</span>
+            <span className="text-sm">{messages.news.loading}</span>
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-12 text-center">
             <BookOpen className="mx-auto h-10 w-10 text-stone-300" />
-            <p className="mt-3 font-semibold text-stone-700">Chưa có bài viết phù hợp</p>
-            <p className="mt-1 text-sm text-stone-500">Thử đổi chủ đề hoặc tìm bằng từ khóa khác.</p>
+            <p className="mt-3 font-semibold text-stone-700">{messages.news.empty}</p>
+            <p className="mt-1 text-sm text-stone-500">{messages.news.emptyHint}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
@@ -155,12 +157,12 @@ export default function NewsPage() {
                     </div>
                     <div className="mt-5">
                       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-amber-700">
-                        <span>{hero.category}</span>
+                        <span>{postCategoryLabel(locale, hero.category)}</span>
                         <span className="h-1 w-1 rounded-full bg-stone-300" />
-                        <span className="text-stone-500">{formatPostDate(hero.published_at)}</span>
+                        <span className="text-stone-500">{formatPostDate(hero.published_at, locale, messages.news.unpublished)}</span>
                         <span className="h-1 w-1 rounded-full bg-stone-300" />
                         <span className="inline-flex items-center gap-1 text-stone-500">
-                          <Clock className="h-3 w-3" /> {hero.read_time_min} phút đọc
+                          <Clock className="h-3 w-3" /> {hero.read_time_min} {messages.news.minuteRead}
                         </span>
                       </div>
                       <h2 className="mt-3 line-clamp-3 font-display text-2xl font-bold leading-tight text-stone-900 group-hover:text-amber-700 md:text-4xl">
@@ -170,7 +172,7 @@ export default function NewsPage() {
                         {hero.excerpt}
                       </p>
                       <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 group-hover:text-amber-800">
-                        Đọc tiếp <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                        {messages.news.readMore} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                       </span>
                     </div>
                   </Link>
@@ -197,9 +199,9 @@ export default function NewsPage() {
                         </div>
                         <div className="mt-3">
                           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700">
-                            <span>{post.category}</span>
+                            <span>{postCategoryLabel(locale, post.category)}</span>
                             <span className="h-1 w-1 rounded-full bg-stone-300" />
-                            <span className="text-stone-500">{formatPostDate(post.published_at)}</span>
+                            <span className="text-stone-500">{formatPostDate(post.published_at, locale, messages.news.unpublished)}</span>
                           </div>
                           <h3 className="mt-2 line-clamp-2 font-display text-lg font-bold leading-snug text-stone-900 group-hover:text-amber-700 md:text-xl">
                             {post.title}
@@ -224,9 +226,9 @@ export default function NewsPage() {
                       <Link href={`/news/${post.slug}`} className="group flex flex-col gap-4 sm:flex-row sm:items-start">
                         <div className="order-2 flex-1 sm:order-1">
                           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700">
-                            <span>{post.category}</span>
+                            <span>{postCategoryLabel(locale, post.category)}</span>
                             <span className="h-1 w-1 rounded-full bg-stone-300" />
-                            <span className="text-stone-500">{formatPostDate(post.published_at)}</span>
+                            <span className="text-stone-500">{formatPostDate(post.published_at, locale, messages.news.unpublished)}</span>
                             <span className="h-1 w-1 rounded-full bg-stone-300" />
                             <span className="inline-flex items-center gap-1 text-stone-500">
                               <Clock className="h-3 w-3" /> {post.read_time_min}&rsquo;
@@ -253,7 +255,7 @@ export default function NewsPage() {
               <div className="sticky top-32 space-y-8">
                 <section>
                   <h3 className="flex items-center gap-2 font-display text-base font-bold text-stone-900">
-                    <TrendingUp className="h-4 w-4 text-rose-500" /> Đang hot
+                    <TrendingUp className="h-4 w-4 text-rose-500" /> {messages.news.trending}
                   </h3>
                   <ol className="mt-4 space-y-4">
                     {trending.map((post, index) => (
@@ -267,7 +269,7 @@ export default function NewsPage() {
                               {post.title}
                             </p>
                             <p className="mt-1 text-xs text-stone-500">
-                              {post.category} · {formatPostDate(post.published_at)}
+                              {postCategoryLabel(locale, post.category)} · {formatPostDate(post.published_at, locale, messages.news.unpublished)}
                             </p>
                           </div>
                         </Link>
@@ -277,9 +279,9 @@ export default function NewsPage() {
                 </section>
 
                 <section className="rounded-2xl border border-stone-200 bg-stone-50 p-5">
-                  <h3 className="font-display text-base font-bold text-stone-900">Nhận bản tin hàng tuần</h3>
+                  <h3 className="font-display text-base font-bold text-stone-900">{messages.news.newsletter}</h3>
                   <p className="mt-1 text-sm text-stone-600">
-                    Những bài đáng đọc nhất về sự kiện giải trí Việt Nam, đến hộp thư của bạn mỗi thứ Bảy.
+                    {messages.news.newsletterHint}
                   </p>
                   <form onSubmit={handleNewsletter} className="mt-4 flex gap-2">
                     <input
@@ -291,7 +293,7 @@ export default function NewsPage() {
                       className="h-10 flex-1 rounded-full border border-stone-200 bg-white px-4 text-sm text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
                     />
                     <button disabled={newsletterPending} className="h-10 rounded-full bg-stone-900 px-4 text-sm font-semibold text-white disabled:opacity-60">
-                      {newsletterPending ? 'Đang gửi' : newsletterDone ? 'Đã nhận' : 'Nhận'}
+                      {newsletterPending ? messages.news.sending : newsletterDone ? messages.news.received : messages.news.receive}
                     </button>
                   </form>
                 </section>

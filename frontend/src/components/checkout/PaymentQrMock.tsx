@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { QrCode } from 'lucide-react';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 const QR_SIZE = 25;
 
@@ -54,6 +55,7 @@ export function PaymentQrMock({ bookingId, amount, expiresAt }: {
   amount: number;
   expiresAt: string;
 }) {
+  const { messages } = useLocale();
   const payload = `TICKETRUSH|BOOKING:${bookingId}|AMOUNT:${amount}|EXP:${expiresAt}`;
   const cells = useMemo(() => buildQrCells(payload), [payload]);
 
@@ -61,7 +63,7 @@ export function PaymentQrMock({ bookingId, amount, expiresAt }: {
     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-900">
         <QrCode className="h-4 w-4" />
-        Mã QR thanh toán demo
+        {messages.checkout.demoQr}
       </div>
       <div className="flex flex-col items-center gap-4 sm:flex-row">
         <div className="rounded-2xl bg-stone-50 p-3 shadow-sm ring-1 ring-amber-100">
@@ -69,7 +71,7 @@ export function PaymentQrMock({ bookingId, amount, expiresAt }: {
             viewBox={`0 0 ${QR_SIZE} ${QR_SIZE}`}
             className="h-36 w-36"
             role="img"
-            aria-label="QR thanh toán demo"
+            aria-label={messages.checkout.demoQrAlt}
             shapeRendering="crispEdges"
           >
             <rect width={QR_SIZE} height={QR_SIZE} fill="#fafaf9" />
@@ -82,7 +84,7 @@ export function PaymentQrMock({ bookingId, amount, expiresAt }: {
           </svg>
         </div>
         <p className="max-w-xs text-sm leading-6 text-stone-600">
-          Đây là QR mô phỏng trong môi trường dev. Chọn phương thức rồi bấm thanh toán để hệ thống giả lập giao dịch thành công.
+          {messages.checkout.demoQrHint}
         </p>
       </div>
     </div>

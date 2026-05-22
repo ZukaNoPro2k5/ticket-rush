@@ -1,17 +1,18 @@
 import type { DisplayEvent } from '@/types';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   event: DisplayEvent;
 }
 
-const VENUE_FACTS = [
-  { label: 'Check-in', value: 'Mở trước giờ diễn' },
-  { label: 'Vé', value: 'QR điện tử' },
-  { label: 'Hỗ trợ', value: 'Theo thông báo BTC' },
-];
-
 export function VenueTab({ event }: Props) {
+  const { messages } = useLocale();
   const mapQuery = encodeURIComponent(`${event.venue}, ${event.city}`);
+  const venueFacts = [
+    { label: 'Check-in', value: messages.eventDetail.openBeforeShow },
+    { label: messages.seats.ticket, value: messages.eventDetail.digitalQr },
+    { label: messages.eventDetail.support, value: messages.eventDetail.organizerNotice },
+  ];
 
   return (
     <div className="animate-fadeInUp space-y-5">
@@ -20,7 +21,7 @@ export function VenueTab({ event }: Props) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`https://maps.googleapis.com/maps/api/staticmap?center=${mapQuery}&zoom=13&size=1200x600&maptype=roadmap&markers=color:0xd97706%7C${mapQuery}`}
-            alt="Bản đồ địa điểm"
+            alt={messages.eventDetail.mapAlt}
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent" />
@@ -31,7 +32,7 @@ export function VenueTab({ event }: Props) {
             {event.venue}, {event.city}
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            {VENUE_FACTS.map((x) => (
+            {venueFacts.map((x) => (
               <div key={x.label} className="rounded-2xl border border-stone-200 bg-stone-50 p-3">
                 <div className="text-[11px] uppercase tracking-wider text-stone-500">{x.label}</div>
                 <div className="mt-0.5 font-semibold text-stone-900">{x.value}</div>

@@ -12,6 +12,8 @@ import {
 import { AccountLayout } from '@/components/account/AccountLayout';
 import api from '@/lib/api/client';
 import type { TicketDetail } from '@/types';
+import { useLocale } from '@/components/providers/LocaleProvider';
+import { localeTag } from '@/lib/i18n';
 
 const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as const;
 const fadeUp = {
@@ -19,24 +21,20 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE_OUT_EXPO } },
 };
 
-function formatDate(iso: string) {
+function formatDate(iso: string, locale: string) {
   const d = new Date(iso);
-  const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${days[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d);
 }
-
-function formatVnd(n: number) {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
-}
-
-const STATUS_MAP = {
-  active:    { label: 'Còn hiệu lực', color: 'bg-emerald-100 text-emerald-700', Icon: CheckCircle2 },
-  used:      { label: 'Đã sử dụng',   color: 'bg-stone-100 text-stone-500',     Icon: CheckCircle2 },
-  cancelled: { label: 'Đã hủy',       color: 'bg-rose-100 text-rose-600',       Icon: XCircle },
-};
 
 export default function TicketDetailPage() {
+  const { formatCurrency, locale, messages } = useLocale();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const ticketId = Number(params?.id);
@@ -65,7 +63,12 @@ export default function TicketDetailPage() {
 
   if (!ticket) return null;
 
-  const status = STATUS_MAP[ticket.status] ?? STATUS_MAP.active;
+  const statusMap = {
+    active: { label: messages.tickets.active, color: 'bg-emerald-100 text-emerald-700', Icon: CheckCircle2 },
+    used: { label: messages.tickets.usedLong, color: 'bg-stone-100 text-stone-500', Icon: CheckCircle2 },
+    cancelled: { label: messages.tickets.cancelled, color: 'bg-rose-100 text-rose-600', Icon: XCircle },
+  };
+  const status = statusMap[ticket.status] ?? statusMap.active;
   const StatusIcon = status.Icon;
 
   return (
@@ -73,7 +76,7 @@ export default function TicketDetailPage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-4">
         {/* Back */}
         <Link href="/my-tickets" className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-stone-800">
-          <ArrowLeft className="h-4 w-4" /> Danh sách vé
+          <ArrowLeft className="h-4 w-4" /> {messages.tickets.list}
         </Link>
 
         <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
@@ -85,7 +88,7 @@ export default function TicketDetailPage() {
                 style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=70)', backgroundSize: 'cover' }}
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 px-5 pb-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">Sự kiện</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">{messages.tickets.event}</p>
                 <h1 className="font-display text-lg font-bold text-white line-clamp-1 sm:text-xl">
                   {ticket.event.title}
                 </h1>
@@ -95,12 +98,12 @@ export default function TicketDetailPage() {
             {/* Info grid */}
             <div className="divide-y divide-stone-100">
               <div className="grid grid-cols-2 gap-px">
-                <InfoCell icon={Calendar} label="Ngày giờ" value={formatDate(ticket.event.event_date)} />
-                <InfoCell icon={MapPin} label="Địa điểm" value={ticket.event.venue} />
-                <InfoCell icon={Tag} label="Khu vực" value={ticket.seat.zone_name} />
-                <InfoCell icon={QrCode} label="Ghế" value={`Hàng ${ticket.seat.row_label} · Số ${ticket.seat.col_number}`} />
-                <InfoCell icon={User} label="Người giữ vé" value={ticket.holder.full_name} />
-                <InfoCell icon={CheckCircle2} label="Trạng thái"
+                <InfoCell icon={Calendar} label={messages.tickets.dateTime} value={formatDate(ticket.event.event_date, localeTag(locale))} />
+                <InfoCell icon={MapPin} label={messages.tickets.venue} value={ticket.event.venue} />
+                <InfoCell icon={Tag} label={messages.tickets.zone} value={ticket.seat.zone_name} />
+                <InfoCell icon={QrCode} label={messages.tickets.seat} value={`${messages.tickets.row} ${ticket.seat.row_label} · ${messages.tickets.number} ${ticket.seat.col_number}`} />
+                <InfoCell icon={User} label={messages.tickets.holder} value={ticket.holder.full_name} />
+                <InfoCell icon={CheckCircle2} label={messages.tickets.status}
                   value={
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${status.color}`}>
                       <StatusIcon className="h-3 w-3" /> {status.label}
@@ -112,7 +115,7 @@ export default function TicketDetailPage() {
               {ticket.checked_in_at && (
                 <div className="flex items-center gap-2 px-5 py-3 text-sm text-emerald-700">
                   <CheckCircle2 className="h-4 w-4" />
-                  Đã soát vé lúc {formatDate(ticket.checked_in_at)}
+                  {messages.tickets.checkedAt} {formatDate(ticket.checked_in_at, localeTag(locale))}
                 </div>
               )}
             </div>
@@ -122,7 +125,7 @@ export default function TicketDetailPage() {
           <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
             <div className="mb-4 flex items-center gap-2">
               <QrCode className="h-5 w-5 text-amber-500" />
-              <h2 className="font-semibold text-stone-900">Mã QR vé</h2>
+              <h2 className="font-semibold text-stone-900">{messages.tickets.qrTitle}</h2>
             </div>
 
             {ticket.status === 'active' ? (
@@ -139,31 +142,31 @@ export default function TicketDetailPage() {
                   />
                 </div>
                 <p className="mt-3 text-center text-xs text-stone-400">
-                  Xuất trình mã QR này tại cửa kiểm soát vé
+                  {messages.tickets.qrHint}
                 </p>
                 {ticket.price && (
                   <div className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-center">
-                    <span className="text-xs text-amber-700">Giá vé</span>
-                    <p className="font-display text-lg font-bold text-amber-700">{formatVnd(ticket.price)}</p>
+                    <span className="text-xs text-amber-700">{messages.tickets.price}</span>
+                    <p className="font-display text-lg font-bold text-amber-700">{formatCurrency(ticket.price)}</p>
                   </div>
                 )}
               </>
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-stone-50 py-12 text-stone-400">
                 {ticket.status === 'used'
-                  ? <><CheckCircle2 className="h-12 w-12 text-stone-300" /><p className="text-sm">Vé đã được sử dụng</p></>
-                  : <><XCircle className="h-12 w-12 text-rose-300" /><p className="text-sm text-rose-400">Vé đã bị hủy</p></>
+                  ? <><CheckCircle2 className="h-12 w-12 text-stone-300" /><p className="text-sm">{messages.tickets.alreadyUsed}</p></>
+                  : <><XCircle className="h-12 w-12 text-rose-300" /><p className="text-sm text-rose-400">{messages.tickets.revoked}</p></>
                 }
               </div>
             )}
 
             <div className="mt-4 space-y-1.5 text-xs text-stone-400">
               <p className="flex justify-between">
-                <span>Mã vé</span>
+                <span>{messages.tickets.ticketCode}</span>
                 <span className="font-mono font-semibold text-stone-700">#{String(ticket.id).padStart(6, '0')}</span>
               </p>
               <p className="flex justify-between">
-                <span>Mã booking</span>
+                <span>{messages.tickets.bookingCode}</span>
                 <span className="font-mono font-semibold text-stone-700">#{String(ticket.booking_id).padStart(6, '0')}</span>
               </p>
             </div>

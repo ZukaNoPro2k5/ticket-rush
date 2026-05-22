@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { AlertCircle } from 'lucide-react';
 import type { ApiResponse, BookingRules, Event, EventDetail } from '@/types';
 import { Navbar } from '@/components/layout/Navbar';
 import EventDetailClient from './EventDetailClient';
+import { DEFAULT_LOCALE, LOCALE_COOKIE, getMessages, isLocale, type Locale } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,22 +43,29 @@ async function fetchBookingRules(): Promise<BookingRules | null> {
   return fetchApiData<BookingRules>('/bookings/rules');
 }
 
-function buildDescription(event: EventDetail): string {
+function getRequestLocale(): Locale {
+  const cookieValue = cookies().get(LOCALE_COOKIE)?.value;
+  return isLocale(cookieValue) ? cookieValue : DEFAULT_LOCALE;
+}
+
+function buildDescription(event: EventDetail, locale: Locale): string {
   const raw = event.description?.trim();
   if (raw) return raw.length > 155 ? `${raw.slice(0, 152)}...` : raw;
-  return `${event.title} tại ${event.venue}. Xem thông tin sự kiện, giá vé và sơ đồ ghế trên TicketRush.`;
+  const copy = getMessages(locale).eventDetail;
+  return `${event.title} ${copy.metadataAt} ${event.venue}. ${copy.metadataFallback}`;
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const copy = getMessages(getRequestLocale()).eventDetail;
   const event = await fetchEvent(Number(params.id));
   if (!event) {
     return {
-      title: 'Không tìm thấy sự kiện | TicketRush',
-      description: 'Sự kiện không tồn tại hoặc chưa được công bố.',
+      title: `${copy.notFoundTitle} | TicketRush`,
+      description: copy.notFoundMetadata,
     };
   }
 
-  const description = buildDescription(event);
+  const description = buildDescription(event, getRequestLocale());
   const image = event.poster_url || FALLBACK_POSTER;
 
   return {
@@ -78,6 +87,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
+  const copy = getMessages(getRequestLocale()).eventDetail;
   const event = await fetchEvent(Number(params.id));
 
   if (!event) {
@@ -88,15 +98,13 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <div className="grid h-16 w-16 place-items-center rounded-full bg-red-50">
             <AlertCircle className="h-7 w-7 text-red-500" />
           </div>
-          <h1 className="mt-5 font-display text-2xl font-bold text-stone-900">Không tìm thấy sự kiện</h1>
-          <p className="mt-2 text-sm text-stone-500">
-            Sự kiện có thể chưa được publish, đã bị hủy hoặc backend chưa sẵn sàng.
-          </p>
+          <h1 className="mt-5 font-display text-2xl font-bold text-stone-900">{copy.notFoundTitle}</h1>
+          <p className="mt-2 text-sm text-stone-500">{copy.notFoundHint}</p>
           <Link
             href="/events"
             className="mt-6 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-amber-600"
           >
-            Quay lại danh sách
+            {copy.backToList}
           </Link>
         </section>
       </main>

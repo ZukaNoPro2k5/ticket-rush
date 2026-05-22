@@ -9,6 +9,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout';
 import { CATEGORIES, type CategoryKey } from '@/data/uiConfig';
 import api from '@/lib/api/client';
 import { EASE_OUT_EXPO } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 const CITY_OPTIONS = [
   { key: 'hanoi',   label: 'Hà Nội' },
@@ -16,10 +17,11 @@ const CITY_OPTIONS = [
   { key: 'danang',  label: 'Đà Nẵng' },
   { key: 'haiphong', label: 'Hải Phòng' },
   { key: 'hue',     label: 'Huế' },
-  { key: 'other',   label: 'Khác / Đi xa' },
+  { key: 'other',   label: null },
 ];
 
 export default function OnboardingPage() {
+  const { messages } = useLocale();
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [interests, setInterests] = useState<Set<CategoryKey>>(new Set());
@@ -35,7 +37,7 @@ export default function OnboardingPage() {
   };
 
   const goStep2 = () => {
-    if (interests.size < 1) { toast.error('Hãy chọn ít nhất 1 danh mục'); return; }
+    if (interests.size < 1) { toast.error(messages.onboarding.chooseCategory); return; }
     setStep(2);
   };
 
@@ -44,7 +46,7 @@ export default function OnboardingPage() {
   };
 
   const finish = async () => {
-    if (!city) { toast.error('Hãy chọn thành phố của bạn'); return; }
+    if (!city) { toast.error(messages.onboarding.chooseCity); return; }
     setSubmitting(true);
     try {
       const preferredCity = CITY_OPTIONS.find((item) => item.key === city)?.label ?? city;
@@ -52,11 +54,11 @@ export default function OnboardingPage() {
         categories: Array.from(interests),
         preferred_city: preferredCity,
       });
-      toast.success('Sở thích đã lưu. Chúc bạn săn vé vui!');
+      toast.success(messages.onboarding.saved);
       router.push('/');
       router.refresh();
     } catch {
-      toast.error('Chưa lưu được sở thích. Thử lại giúp mình nhé.');
+      toast.error(messages.onboarding.saveFailed);
     } finally {
       setSubmitting(false);
     }
@@ -64,11 +66,11 @@ export default function OnboardingPage() {
 
   return (
     <AuthLayout
-      title={step === 1 ? 'Bạn thích sự kiện gì?' : 'Bạn đang ở đâu?'}
+      title={step === 1 ? messages.onboarding.interestsTitle : messages.onboarding.cityTitle}
       subtitle={
         step === 1
-          ? 'Chọn các danh mục bạn quan tâm để chúng tôi đề xuất sự kiện hợp gu hơn. Có thể đổi bất cứ lúc nào.'
-          : 'Chọn thành phố để gợi ý sự kiện gần bạn nhất. Bạn có thể đổi sau trong phần Tài khoản.'
+          ? messages.onboarding.interestsIntro
+          : messages.onboarding.cityIntro
       }
     >
       {/* Progress */}
@@ -77,11 +79,11 @@ export default function OnboardingPage() {
           <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold transition-colors ${step >= 1 ? 'bg-amber-500 text-white' : 'bg-stone-200 text-stone-500'}`}>
             {step > 1 ? <Check className="h-3.5 w-3.5" /> : '1'}
           </span>
-          <span className={`text-sm font-medium ${step === 1 ? 'text-stone-900' : 'text-stone-500'}`}>Sở thích</span>
+          <span className={`text-sm font-medium ${step === 1 ? 'text-stone-900' : 'text-stone-500'}`}>{messages.onboarding.interests}</span>
         </div>
         <div className={`h-px flex-1 ${step >= 2 ? 'bg-amber-500' : 'bg-stone-200'}`} />
         <div className="flex flex-1 items-center justify-end gap-2">
-          <span className={`text-sm font-medium ${step === 2 ? 'text-stone-900' : 'text-stone-500'}`}>Khu vực</span>
+          <span className={`text-sm font-medium ${step === 2 ? 'text-stone-900' : 'text-stone-500'}`}>{messages.onboarding.area}</span>
           <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold transition-colors ${step >= 2 ? 'bg-amber-500 text-white' : 'bg-stone-200 text-stone-500'}`}>2</span>
         </div>
       </div>
@@ -112,7 +114,7 @@ export default function OnboardingPage() {
                       ${active ? 'bg-amber-500 text-white' : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'}`}>
                       <i className={`${c.icon} text-lg`} aria-hidden />
                     </span>
-                    <span className={`text-xs font-semibold ${active ? 'text-amber-900' : 'text-stone-700'}`}>{c.label}</span>
+                    <span className={`text-xs font-semibold ${active ? 'text-amber-900' : 'text-stone-700'}`}>{messages.categories[c.key]}</span>
                     {active && (
                       <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-amber-500 text-white">
                         <Check className="h-3 w-3" strokeWidth={3} />
@@ -125,17 +127,17 @@ export default function OnboardingPage() {
 
             <p className="mt-4 flex items-center gap-1.5 text-xs text-stone-500">
               <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              Đã chọn <span className="font-semibold text-stone-700">{interests.size}</span> / {CATEGORIES.length} — khuyến nghị 2-4 mục.
+              {messages.onboarding.chosen} <span className="font-semibold text-stone-700">{interests.size}</span> / {CATEGORIES.length} - {messages.onboarding.chosenHint}
             </p>
 
             <div className="mt-8 flex items-center gap-3">
-              <button onClick={skip} className="text-sm font-medium text-stone-500 hover:text-stone-800">Bỏ qua</button>
+              <button onClick={skip} className="text-sm font-medium text-stone-500 hover:text-stone-800">{messages.onboarding.skip}</button>
               <button
                 onClick={goStep2}
                 disabled={interests.size < 1}
                 className="ml-auto inline-flex h-12 items-center gap-2 rounded-xl bg-amber-500 px-6 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-lift disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
-                Tiếp tục <ArrowRight className="h-4 w-4" />
+                {messages.onboarding.continue} <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </motion.div>
@@ -161,20 +163,20 @@ export default function OnboardingPage() {
                         : 'border-stone-200 bg-white hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-soft'}`}
                   >
                     <MapPin className={`h-6 w-6 ${active ? 'text-amber-600' : 'text-stone-500'}`} />
-                    <span className={`text-sm font-semibold ${active ? 'text-amber-900' : 'text-stone-700'}`}>{opt.label}</span>
+                    <span className={`text-sm font-semibold ${active ? 'text-amber-900' : 'text-stone-700'}`}>{opt.label ?? messages.onboarding.otherCity}</span>
                   </button>
                 );
               })}
             </div>
 
             <div className="mt-8 flex items-center gap-3">
-              <button onClick={() => setStep(1)} className="text-sm font-medium text-stone-500 hover:text-stone-800">← Quay lại</button>
+              <button onClick={() => setStep(1)} className="text-sm font-medium text-stone-500 hover:text-stone-800">← {messages.onboarding.back}</button>
               <button
                 onClick={finish}
                 disabled={!city || submitting}
                 className="ml-auto inline-flex h-12 items-center gap-2 rounded-xl bg-amber-500 px-6 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-lift disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
-                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Đang lưu…</> : <>Hoàn tất <Check className="h-4 w-4" /></>}
+                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> {messages.onboarding.saving}</> : <>{messages.onboarding.finish} <Check className="h-4 w-4" /></>}
               </button>
             </div>
           </motion.div>

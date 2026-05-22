@@ -7,10 +7,12 @@ import { Users, Clock, ArrowLeft, Ticket, ShieldCheck } from 'lucide-react';
 import { ProtectedRoute } from '@/components/providers/ProtectedRoute';
 import { Card, Button } from '@/components/ui';
 import { enterQueue, getQueueStatus, leaveQueue, type QueueStatus } from '@/lib/api';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 const POLL_INTERVAL_MS = 2500;
 
 function QueueContent() {
+  const { formatNumber, messages } = useLocale();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const eventId = Number(params.id);
@@ -34,7 +36,7 @@ function QueueContent() {
         if (result.position > 0) setInitialPosition(result.position);
         if (result.granted) router.replace(`/events/${eventId}/seats`);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Không thể vào phòng chờ';
+        const msg = err instanceof Error ? err.message : messages.queue.enterFailed;
         setError(msg);
       }
     })();
@@ -42,7 +44,7 @@ function QueueContent() {
     return () => {
       cancelled = true;
     };
-  }, [eventId, router]);
+  }, [eventId, messages.queue.enterFailed, router]);
 
   // Poll status
   useEffect(() => {
@@ -79,7 +81,7 @@ function QueueContent() {
           <p className="mb-4 text-red-600">{error}</p>
           <Button onClick={() => router.back()} variant="secondary">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại
+            {messages.queue.back}
           </Button>
         </Card>
       </div>
@@ -89,7 +91,7 @@ function QueueContent() {
   if (!status) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center bg-stone-50">
-        <div className="animate-pulse text-sm font-medium text-stone-500">Đang kết nối phòng chờ...</div>
+        <div className="animate-pulse text-sm font-medium text-stone-500">{messages.queue.connecting}</div>
       </div>
     );
   }
@@ -110,19 +112,19 @@ function QueueContent() {
               <Ticket className="h-7 w-7" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Phòng chờ ảo</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-stone-500">{messages.queue.virtualRoom}</p>
               <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-stone-900 md:text-3xl">
-                Đang giữ lượt cho bạn
+                {messages.queue.holdingTurn}
               </h1>
             </div>
           </div>
 
           <p className="max-w-2xl text-sm leading-6 text-stone-600">
-            Lượng truy cập đang cao. Cứ giữ trang này mở, hệ thống sẽ tự chuyển bạn sang chọn ghế khi đến lượt.
+            {messages.queue.intro}
           </p>
 
           <div className="mt-8 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-6 md:px-6">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Vị trí hiện tại</div>
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">{messages.queue.position}</div>
             <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
               <motion.div
                 key={status.position}
@@ -134,7 +136,7 @@ function QueueContent() {
                 #{status.position}
               </motion.div>
               <p className="pb-1 text-sm text-stone-600">
-                trong {status.totalWaiting.toLocaleString('vi-VN')} người đang chờ
+                {messages.queue.waitingPeople(formatNumber(status.totalWaiting))}
               </p>
             </div>
           </div>
@@ -142,7 +144,7 @@ function QueueContent() {
           {initialPosition && initialPosition > 0 && (
             <div className="mt-6">
               <div className="mb-2 flex justify-between text-sm text-stone-600">
-                <span>Tiến độ</span>
+                <span>{messages.queue.progress}</span>
                 <span className="font-semibold text-stone-900">{Math.round(progress)}%</span>
               </div>
               <div className="h-2.5 overflow-hidden rounded-full bg-stone-200">
@@ -159,29 +161,29 @@ function QueueContent() {
             <div className="rounded-2xl border border-stone-200 bg-white p-4">
               <div className="flex items-center gap-2 text-sm text-stone-500">
                 <Users className="h-4 w-4 text-amber-600" />
-                Trước bạn
+                {messages.queue.ahead}
               </div>
               <div className="mt-2 text-2xl font-bold tabular-nums text-stone-900">
-                {status.ahead.toLocaleString('vi-VN')}
+                {formatNumber(status.ahead)}
               </div>
             </div>
             <div className="rounded-2xl border border-stone-200 bg-white p-4">
               <div className="flex items-center gap-2 text-sm text-stone-500">
                 <Clock className="h-4 w-4 text-amber-600" />
-                Chờ ước tính
+                {messages.queue.estimate}
               </div>
               <div className="mt-2 text-2xl font-bold tabular-nums text-stone-900">
-                {minutes > 0 ? `${minutes}p ` : ''}{seconds}s
+                {minutes > 0 ? `${minutes}${messages.queue.minuteSuffix} ` : ''}{seconds}s
               </div>
             </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 border-t border-stone-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-5 text-stone-500">
-              Đừng tải lại hoặc tắt trang, làm vậy có thể mất lượt đang giữ.
+              {messages.queue.dontReload}
             </p>
             <Button onClick={handleLeave} variant="ghost" className="justify-center text-stone-500 hover:text-red-600">
-              Rời phòng chờ
+              {messages.queue.leave}
             </Button>
           </div>
         </Card>
@@ -193,28 +195,28 @@ function QueueContent() {
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="font-semibold text-stone-900">Vị trí được giữ tự động</h2>
+                <h2 className="font-semibold text-stone-900">{messages.queue.keptAutomatically}</h2>
                 <p className="mt-1 text-sm leading-6 text-stone-600">
-                  Hệ thống cấp lượt theo từng nhóm để giảm nghẽn khi flash sale mở bán.
+                  {messages.queue.keptAutomaticallyDesc}
                 </p>
               </div>
             </div>
           </Card>
 
           <Card className="border-stone-200 p-5 shadow-soft">
-            <h2 className="font-semibold text-stone-900">Khi tới lượt</h2>
+            <h2 className="font-semibold text-stone-900">{messages.queue.whenTurn}</h2>
             <ol className="mt-3 space-y-3 text-sm text-stone-600">
               <li className="flex gap-3">
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone-100 text-xs font-bold text-stone-700">1</span>
-                Trang tự chuyển sang sơ đồ ghế.
+                {messages.queue.stepMap}
               </li>
               <li className="flex gap-3">
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone-100 text-xs font-bold text-stone-700">2</span>
-                Bạn chọn ghế và giữ chỗ trong thời gian quy định.
+                {messages.queue.stepSelect}
               </li>
               <li className="flex gap-3">
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone-100 text-xs font-bold text-stone-700">3</span>
-                Xác nhận để hoàn tất đặt vé.
+                {messages.queue.stepConfirm}
               </li>
             </ol>
           </Card>

@@ -12,7 +12,11 @@ interface Props {
 
 export function PasswordStrength({ password, visible }: Props) {
   const { messages } = useLocale();
-  const checks = passwordChecks(password);
+  const checks = passwordChecks(password, [
+    messages.auth.passwordMin,
+    messages.auth.passwordUpper,
+    messages.auth.passwordNumber,
+  ]);
   const score = strengthScore(password);
 
   const strengthLabel =

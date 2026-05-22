@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Minus, Plus, RotateCcw } from 'lucide-react';
 import type { EventLayoutConfig, Seat } from '@/types';
 import { getSeatBg, type PendingBooking, type ZoneData } from '@/lib/utils/seatUtils';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import { SeatLegend } from './SeatLegend';
 
 interface Props {
@@ -25,18 +26,19 @@ function SeatButton({
   booking: PendingBooking | null;
   onToggle: (seat: Seat) => void;
 }) {
+  const { formatCurrency, messages } = useLocale();
   const bg = getSeatBg(seat, selectedIds, booking);
   const isMyBookedSeat = booking?.seat_ids.includes(seat.id) ?? false;
   const isClickable = seat.status === 'available' || isMyBookedSeat;
   const isSelected = selectedIds.has(seat.id);
   const statusLabel =
     seat.status === 'available'
-      ? 'Còn trống'
+      ? messages.seats.open
       : seat.status === 'locked'
         ? isMyBookedSeat
-          ? 'Ghế của bạn'
-          : 'Đang giữ'
-        : 'Đã bán';
+          ? messages.seats.yourSeat
+          : messages.seats.held
+        : messages.seats.sold;
 
   return (
     <div className="relative group inline-block">
@@ -62,7 +64,7 @@ function SeatButton({
             {seat.zone_name} - T{seat.row_label} G{seat.col_number}
           </div>
           <div className="flex items-center justify-between gap-4">
-            <span className="font-bold text-amber-400">{seat.zone_price.toLocaleString('vi-VN')}đ</span>
+            <span className="font-bold text-amber-400">{formatCurrency(seat.zone_price)}</span>
             <span className={seat.status === 'available' ? 'text-emerald-400' : 'text-stone-400'}>{statusLabel}</span>
           </div>
           <div className="absolute -bottom-1.5 left-1/2 -ml-1.5 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-stone-900" />
@@ -85,6 +87,8 @@ function ZoneGrid({
   onToggleSeat: (seat: Seat) => void;
   fillWidth?: boolean;
 }) {
+  const { formatCurrency, messages } = useLocale();
+
   return (
     <div
       className={`${fillWidth ? 'min-w-full' : ''} w-max rounded-[2rem] border border-black/5 p-6 shadow-sm md:p-8`}
@@ -97,7 +101,7 @@ function ZoneGrid({
           <span className="inline-block h-3 w-3 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: zone.color }} />
         </h3>
         <p className="mt-1.5 text-center text-sm font-semibold text-stone-600">
-          {zone.price.toLocaleString('vi-VN')}đ / ghế
+          {formatCurrency(zone.price)} / {messages.seats.perSeat}
         </p>
       </div>
 
@@ -171,6 +175,7 @@ function AuthoredSeatLayout({
   onToggleSeat: (seat: Seat) => void;
   zoom: number;
 }) {
+  const { messages } = useLocale();
   const canvas = getAuthoredCanvasSize(zones, layoutConfig);
   const hasFixtures = layoutConfig.fixtures.length > 0;
   const positionIndexByZoneId = new Map(
@@ -204,7 +209,7 @@ function AuthoredSeatLayout({
             </div>
           )) : (
             <div className="absolute left-1/2 top-6 flex -translate-x-1/2 items-center justify-center rounded-b-[2.5rem] bg-[#1c1c1c] px-32 py-4 text-sm font-bold tracking-[0.4em] text-white shadow-xl">
-              SÂN KHẤU CHÍNH
+              {messages.seats.stage}
             </div>
           )}
 
@@ -260,13 +265,15 @@ function ZoomControls({
   onZoomOut: () => void;
   onReset: () => void;
 }) {
+  const { messages } = useLocale();
+
   return (
     <div className="absolute right-4 top-4 z-20 flex items-center gap-1 rounded-2xl border border-stone-200 bg-white/95 p-1 shadow-soft backdrop-blur-sm">
       <button
         type="button"
         onClick={onZoomOut}
         disabled={zoom <= 0.7}
-        aria-label="Thu nhỏ sơ đồ"
+        aria-label={messages.seats.zoomOut}
         className="grid h-9 w-9 place-items-center rounded-xl text-stone-600 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300"
       >
         <Minus className="h-4 w-4" />
@@ -274,7 +281,7 @@ function ZoomControls({
       <button
         type="button"
         onClick={onReset}
-        aria-label="Đưa sơ đồ về 100 phần trăm"
+        aria-label={messages.seats.zoomReset}
         className="min-w-[64px] rounded-xl px-2 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-100"
       >
         {Math.round(zoom * 100)}%
@@ -283,7 +290,7 @@ function ZoomControls({
         type="button"
         onClick={onZoomIn}
         disabled={zoom >= 1.5}
-        aria-label="Phóng to sơ đồ"
+        aria-label={messages.seats.zoomIn}
         className="grid h-9 w-9 place-items-center rounded-xl text-stone-600 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300"
       >
         <Plus className="h-4 w-4" />
@@ -292,7 +299,7 @@ function ZoomControls({
         <button
           type="button"
           onClick={onReset}
-          aria-label="Đặt lại độ phóng"
+          aria-label={messages.seats.resetZoom}
           className="grid h-9 w-9 place-items-center rounded-xl text-stone-500 transition hover:bg-stone-100"
         >
           <RotateCcw className="h-4 w-4" />
@@ -303,6 +310,7 @@ function ZoomControls({
 }
 
 export function SeatMap({ zones, layoutConfig, selectedIds, booking, onToggleSeat }: Props) {
+  const { messages } = useLocale();
   const [zoom, setZoom] = useState(1);
   const useAuthoredLayout = Boolean(
     layoutConfig
@@ -328,8 +336,8 @@ export function SeatMap({ zones, layoutConfig, selectedIds, booking, onToggleSea
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
               </svg>
             </div>
-            <p className="text-lg font-bold text-stone-800">Chưa có sơ đồ ghế</p>
-            <p className="text-sm font-medium text-stone-500">Sự kiện chưa được cấu hình ghế ngồi.</p>
+            <p className="text-lg font-bold text-stone-800">{messages.seats.noSeatMap}</p>
+            <p className="text-sm font-medium text-stone-500">{messages.seats.noSeatMapDesc}</p>
           </div>
       ) : (
         <>
@@ -347,7 +355,7 @@ export function SeatMap({ zones, layoutConfig, selectedIds, booking, onToggleSea
               <div className="flex min-w-max flex-col items-center gap-10 px-6 pb-10 md:px-10">
                 <div className="pointer-events-none flex w-full max-w-4xl flex-col items-center pb-6 pt-0">
                   <div className="mt-0 rounded-b-[2.5rem] border-b-4 border-stone-900 bg-[#1c1c1c] px-32 py-4 text-sm font-bold tracking-[0.4em] text-white shadow-xl">
-                    SÂN KHẤU CHÍNH
+                    {messages.seats.stage}
                   </div>
                 </div>
                 {zones.map((zone) => (

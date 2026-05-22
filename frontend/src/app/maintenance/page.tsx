@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Wrench } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export default function MaintenancePage() {
+  const { messages } = useLocale();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const hydrated = useAuthStore((state) => state._hasHydrated);
@@ -19,7 +21,7 @@ export default function MaintenancePage() {
     <main className="grid min-h-screen place-items-center bg-gradient-to-b from-amber-50 to-stone-50 px-4">
       <section className="w-full max-w-2xl rounded-3xl border border-amber-100 bg-white p-6 text-center shadow-soft sm:p-10">
         <div className="mx-auto mb-6 h-48 w-full max-w-sm">
-          <svg viewBox="0 0 360 190" className="h-full w-full" role="img" aria-label="Minh họa đang bảo trì">
+          <svg viewBox="0 0 360 190" className="h-full w-full" role="img" aria-label={messages.maintenance.imageAlt}>
             <rect x="34" y="34" width="292" height="122" rx="24" fill="#fffbeb" />
             <rect x="58" y="57" width="244" height="76" rx="18" fill="#fff" stroke="#fcd34d" strokeWidth="3" />
             <path d="M82 118h196" stroke="#e7e5e4" strokeWidth="7" strokeLinecap="round" />
@@ -32,18 +34,18 @@ export default function MaintenancePage() {
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
           <Wrench className="h-3.5 w-3.5" />
-          Đang bảo trì
+          {messages.maintenance.eyebrow}
         </span>
-        <h1 className="mt-4 font-display text-2xl font-bold text-stone-900 sm:text-3xl">TicketRush đang chỉnh lại sân khấu</h1>
+        <h1 className="mt-4 font-display text-2xl font-bold text-stone-900 sm:text-3xl">{messages.maintenance.title}</h1>
         <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-stone-600 sm:text-base">
-          Bọn mình đang nâng cấp hệ thống để trải nghiệm đặt vé ổn định hơn. Vui lòng quay lại sau ít phút nhé.
+          {messages.maintenance.intro}
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <Link href="/login" className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700">
-            Đăng nhập
+            {messages.nav.login}
           </Link>
           <button onClick={() => window.location.reload()} className="rounded-xl border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
-            Thử lại
+            {messages.common.retry}
           </button>
         </div>
       </section>

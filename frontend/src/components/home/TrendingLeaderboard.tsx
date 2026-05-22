@@ -100,7 +100,7 @@ function LeaderboardRow({ ev, rank }: { ev: DisplayEvent; rank: number }) {
                 <span className="rounded-full bg-rose-50 px-1.5 py-px text-[10px] font-bold text-rose-600 ring-1 ring-rose-200">HOT</span>
               )}
               {ev.badge === 'almost-sold' && (
-                <span className="rounded-full bg-orange-50 px-1.5 py-px text-[10px] font-bold text-orange-600 ring-1 ring-orange-200">SẮP CHÁY</span>
+                <span className="rounded-full bg-orange-50 px-1.5 py-px text-[10px] font-bold text-orange-600 ring-1 ring-orange-200">{messages.events.almostSold}</span>
               )}
             </div>
             {/* Mobile meta */}

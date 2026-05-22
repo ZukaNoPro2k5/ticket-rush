@@ -1,10 +1,10 @@
 export type PwCheck = { label: string; pass: boolean };
 
-export function passwordChecks(pw: string): PwCheck[] {
+export function passwordChecks(pw: string, labels = ['8+ ký tự', 'Chữ HOA', 'Chữ số']): PwCheck[] {
   return [
-    { label: '8+ ký tự',  pass: pw.length >= 8 },
-    { label: 'Chữ HOA',   pass: /[A-Z]/.test(pw) },
-    { label: 'Chữ số',    pass: /[0-9]/.test(pw) },
+    { label: labels[0], pass: pw.length >= 8 },
+    { label: labels[1], pass: /[A-Z]/.test(pw) },
+    { label: labels[2], pass: /[0-9]/.test(pw) },
   ];
 }
 

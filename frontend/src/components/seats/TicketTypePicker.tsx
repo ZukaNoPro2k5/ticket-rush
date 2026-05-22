@@ -3,6 +3,7 @@
 import { Minus, Plus, Ticket } from 'lucide-react';
 import type { Seat } from '@/types';
 import type { PendingBooking, ZoneData } from '@/lib/utils/seatUtils';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   zones: ZoneData[];
@@ -18,6 +19,8 @@ function zoneSeats(zone: ZoneData): Seat[] {
 }
 
 export function TicketTypePicker({ zones, selectedIds, booking, onChange, mode, maxTickets }: Props) {
+  const { formatCurrency, formatNumber, messages } = useLocale();
+
   return (
     <div className="min-w-0 flex-1 rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm md:p-7">
       <div className="mb-6 flex items-start gap-3">
@@ -26,12 +29,12 @@ export function TicketTypePicker({ zones, selectedIds, booking, onChange, mode, 
         </div>
         <div>
           <h2 className="font-display text-xl font-bold tracking-tight text-stone-900">
-            {mode === 'zoned' ? 'Chọn khu vực' : 'Chọn loại vé'}
+            {mode === 'zoned' ? messages.seats.chooseZone : messages.seats.chooseTicketType}
           </h2>
           <p className="mt-1 text-sm text-stone-500">
             {mode === 'zoned'
-              ? 'Chọn số lượng vé cho từng khu, không cần chọn ghế cụ thể.'
-              : 'Chọn số lượng vé vào cửa, hệ thống sẽ giữ suất còn trống cho bạn.'}
+              ? messages.seats.zoneModeHint
+              : messages.seats.admissionModeHint}
           </p>
         </div>
       </div>
@@ -72,9 +75,9 @@ export function TicketTypePicker({ zones, selectedIds, booking, onChange, mode, 
                   <h3 className="font-semibold text-stone-900">{zone.name}</h3>
                 </div>
                 <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
-                  <span>{zone.price.toLocaleString('vi-VN')}đ / vé</span>
-                  <span>{availableSeats.length.toLocaleString('vi-VN')} còn trống</span>
-                  {soldCount > 0 && <span>{soldCount.toLocaleString('vi-VN')} đã giữ hoặc bán</span>}
+                  <span>{formatCurrency(zone.price)} / {messages.seats.ticket}</span>
+                  <span>{formatNumber(availableSeats.length)} {messages.seats.available}</span>
+                  {soldCount > 0 && <span>{formatNumber(soldCount)} {messages.seats.heldOrSold}</span>}
                 </div>
               </div>
 
@@ -84,7 +87,7 @@ export function TicketTypePicker({ zones, selectedIds, booking, onChange, mode, 
                   onClick={decrement}
                   disabled={disabled || count === 0}
                   className="grid h-10 w-10 place-items-center rounded-full border border-stone-200 bg-white text-stone-700 transition hover:border-stone-300 hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
-                  aria-label={`Giảm số vé ${zone.name}`}
+                  aria-label={`${messages.seats.decrement} ${zone.name}`}
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -94,7 +97,7 @@ export function TicketTypePicker({ zones, selectedIds, booking, onChange, mode, 
                   onClick={increment}
                   disabled={disabled || count >= availableSeats.length || selectedIds.size >= maxTickets}
                   className="grid h-10 w-10 place-items-center rounded-full bg-stone-900 text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
-                  aria-label={`Tăng số vé ${zone.name}`}
+                  aria-label={`${messages.seats.increment} ${zone.name}`}
                 >
                   <Plus className="h-4 w-4" />
                 </button>

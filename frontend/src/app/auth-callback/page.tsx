@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 /**
  * This page runs inside the OAuth popup window.
@@ -14,6 +15,7 @@ import { Loader2 } from 'lucide-react';
  * they are redirected to home.
  */
 export default function AuthCallbackPage() {
+  const { messages } = useLocale();
   const { data: session, status } = useSession();
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function AuthCallbackPage() {
     <div className="flex min-h-screen items-center justify-center bg-stone-50">
       <div className="text-center">
         <Loader2 className="mx-auto h-8 w-8 animate-spin text-amber-500" />
-        <p className="mt-4 text-sm text-stone-500">Đang xác thực…</p>
+        <p className="mt-4 text-sm text-stone-500">{messages.auth.authenticating}</p>
       </div>
     </div>
   );

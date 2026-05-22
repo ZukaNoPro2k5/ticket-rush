@@ -5,9 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { AuthLayout } from '@/components/auth/AuthLayout';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import api from '@/lib/api/client';
 
 function ResetPasswordForm() {
+  const { messages } = useLocale();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const [password, setPassword] = useState('');
@@ -18,20 +20,20 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
-      toast.error('Thiếu mã đặt lại mật khẩu');
+      toast.error(messages.auth.resetTokenMissing);
       return;
     }
     if (password !== confirm) {
-      toast.error('Mật khẩu nhập lại chưa khớp');
+      toast.error(messages.auth.resetMismatch);
       return;
     }
     setSubmitting(true);
     try {
       await api.post('/auth/reset-password', { token, password });
       setDone(true);
-      toast.success('Đặt lại mật khẩu thành công');
+      toast.success(messages.auth.resetSuccess);
     } catch {
-      toast.error('Liên kết không hợp lệ hoặc đã hết hạn');
+      toast.error(messages.auth.resetInvalid);
     } finally {
       setSubmitting(false);
     }
@@ -39,9 +41,9 @@ function ResetPasswordForm() {
 
   return (
     <AuthLayout
-      title="Đặt lại mật khẩu"
-      subtitle="Mật khẩu mới cần ít nhất 8 ký tự, có chữ hoa và chữ số."
-      footer={<Link href="/login" className="font-semibold text-amber-700 hover:text-amber-800">Về đăng nhập</Link>}
+      title={messages.auth.resetTitle}
+      subtitle={messages.auth.resetSubtitle}
+      footer={<Link href="/login" className="font-semibold text-amber-700 hover:text-amber-800">{messages.auth.backToLogin}</Link>}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
@@ -50,7 +52,7 @@ function ResetPasswordForm() {
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Mật khẩu mới"
+          placeholder={messages.auth.newPassword}
           className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
         />
         <input
@@ -59,14 +61,14 @@ function ResetPasswordForm() {
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Nhập lại mật khẩu"
+          placeholder={messages.auth.repeatPassword}
           className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
         />
         <button
           disabled={submitting || done}
           className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
         >
-          {done ? 'Đã cập nhật' : submitting ? 'Đang cập nhật…' : 'Cập nhật mật khẩu'}
+          {done ? messages.auth.passwordUpdated : submitting ? messages.auth.passwordUpdating : messages.account.updatePassword}
         </button>
       </form>
     </AuthLayout>

@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Clock, ArrowRight } from 'lucide-react';
 import type { DisplayEvent } from '@/types';
 import { EASE_OUT_EXPO } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
+import { localeTag } from '@/lib/i18n';
 
 interface Props {
   events: DisplayEvent[];
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export function EventCalendar({ events, onClose }: Props) {
+  const { locale, messages } = useLocale();
   const [viewDate, setViewDate] = useState(() => new Date());
   const [selected, setSelected] = useState<number | null>(null);
   const [yearDraft, setYearDraft] = useState(() => String(new Date().getFullYear()));
@@ -38,7 +41,7 @@ export function EventCalendar({ events, onClose }: Props) {
   const firstDayRaw = new Date(year, month, 1).getDay();
   const leading = firstDayRaw === 0 ? 6 : firstDayRaw - 1;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const monthLabel = viewDate.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+  const monthLabel = viewDate.toLocaleDateString(localeTag(locale), { month: 'long', year: 'numeric' });
   const today = new Date();
   const isToday = (d: number) =>
     d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
@@ -47,7 +50,7 @@ export function EventCalendar({ events, onClose }: Props) {
     ...Array(leading).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-  const weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+  const weekdays = messages.calendar.weekdays;
   const updateViewDate = (nextDate: Date) => {
     setViewDate(nextDate);
     setYearDraft(String(nextDate.getFullYear()));
@@ -82,17 +85,17 @@ export function EventCalendar({ events, onClose }: Props) {
       <div className="bg-gradient-to-br from-amber-50 via-white to-white px-5 pb-4 pt-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-700">Lịch sự kiện</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-700">{messages.calendar.title}</div>
             <div className="mt-0.5 font-display text-lg font-bold capitalize text-stone-900">{monthLabel}</div>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={goToday} className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-stone-600 transition-colors hover:border-amber-300 hover:text-amber-700">Hôm nay</button>
-            <button onClick={goPrev} aria-label="Tháng trước" className="grid h-8 w-8 place-items-center rounded-full text-stone-600 transition-colors hover:bg-white hover:text-stone-900"><ChevronLeft className="h-4 w-4" /></button>
-            <button onClick={goNext} aria-label="Tháng sau" className="grid h-8 w-8 place-items-center rounded-full text-stone-600 transition-colors hover:bg-white hover:text-stone-900"><ChevronRight className="h-4 w-4" /></button>
+            <button onClick={goToday} className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-stone-600 transition-colors hover:border-amber-300 hover:text-amber-700">{messages.calendar.today}</button>
+            <button onClick={goPrev} aria-label={messages.calendar.previousMonth} className="grid h-8 w-8 place-items-center rounded-full text-stone-600 transition-colors hover:bg-white hover:text-stone-900"><ChevronLeft className="h-4 w-4" /></button>
+            <button onClick={goNext} aria-label={messages.calendar.nextMonth} className="grid h-8 w-8 place-items-center rounded-full text-stone-600 transition-colors hover:bg-white hover:text-stone-900"><ChevronRight className="h-4 w-4" /></button>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-[1fr_108px] gap-2">
-          <label className="sr-only" htmlFor="calendar-month">Tháng</label>
+          <label className="sr-only" htmlFor="calendar-month">{messages.calendar.month}</label>
           <select
             id="calendar-month"
             value={month}
@@ -100,10 +103,10 @@ export function EventCalendar({ events, onClose }: Props) {
             className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
           >
             {Array.from({ length: 12 }, (_, index) => (
-              <option key={index} value={index}>Tháng {index + 1}</option>
+              <option key={index} value={index}>{messages.calendar.monthOption(index + 1)}</option>
             ))}
           </select>
-          <label className="sr-only" htmlFor="calendar-year">Năm</label>
+          <label className="sr-only" htmlFor="calendar-year">{messages.calendar.year}</label>
           <input
             id="calendar-year"
             type="number"
@@ -167,9 +170,9 @@ export function EventCalendar({ events, onClose }: Props) {
           })}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-stone-500">
-          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Có sự kiện</span>
-          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> Có sự kiện hot</span>
-          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-stone-300" /> 3+ sự kiện</span>
+          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> {messages.calendar.hasEvent}</span>
+          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> {messages.calendar.hasHotEvent}</span>
+          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-stone-300" /> {messages.calendar.manyEvents}</span>
         </div>
       </div>
 
@@ -185,12 +188,12 @@ export function EventCalendar({ events, onClose }: Props) {
           >
             <div className="flex items-center justify-between px-5 py-3">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Ngày {selected}</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700">{messages.calendar.day} {selected}</div>
                 <div className="text-sm font-semibold text-stone-900">
-                  {selectedEvents.length > 0 ? `${selectedEvents.length} sự kiện diễn ra` : 'Không có sự kiện'}
+                  {selectedEvents.length > 0 ? messages.calendar.eventsOnDay(selectedEvents.length) : messages.calendar.noEvents}
                 </div>
               </div>
-              <button onClick={() => setSelected(null)} aria-label="Đóng" className="grid h-7 w-7 place-items-center rounded-full text-stone-400 transition-colors hover:bg-white hover:text-stone-700"><X className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setSelected(null)} aria-label={messages.calendar.close} className="grid h-7 w-7 place-items-center rounded-full text-stone-400 transition-colors hover:bg-white hover:text-stone-700"><X className="h-3.5 w-3.5" /></button>
             </div>
             {selectedEvents.length > 0 && (
               <ul className="max-h-64 divide-y divide-stone-200/80 overflow-y-auto bg-white">
@@ -221,7 +224,7 @@ export function EventCalendar({ events, onClose }: Props) {
                       onClick={onClose}
                       className="flex items-center justify-center gap-1.5 bg-amber-50/50 px-5 py-2.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100"
                     >
-                      Xem tất cả {selectedEvents.length} sự kiện <ArrowRight className="h-3.5 w-3.5" />
+                      {messages.calendar.viewEvents(selectedEvents.length)} <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </li>
                 )}

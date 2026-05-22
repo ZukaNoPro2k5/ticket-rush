@@ -2,6 +2,7 @@ import type { DisplayEvent } from '@/types';
 import Link from 'next/link';
 import { Calendar, ChevronRight, Clock, Flame, MapPin } from 'lucide-react';
 import { EVENT_CATEGORY_OPTIONS } from '@/components/events/EventsCategoryBar';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   event: DisplayEvent;
@@ -9,6 +10,7 @@ interface Props {
 
 export function EventHero({ event }: Props) {
   const categoryDef = EVENT_CATEGORY_OPTIONS.find((c) => c.key === event.categoryKey);
+  const { messages } = useLocale();
 
   return (
     <section className="relative h-[360px] w-full overflow-hidden md:h-[480px]">
@@ -19,11 +21,11 @@ export function EventHero({ event }: Props) {
       <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-8 lg:px-8">
         <nav className="mb-3 flex items-center gap-1.5 text-xs text-white/70">
           <Link href="/" className="hover:text-white">
-            Trang chủ
+            {messages.common.home}
           </Link>
           <ChevronRight className="h-3 w-3" />
           <Link href="/events" className="hover:text-white">
-            Sự kiện
+            {messages.eventDetail.events}
           </Link>
           <ChevronRight className="h-3 w-3" />
           <span className="text-white">{event.category}</span>
@@ -37,7 +39,7 @@ export function EventHero({ event }: Props) {
           )}
           {event.badge === 'almost-sold' && (
             <span className="rounded-full bg-orange-600 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lift">
-              Sắp cháy vé
+              {messages.events.almostSold}
             </span>
           )}
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">

@@ -64,7 +64,7 @@ export function OAuthButtons({
 
     if (!popup) {
       setLoading(null);
-      toast.error('Trình duyệt đã chặn cửa sổ popup. Vui lòng cho phép popup và thử lại.');
+      toast.error(messages.auth.oauthPopupBlocked);
       return;
     }
 
@@ -94,7 +94,7 @@ export function OAuthButtons({
     } catch {
       popup.close();
       setLoading(null);
-      toast.error('Không thể khởi động OAuth. Vui lòng thử lại.');
+      toast.error(messages.auth.oauthStartFailed);
       return;
     }
 
@@ -121,7 +121,7 @@ export function OAuthButtons({
             avatar_url: user.avatar_url ?? null,
           } as const;
           setAuth(token, authUser);
-          toast.success(`Chào mừng, ${user.name.split(' ').pop()}!`);
+          toast.success(messages.auth.welcomeUser(user.name.split(' ').pop() ?? user.name));
           if (onSuccess) {
             onSuccess({ token, user: authUser, maintenance_mode: ev.data.maintenance_mode ?? false });
           } else {
@@ -129,19 +129,19 @@ export function OAuthButtons({
             router.refresh();
           }
         } else {
-          toast.error('Đăng nhập thành công nhưng không nhận được token. Vui lòng thử lại.');
+          toast.error(messages.auth.oauthTokenMissing);
         }
       } else if (ev.data?.type === 'oauth-error') {
         const code = (ev.data as { code?: string }).code;
         const map: Record<string, string> = {
-          OAuthSignin:           'Đăng nhập OAuth thất bại. Kiểm tra redirect URI đã được thêm vào Google/Facebook Console chưa.',
-          OAuthCallback:         'Nhà cung cấp OAuth từ chối đăng nhập. Vui lòng thử lại.',
-          OAuthCreateAccount:    'Không tạo được tài khoản OAuth. Vui lòng thử lại.',
-          OAuthAccountNotLinked: 'Email này đã đăng ký bằng phương thức khác. Hãy dùng email & mật khẩu.',
-          AccessDenied:          'Bạn đã từ chối cấp quyền truy cập.',
-          Configuration:         'OAuth chưa được cấu hình. Vui lòng liên hệ admin.',
+          OAuthSignin: messages.auth.oauthSigninFailed,
+          OAuthCallback: messages.auth.oauthCallbackFailed,
+          OAuthCreateAccount: messages.auth.oauthAccountCreateFailed,
+          OAuthAccountNotLinked: messages.auth.oauthAccountNotLinked,
+          AccessDenied: messages.auth.oauthAccessDenied,
+          Configuration: messages.auth.oauthConfiguration,
         };
-        toast.error(code ? (map[code] ?? `Đăng nhập OAuth thất bại (${code}).`) : 'Đăng nhập OAuth thất bại. Vui lòng thử lại.');
+        toast.error(code ? (map[code] ?? messages.auth.oauthFailedCode(code)) : messages.auth.oauthFailed);
       }
     };
 
@@ -180,7 +180,7 @@ export function OAuthButtons({
           ) : (
             <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
               <FacebookIcon />
-              {verb} với Facebook
+              {verb} {messages.auth.with} Facebook
             </motion.span>
           )}
         </AnimatePresence>
@@ -202,7 +202,7 @@ export function OAuthButtons({
           ) : (
             <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
               <GoogleIcon />
-              {verb} với Google
+              {verb} {messages.auth.with} Google
             </motion.span>
           )}
         </AnimatePresence>

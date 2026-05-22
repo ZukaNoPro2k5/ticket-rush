@@ -20,10 +20,12 @@ import {
   TicketTypePicker,
 } from '@/components/seats';
 import { Navbar } from '@/components/layout/Navbar';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import { useAuthStore } from '@/stores/authStore';
 import type { BookingDetail } from '@/types';
 
 export default function SeatsPage() {
+  const { messages } = useLocale();
   const params = useParams();
   const router = useRouter();
   const eventId = Number(params.id);
@@ -84,9 +86,9 @@ export default function SeatsPage() {
         setBookingRules(rulesRes.data.data);
         setEntryExpiresAt(new Date(Date.now() + rulesRes.data.data.ticket_hold_minutes * 60_000).toISOString());
       })
-      .catch(() => toast.error('Không thể tải sơ đồ ghế'))
+      .catch(() => toast.error(messages.seats.loadFailed))
       .finally(() => setLoading(false));
-  }, [refreshSeatLayout]);
+  }, [messages.seats.loadFailed, refreshSeatLayout]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -132,7 +134,7 @@ export default function SeatsPage() {
       });
 
       if (removedSelectedSeat) {
-        toast('Một số ghế vừa được người khác giữ hoặc mua. Danh sách chọn đã được cập nhật.');
+        toast(messages.seats.changedSelection);
       }
 
     };
@@ -140,8 +142,8 @@ export default function SeatsPage() {
       if (layoutRefreshTimerRef.current) clearTimeout(layoutRefreshTimerRef.current);
       layoutRefreshTimerRef.current = setTimeout(() => {
         refreshSeatLayout()
-          .then(() => toast('Sơ đồ ghế vừa được cập nhật.'))
-          .catch(() => toast.error('Không thể tải bản cập nhật sơ đồ ghế.'));
+          .then(() => toast(messages.seats.layoutUpdated))
+          .catch(() => toast.error(messages.seats.layoutUpdateFailed));
       }, 180);
     };
 
@@ -162,7 +164,7 @@ export default function SeatsPage() {
       socket.off('seat:layout_changed', handleLayoutChange);
       if (layoutRefreshTimerRef.current) clearTimeout(layoutRefreshTimerRef.current);
     };
-  }, [eventId, refreshSeatLayout]);
+  }, [eventId, messages.seats.changedSelection, messages.seats.layoutUpdateFailed, messages.seats.layoutUpdated, refreshSeatLayout]);
 
   useEffect(() => {
     const handleFocus = () => {
@@ -184,9 +186,9 @@ export default function SeatsPage() {
       if (bookingRules) {
         setEntryExpiresAt(new Date(Date.now() + bookingRules.ticket_hold_minutes * 60_000).toISOString());
       }
-      toast.error('Thời gian giữ ghế đã hết. Vui lòng chọn lại.');
+      toast.error(messages.seats.holdExpired);
     }
-  }, [booking, bookingRules, countdown]);
+  }, [booking, bookingRules, countdown, messages.seats.holdExpired]);
 
   const toggleSeat = useCallback(
     async (seat: Seat) => {
@@ -200,7 +202,7 @@ export default function SeatsPage() {
       if (isHeldByMe) nextIds.delete(seat.id);
       else {
         if (nextIds.size >= maxTickets) {
-          toast.error(`Tối đa ${maxTickets} vé cho mỗi giao dịch`);
+          toast.error(messages.seats.maxTickets(maxTickets));
           return;
         }
         nextIds.add(seat.id);
@@ -252,27 +254,27 @@ export default function SeatsPage() {
       } catch (err) {
         const code = (err as { response?: { data?: { error?: { code?: string } } } })?.response?.data?.error?.code;
         if (code === 'QUEUE_REQUIRED') {
-          toast('Sự kiện đang mở phòng chờ. Mình chuyển bạn vào hàng đợi nhé.');
+          toast(messages.seats.queueRedirect);
           router.push(`/events/${eventId}/queue`);
           return;
         }
-        toast.error(extractErrorMessage(err, 'Không thể cập nhật ghế. Vui lòng thử lại.'));
+        toast.error(extractErrorMessage(err, messages.seats.seatUpdateFailed));
       } finally {
         setSubmitting(false);
       }
     },
-    [bookingRules, eventId, router, submitting, toPendingBooking],
+    [bookingRules, eventId, messages.seats, router, submitting, toPendingBooking],
   );
 
   const selectedSeats = seats.filter((s) => selectedIds.has(s.id));
   const subtotal = selectedSeats.reduce((sum, s) => sum + s.zone_price, 0);
-  const unitLabel = event?.seating_mode === 'seated' ? 'ghế' : 'vé';
+  const unitLabel = event?.seating_mode === 'seated' ? messages.seats.seatUnit : messages.seats.ticketUnit;
   const nonSeatedMode = event?.seating_mode === 'zoned' ? 'zoned' : 'admission';
 
   const handleBook = async () => {
     if (event?.seating_mode === 'seated') {
       if (!booking) {
-        toast.error('Vui lòng chọn ít nhất 1 ghế');
+        toast.error(messages.seats.chooseSeat);
         return;
       }
       router.push(`/checkout/${booking.id}`);
@@ -280,7 +282,7 @@ export default function SeatsPage() {
     }
 
     if (selectedIds.size === 0) {
-      toast.error('Vui lòng chọn ít nhất 1 ghế');
+      toast.error(messages.seats.chooseSeat);
       return;
     }
     setSubmitting(true);
@@ -290,16 +292,16 @@ export default function SeatsPage() {
         seat_ids: [...selectedIds],
       });
       setSelectedIds(new Set());
-      toast.success('Đã giữ chỗ. Đang chuyển sang thanh toán...');
+      toast.success(messages.seats.placeHeld);
       router.push(`/checkout/${res.data.data.id}`);
     } catch (err) {
       const code = (err as { response?: { data?: { error?: { code?: string } } } })?.response?.data?.error?.code;
       if (code === 'QUEUE_REQUIRED') {
-        toast('Sự kiện đang mở phòng chờ. Mình chuyển bạn vào hàng đợi nhé.');
+        toast(messages.seats.queueRedirect);
         router.push(`/events/${eventId}/queue`);
         return;
       }
-      toast.error(extractErrorMessage(err, 'Không thể đặt ghế. Vui lòng thử lại.'));
+      toast.error(extractErrorMessage(err, messages.seats.bookFailed));
     } finally {
       setSubmitting(false);
     }
@@ -310,8 +312,8 @@ export default function SeatsPage() {
     return (
       <div className="grid min-h-screen place-items-center bg-stone-50 px-4">
         <div className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
-          <p className="font-semibold text-stone-900">Không tải được thông tin sự kiện</p>
-          <p className="mt-1 text-sm text-stone-500">Vui lòng quay lại và thử lần nữa.</p>
+          <p className="font-semibold text-stone-900">{messages.seats.eventLoadFailed}</p>
+          <p className="mt-1 text-sm text-stone-500">{messages.seats.retryEvent}</p>
         </div>
       </div>
     );

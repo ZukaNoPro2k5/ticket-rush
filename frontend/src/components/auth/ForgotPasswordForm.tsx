@@ -7,12 +7,14 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { isValidEmail } from './authUtils';
 import { FieldError, FormError, SubmitBtn, fieldClass } from './AuthFormAtoms';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 export function ForgotPasswordForm({
   onBack,
 }: {
   onBack: () => void;
 }) {
+  const { messages } = useLocale();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -22,11 +24,11 @@ export function ForgotPasswordForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setFieldError('Vui lòng nhập email');
+      setFieldError(messages.auth.emailRequired);
       return;
     }
     if (!isValidEmail(email)) {
-      setFieldError('Email không hợp lệ');
+      setFieldError(messages.auth.emailInvalid);
       return;
     }
     setSubmitting(true);
@@ -35,9 +37,9 @@ export function ForgotPasswordForm({
     try {
       await api.post('/auth/forgot-password', { email });
       setSent(true);
-      toast.success('Nếu email tồn tại, hướng dẫn đã được gửi');
+      toast.success(messages.auth.resetSent);
     } catch {
-      setFormError('Chưa gửi được liên kết. Vui lòng thử lại.');
+      setFormError(messages.auth.resetSendFailed);
     } finally {
       setSubmitting(false);
     }
@@ -52,7 +54,7 @@ export function ForgotPasswordForm({
   return (
     <div>
       <p className="mb-5 text-sm leading-relaxed text-stone-500">
-        Nhập email, TicketRush sẽ gửi liên kết đặt lại nếu tài khoản tồn tại.
+        {messages.auth.forgotHint}
       </p>
 
       <motion.form onSubmit={handleSubmit} noValidate className="space-y-3.5">
@@ -78,7 +80,7 @@ export function ForgotPasswordForm({
         <SubmitBtn
           submitting={submitting}
           succeeded={sent}
-          label={sent ? 'Đã gửi hướng dẫn' : 'Gửi liên kết'}
+          label={sent ? messages.auth.sentGuide : messages.auth.sendLink}
         />
       </motion.form>
 
@@ -88,7 +90,7 @@ export function ForgotPasswordForm({
         className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 transition-colors hover:text-amber-800"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        {sent ? 'Về đăng nhập' : 'Đã nhớ mật khẩu'}
+        {sent ? messages.auth.backToLogin : messages.auth.rememberedPassword}
       </button>
     </div>
   );

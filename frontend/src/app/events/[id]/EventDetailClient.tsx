@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { BookingRules, DisplayEvent, Event, EventCategory, EventDetail } from '@/types';
+import type { BookingRules, DisplayEvent, Event, EventDetail } from '@/types';
 import { Navbar } from '@/components/layout/Navbar';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import type { EventTabKey } from '@/data/eventDetailData';
+import { categoryLabel, localeTag, type Locale } from '@/lib/i18n';
 import {
   AboutTab,
   DetailSidebarCTA,
@@ -15,18 +17,8 @@ import {
 } from '@/components/event-detail';
 
 const DAY_MS = 86_400_000;
-const CATEGORY_LABELS: Record<EventCategory, string> = {
-  music: 'Âm nhạc',
-  arts: 'Nghệ thuật',
-  sports: 'Thể thao',
-  food: 'Ẩm thực',
-  entertainment: 'Giải trí',
-  workshop: 'Workshop',
-  stage: 'Sân khấu',
-  other: 'Khác',
-};
 
-function deriveCityFromVenue(venue: string): string {
+function deriveCityFromVenue(venue: string, locale: Locale): string {
   const normalized = venue.toLowerCase();
   if (normalized.includes('hà nội') || normalized.includes('ha noi')) return 'Hà Nội';
   if (normalized.includes('hồ chí minh') || normalized.includes('ho chi minh') || normalized.includes('hcm')) return 'TP. HCM';
@@ -34,13 +26,12 @@ function deriveCityFromVenue(venue: string): string {
   if (normalized.includes('hải phòng') || normalized.includes('hai phong')) return 'Hải Phòng';
   if (normalized.includes('huế') || normalized.includes('hue')) return 'Huế';
   const parts = venue.split(',');
-  return parts[parts.length - 1]?.trim() || 'Việt Nam';
+  return parts[parts.length - 1]?.trim() || (locale === 'vi' ? 'Việt Nam' : 'Vietnam');
 }
 
-function toDisplayEvent(e: Event): DisplayEvent {
+function toDisplayEvent(e: Event, locale: Locale): DisplayEvent {
   const date = new Date(e.event_date);
   const pad = (n: number) => String(n).padStart(2, '0');
-  const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
   const total = e.total_seats ?? 0;
   const available = e.available_seats ?? total;
   const soldPercent = total > 0 ? Math.round(((total - available) / total) * 100) : 0;
@@ -54,12 +45,16 @@ function toDisplayEvent(e: Event): DisplayEvent {
   return {
     id: e.id,
     title: e.title,
-    category: CATEGORY_LABELS[e.category],
+    category: categoryLabel(locale, e.category),
     categoryKey: e.category,
     venue: e.venue,
-    city: deriveCityFromVenue(e.venue),
+    city: deriveCityFromVenue(e.venue, locale),
     date: e.event_date,
-    dateLabel: `${weekdays[date.getDay()]}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`,
+    dateLabel: new Intl.DateTimeFormat(localeTag(locale), {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+    }).format(date),
     timeLabel: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
     poster: e.poster_url || 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200&q=80',
     priceFrom: e.min_price ?? 0,
@@ -83,9 +78,10 @@ interface Props {
 }
 
 export default function EventDetailClient({ event, similarEvents, bookingRules }: Props) {
+  const { locale } = useLocale();
   const [tab, setTab] = useState<EventTabKey>('about');
-  const displayEvent = useMemo(() => toDisplayEvent(event), [event]);
-  const similar = useMemo(() => similarEvents.map(toDisplayEvent), [similarEvents]);
+  const displayEvent = useMemo(() => toDisplayEvent(event, locale), [event, locale]);
+  const similar = useMemo(() => similarEvents.map((item) => toDisplayEvent(item, locale)), [locale, similarEvents]);
   const { minPrice, maxPrice } = getPriceRange(event);
   const bookingHref = event.queue_enabled ? `/events/${event.id}/queue` : `/events/${event.id}/seats`;
 

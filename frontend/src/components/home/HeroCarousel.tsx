@@ -22,19 +22,19 @@ interface HeroSlide {
   venue: string;
 }
 
-function eventsToSlides(events: DisplayEvent[], fallbackBadge: string): HeroSlide[] {
+function eventsToSlides(events: DisplayEvent[], copy: ReturnType<typeof useLocale>['messages']): HeroSlide[] {
   return events.slice(0, 6).map((e) => ({
     id: e.id,
     title: e.title,
     subtitle: `${e.dateLabel} · ${e.timeLabel}`,
     tagline: e.venue,
     badge: e.badge === 'almost-sold'
-      ? fallbackBadge === 'FEATURED' ? 'ALMOST SOLD' : 'SẮP CHÁY VÉ'
+      ? copy.events.almostSold
       : e.badge === 'new'
-        ? fallbackBadge === 'FEATURED' ? 'NEW ON SALE' : 'MỚI MỞ BÁN'
+        ? copy.events.new
         : e.badge === 'hot'
-          ? fallbackBadge === 'FEATURED' ? 'HOT' : 'ĐANG HOT'
-          : fallbackBadge,
+          ? 'HOT'
+          : copy.home.highlighted,
     image: e.poster,
     date: `${e.dateLabel} · ${e.timeLabel}`,
     venue: e.city,
@@ -43,7 +43,7 @@ function eventsToSlides(events: DisplayEvent[], fallbackBadge: string): HeroSlid
 
 export function HeroCarousel({ events, loading = false }: { events?: DisplayEvent[]; loading?: boolean }) {
   const { messages } = useLocale();
-  const slides: HeroSlide[] = events && events.length > 0 ? eventsToSlides(events, messages.home.highlighted) : [];
+  const slides: HeroSlide[] = events && events.length > 0 ? eventsToSlides(events, messages) : [];
   const [active, setActive] = useState(0);
   const slide = slides[active];
 

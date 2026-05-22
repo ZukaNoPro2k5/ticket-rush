@@ -24,6 +24,8 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ProtectedRoute } from '@/components/providers/ProtectedRoute';
 import { PaymentQrMock } from '@/components/checkout/PaymentQrMock';
+import { useLocale } from '@/components/providers/LocaleProvider';
+import { localeTag } from '@/lib/i18n';
 import type { BookingDetail } from '@/types';
 
 type PaymentMethod = {
@@ -38,12 +40,8 @@ const METHOD_ICONS: Record<string, typeof CreditCard> = {
   stripe: CreditCard,
 };
 
-function money(value: number) {
-  return `${value.toLocaleString('vi-VN')}đ`;
-}
-
-function dateTime(value: string) {
-  return new Date(value).toLocaleString('vi-VN', {
+function dateTime(value: string, locale: string) {
+  return new Date(value).toLocaleString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -59,6 +57,7 @@ function formatCountdown(totalSeconds: number) {
 }
 
 function CheckoutContent() {
+  const { formatCurrency, locale, messages } = useLocale();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { mutate } = useSWRConfig();
@@ -90,7 +89,7 @@ function CheckoutContent() {
         setPromoCode(nextBooking.promo_code ?? '');
       })
       .catch(() => {
-        toast.error('Không tải được thông tin thanh toán');
+        toast.error(messages.checkout.loadFailed);
         router.replace('/order-history');
       })
       .finally(() => {
@@ -99,7 +98,7 @@ function CheckoutContent() {
     return () => {
       alive = false;
     };
-  }, [bookingId, router]);
+  }, [bookingId, messages.checkout.loadFailed, router]);
 
   const selectedMethod = useMemo(
     () => methods.find((method) => method.id === methodId) ?? null,
@@ -108,18 +107,18 @@ function CheckoutContent() {
 
   const pay = async () => {
     if (!booking || !methodId) {
-      toast.error('Vui lòng chọn phương thức thanh toán');
+      toast.error(messages.checkout.chooseMethod);
       return;
     }
     setSubmitting(true);
     try {
       await api.post(`/bookings/${booking.id}/confirm`, { payment_method: methodId });
       mutate((key) => typeof key === 'string' && (key.startsWith('/tickets/my') || key.startsWith('/bookings/my')));
-      toast.success('Thanh toán thành công. Vé đã được tạo.');
+      toast.success(messages.checkout.paid);
       router.push('/my-tickets');
     } catch (err) {
       const message = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      toast.error(message ?? 'Không thể hoàn tất thanh toán');
+      toast.error(message ?? messages.checkout.payFailed);
     } finally {
       setSubmitting(false);
     }
@@ -127,7 +126,7 @@ function CheckoutContent() {
 
   const applyPromo = async () => {
     if (!booking || !promoCode.trim()) {
-      toast.error('Nhập mã giảm giá trước đã');
+      toast.error(messages.checkout.enterPromo);
       return;
     }
     setApplyingPromo(true);
@@ -137,10 +136,10 @@ function CheckoutContent() {
       });
       setBooking(res.data.data);
       setPromoCode(res.data.data.promo_code ?? promoCode.trim().toUpperCase());
-      toast.success('Đã áp mã giảm giá');
+      toast.success(messages.checkout.promoApplied);
     } catch (err) {
       const message = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      toast.error(message ?? 'Không thể áp mã giảm giá');
+      toast.error(message ?? messages.checkout.promoFailed);
     } finally {
       setApplyingPromo(false);
     }
@@ -151,10 +150,10 @@ function CheckoutContent() {
     setSubmitting(true);
     try {
       await api.post(`/bookings/${booking.id}/cancel`);
-      toast('Đã hủy đơn và trả ghế về hệ thống.');
+      toast(messages.checkout.cancelled);
       router.push(`/events/${booking.event.id}/seats`);
     } catch {
-      toast.error('Không thể hủy đơn lúc này');
+      toast.error(messages.checkout.cancelFailed);
     } finally {
       setSubmitting(false);
     }
@@ -185,11 +184,11 @@ function CheckoutContent() {
             href={`/events/${booking.event.id}/seats`}
             className="inline-flex items-center gap-1.5 rounded-lg text-sm font-medium text-stone-500 hover:text-stone-800"
           >
-            <ArrowLeft className="h-4 w-4" /> Quay lại chọn vé
+            <ArrowLeft className="h-4 w-4" /> {messages.checkout.backToTickets}
           </Link>
           {booking.status === 'pending' && !expired && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700">
-              <Clock3 className="h-4 w-4" /> Còn {formatCountdown(countdown)}
+              <Clock3 className="h-4 w-4" /> {messages.checkout.timeLeft} {formatCountdown(countdown)}
             </span>
           )}
         </div>
@@ -197,30 +196,30 @@ function CheckoutContent() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section className="space-y-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Bước 2 / 2</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-stone-500">{messages.checkout.step}</p>
               <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-stone-900">
-                Thanh toán đơn #{booking.id}
+                {messages.checkout.paymentFor} #{booking.id}
               </h1>
             </div>
 
             {booking.status === 'confirmed' ? (
               <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
                 <div className="flex items-center gap-2 font-semibold text-emerald-800">
-                  <CheckCircle2 className="h-5 w-5" /> Đơn đã thanh toán
+                  <CheckCircle2 className="h-5 w-5" /> {messages.checkout.paidOrder}
                 </div>
-                <p className="mt-2 text-sm text-emerald-700">Vé đã được tạo cho đơn này.</p>
+                <p className="mt-2 text-sm text-emerald-700">{messages.checkout.ticketsCreated}</p>
               </div>
             ) : expired ? (
               <div className="rounded-3xl border border-rose-200 bg-rose-50 p-5">
                 <div className="flex items-center gap-2 font-semibold text-rose-700">
-                  <XCircle className="h-5 w-5" /> Đơn đã hết hạn giữ chỗ
+                  <XCircle className="h-5 w-5" /> {messages.checkout.expiredOrder}
                 </div>
-                <p className="mt-2 text-sm text-rose-600">Bạn cần quay lại chọn vé để tạo đơn mới.</p>
+                <p className="mt-2 text-sm text-rose-600">{messages.checkout.chooseAgain}</p>
               </div>
             ) : (
               <>
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-soft">
-                  <h2 className="mb-4 font-semibold text-stone-900">Chọn phương thức</h2>
+                  <h2 className="mb-4 font-semibold text-stone-900">{messages.checkout.selectMethod}</h2>
 
                   <div className="space-y-3">
                     {methods.map((method) => {
@@ -264,20 +263,20 @@ function CheckoutContent() {
 
           <aside className="space-y-4 lg:sticky lg:top-24">
             <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-soft">
-              <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Tóm tắt đơn</h2>
+              <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">{messages.checkout.summary}</h2>
               <h3 className="mt-3 font-semibold text-stone-900">{booking.event.title}</h3>
               <div className="mt-2 space-y-1.5 text-sm text-stone-500">
                 <p className="flex gap-2">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0" /> {booking.event.venue}
                 </p>
                 <p className="flex gap-2">
-                  <Clock3 className="mt-0.5 h-4 w-4 shrink-0" /> {dateTime(booking.event.event_date)}
+                  <Clock3 className="mt-0.5 h-4 w-4 shrink-0" /> {dateTime(booking.event.event_date, localeTag(locale))}
                 </p>
               </div>
 
               <div className="mt-4 border-t border-stone-100 pt-4">
                 <p className="mb-2 text-sm font-semibold text-stone-700">
-                  Vé đã giữ ({booking.seats.length})
+                  {messages.checkout.heldTickets} ({booking.seats.length})
                 </p>
                 <div className="space-y-2">
                   {booking.seats.map((seat) => (
@@ -286,7 +285,7 @@ function CheckoutContent() {
                         <Ticket className="h-4 w-4 shrink-0 text-stone-400" />
                         <span className="truncate">{seat.zone_name} · {seat.row_label}{seat.col_number}</span>
                       </span>
-                      <span className="shrink-0 font-medium text-stone-900">{money(seat.price)}</span>
+                      <span className="shrink-0 font-medium text-stone-900">{formatCurrency(seat.price)}</span>
                     </div>
                   ))}
                 </div>
@@ -294,20 +293,20 @@ function CheckoutContent() {
 
               <div className="mt-4 space-y-2 border-t border-stone-100 pt-4 text-sm">
                 <div className="flex justify-between text-stone-600">
-                  <span>Tạm tính</span>
-                  <span>{money(booking.subtotal)}</span>
+                  <span>{messages.checkout.subtotal}</span>
+                  <span>{formatCurrency(booking.subtotal)}</span>
                 </div>
                 {booking.discount_amount > 0 && (
                   <div className="flex justify-between text-emerald-600">
-                    <span>Giảm giá</span>
-                    <span>-{money(booking.discount_amount)}</span>
+                    <span>{messages.checkout.discount}</span>
+                    <span>-{formatCurrency(booking.discount_amount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between pt-1 font-bold text-stone-900">
                   <span className="inline-flex items-center gap-1.5">
-                    <Banknote className="h-4 w-4 text-stone-400" /> Tổng cộng
+                    <Banknote className="h-4 w-4 text-stone-400" /> {messages.checkout.total}
                   </span>
-                  <span className="text-lg text-amber-600">{money(booking.total_amount)}</span>
+                  <span className="text-lg text-amber-600">{formatCurrency(booking.total_amount)}</span>
                 </div>
               </div>
             </div>
@@ -317,13 +316,13 @@ function CheckoutContent() {
                 <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
                   <label className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-stone-400">
                     <Tag className="h-3.5 w-3.5" />
-                    Mã giảm giá
+                    {messages.checkout.promoCode}
                   </label>
                   <div className="flex gap-2">
                     <input
                       value={promoCode}
                       onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
-                      placeholder="Nhập mã..."
+                      placeholder={messages.checkout.promoPlaceholder}
                       className="h-11 min-w-0 flex-1 rounded-2xl border border-stone-200 px-3 text-sm uppercase tracking-wider outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 placeholder:normal-case placeholder:tracking-normal"
                     />
                     <button
@@ -331,12 +330,12 @@ function CheckoutContent() {
                       disabled={applyingPromo || !promoCode.trim()}
                       className="rounded-2xl border border-stone-200 px-4 text-sm font-semibold text-stone-700 transition hover:border-stone-300 hover:bg-stone-50 disabled:text-stone-300"
                     >
-                      {applyingPromo ? 'Đang áp...' : 'Áp mã'}
+                      {applyingPromo ? messages.checkout.applying : messages.checkout.applyPromo}
                     </button>
                   </div>
                   {booking.promo_code && (
                     <p className="mt-2 text-xs text-emerald-600">
-                      Đang dùng mã <span className="font-semibold">{booking.promo_code}</span>
+                      {messages.checkout.usingCode} <span className="font-semibold">{booking.promo_code}</span>
                     </p>
                   )}
                 </div>
@@ -346,14 +345,14 @@ function CheckoutContent() {
                   disabled={submitting || !methodId}
                   className="w-full rounded-2xl bg-stone-900 px-4 py-3.5 font-semibold text-white transition hover:bg-stone-800 disabled:bg-stone-200 disabled:text-stone-400"
                 >
-                  {submitting ? 'Đang xử lý...' : `Thanh toán ${money(booking.total_amount)}`}
+                  {submitting ? messages.checkout.processing : `${messages.checkout.pay} ${formatCurrency(booking.total_amount)}`}
                 </button>
                 <button
                   onClick={cancel}
                   disabled={submitting}
                   className="w-full rounded-2xl border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
                 >
-                  Hủy đơn và trả ghế
+                  {messages.checkout.cancelAndRelease}
                 </button>
               </div>
             )}
@@ -363,7 +362,7 @@ function CheckoutContent() {
                 href="/my-tickets"
                 className="block rounded-2xl bg-stone-900 px-4 py-3.5 text-center font-semibold text-white hover:bg-stone-800"
               >
-                Xem vé của tôi
+                {messages.checkout.viewMine}
               </Link>
             )}
           </aside>

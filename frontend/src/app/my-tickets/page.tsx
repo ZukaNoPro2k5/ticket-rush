@@ -8,6 +8,8 @@ import { Ticket, MapPin, Calendar, CheckCircle2, XCircle, Clock, QrCode } from '
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { TicketRowSkeleton } from '@/components/ui/Skeleton';
 import { fadeUp } from '@/lib/motion';
+import { useLocale } from '@/components/providers/LocaleProvider';
+import { localeTag } from '@/lib/i18n';
 
 interface MyTicket {
   id: number;
@@ -18,40 +20,41 @@ interface MyTicket {
   created_at: string;
 }
 
-const STATUS_TABS = [
-  { key: '',          label: 'Tất cả' },
-  { key: 'active',    label: 'Còn hiệu lực' },
-  { key: 'used',      label: 'Đã dùng' },
-  { key: 'cancelled', label: 'Đã hủy' },
-];
-
 function StatusBadge({ status }: { status: MyTicket['status'] }) {
+  const { messages } = useLocale();
   if (status === 'active')
     return (
       <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-        <CheckCircle2 className="h-3 w-3" /> Còn hiệu lực
+        <CheckCircle2 className="h-3 w-3" /> {messages.tickets.active}
       </span>
     );
   if (status === 'used')
     return (
       <span className="flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-500">
-        <Clock className="h-3 w-3" /> Đã sử dụng
+        <Clock className="h-3 w-3" /> {messages.tickets.usedLong}
       </span>
     );
   return (
     <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-600">
-      <XCircle className="h-3 w-3" /> Đã hủy
+      <XCircle className="h-3 w-3" /> {messages.tickets.cancelled}
     </span>
   );
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string, locale: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 export default function MyTicketsPage() {
+  const { locale, messages } = useLocale();
   const [status, setStatus] = useState('');
+  const statusTabs = [
+    { key: '', label: messages.tickets.all },
+    { key: 'active', label: messages.tickets.active },
+    { key: 'used', label: messages.tickets.used },
+    { key: 'cancelled', label: messages.tickets.cancelled },
+  ];
 
   const params = new URLSearchParams({ limit: '20' });
   if (status) params.set('status', status);
@@ -67,15 +70,15 @@ export default function MyTicketsPage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-display text-2xl font-bold text-stone-900">Vé của tôi</h1>
+          <h1 className="font-display text-2xl font-bold text-stone-900">{messages.tickets.title}</h1>
           <p className="mt-1 text-sm text-stone-500">
-            {total > 0 ? `${total} vé` : 'Chưa có vé nào'}
+            {total > 0 ? messages.tickets.count(total) : messages.tickets.emptyCount}
           </p>
         </div>
 
         {/* Status filter tabs */}
         <div className="flex flex-wrap gap-2">
-          {STATUS_TABS.map(tab => (
+          {statusTabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setStatus(tab.key)}
@@ -98,11 +101,11 @@ export default function MyTicketsPage() {
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-stone-200 bg-white py-20 text-center shadow-soft">
             <Ticket className="h-12 w-12 text-stone-200" />
             <div>
-              <p className="font-semibold text-stone-700">Chưa có vé nào</p>
-              <p className="mt-1 text-sm text-stone-400">Hãy đặt vé sự kiện yêu thích của bạn</p>
+              <p className="font-semibold text-stone-700">{messages.tickets.emptyTitle}</p>
+              <p className="mt-1 text-sm text-stone-400">{messages.tickets.emptyDesc}</p>
             </div>
             <Link href="/events" className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors">
-              Khám phá sự kiện
+              {messages.tickets.explore}
             </Link>
           </div>
         ) : (
@@ -130,11 +133,11 @@ export default function MyTicketsPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3 shrink-0" />
-                      {formatDate(ticket.event.event_date)}
+                      {formatDate(ticket.event.event_date, localeTag(locale))}
                     </span>
                   </div>
                   <p className="mt-1.5 text-xs font-medium text-stone-600">
-                    Ghế: {ticket.seat.zone_name} — {ticket.seat.row_label}{ticket.seat.col_number}
+                    {messages.tickets.seat}: {ticket.seat.zone_name} - {ticket.seat.row_label}{ticket.seat.col_number}
                   </p>
                 </div>
                 <div className="shrink-0">
@@ -142,7 +145,7 @@ export default function MyTicketsPage() {
                     href={`/my-tickets/${ticket.id}`}
                     className="flex items-center gap-1.5 rounded-xl border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
                   >
-                    <QrCode className="h-3.5 w-3.5" /> Xem vé
+                    <QrCode className="h-3.5 w-3.5" /> {messages.tickets.view}
                   </Link>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 import type { DisplayEvent, SeatZone } from '@/types';
 import Link from 'next/link';
 import { Building2, Clock, Info, Star, Users } from 'lucide-react';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 type ZoneWithStats = SeatZone & {
   available_seats?: number | null;
@@ -14,33 +15,30 @@ interface Props {
   holdMinutes: number;
 }
 
-function getFeatureIcons(holdMinutes: number) {
+function getFeatureIcons(holdMinutes: number, messages: ReturnType<typeof useLocale>['messages']) {
   return [
-    { icon: Users, label: 'Sơ đồ ghế rõ ràng' },
-    { icon: Clock, label: `Giữ ghế ${holdMinutes} phút` },
-    { icon: Building2, label: 'Cập nhật realtime' },
-    { icon: Info, label: 'QR sau xác nhận' },
+    { icon: Users, label: messages.eventDetail.clearSeatMap },
+    { icon: Clock, label: messages.eventDetail.holdForMinutes(holdMinutes) },
+    { icon: Building2, label: messages.eventDetail.realtimeUpdates },
+    { icon: Info, label: messages.eventDetail.qrAfterConfirmation },
   ];
 }
 
-function formatVnd(value: number): string {
-  return `${value.toLocaleString('vi-VN')}đ`;
-}
-
 export function AboutTab({ event, description, zones, holdMinutes }: Props) {
-  const featureIcons = getFeatureIcons(holdMinutes);
+  const { formatCurrency, messages } = useLocale();
+  const featureIcons = getFeatureIcons(holdMinutes, messages);
 
   return (
     <div className="space-y-6 animate-fadeInUp">
       <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-soft lg:p-8">
-        <h2 className="font-display text-xl font-bold">Giới thiệu sự kiện</h2>
+        <h2 className="font-display text-xl font-bold">{messages.eventDetail.eventIntro}</h2>
         <div className="mt-4 space-y-4 text-stone-700 leading-relaxed">
           {description ? (
             description.split(/\n+/).map((paragraph) => <p key={paragraph}>{paragraph}</p>)
           ) : (
             <p>
-              <strong>{event.title}</strong> diễn ra tại <strong>{event.venue}</strong>. Theo dõi thông tin vé,
-              khu ghế và trạng thái chỗ ngồi realtime trực tiếp trên TicketRush.
+              <strong>{event.title}</strong> {messages.eventDetail.fallbackIntroPrefix}{' '}
+              <strong>{event.venue}</strong>. {messages.eventDetail.fallbackIntroSuffix}
             </p>
           )}
         </div>
@@ -57,14 +55,14 @@ export function AboutTab({ event, description, zones, holdMinutes }: Props) {
 
       <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-soft lg:p-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold">Hạng vé & giá</h2>
+          <h2 className="font-display text-xl font-bold">{messages.eventDetail.ticketTiers}</h2>
           <Link href={`/events/${event.id}/seats`} className="text-sm font-semibold text-amber-700 hover:text-amber-800">
-            Xem sơ đồ ghế →
+            {messages.eventDetail.viewSeatMap} →
           </Link>
         </div>
         {zones.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-6 text-sm text-stone-500">
-            Sự kiện này chưa có thông tin khu ghế.
+            {messages.eventDetail.noSeatZones}
           </div>
         ) : (
           <div className="space-y-3">
@@ -81,14 +79,15 @@ export function AboutTab({ event, description, zones, holdMinutes }: Props) {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <h4 className="truncate font-semibold text-stone-900">{z.name}</h4>
-                      <div className="font-display text-lg font-bold text-amber-700">{formatVnd(z.price)}</div>
+                      <div className="font-display text-lg font-bold text-amber-700">{formatCurrency(z.price)}</div>
                     </div>
                     <div className="mt-0.5 text-xs text-stone-500">
-                      {z.total_rows} hàng × {z.total_cols} ghế, tổng {total} chỗ
+                      {z.total_rows} {messages.eventDetail.rows} × {z.total_cols} {messages.eventDetail.seats},{' '}
+                      {messages.eventDetail.total} {total} {messages.eventDetail.spots}
                     </div>
                     {available !== null && (
                       <div className="mt-2 flex items-center gap-3 text-[11px] text-stone-500">
-                        <span>Còn {available}/{total}</span>
+                        <span>{messages.eventDetail.available} {available}/{total}</span>
                         <div className="h-1 flex-1 overflow-hidden rounded-full bg-stone-100">
                           <div
                             className={`h-full rounded-full ${soldPct >= 80 ? 'bg-orange-500' : 'bg-amber-500'}`}
@@ -106,7 +105,7 @@ export function AboutTab({ event, description, zones, holdMinutes }: Props) {
       </div>
 
       <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-soft lg:p-8">
-        <h2 className="mb-4 font-display text-xl font-bold">Đơn vị tổ chức</h2>
+        <h2 className="mb-4 font-display text-xl font-bold">{messages.eventDetail.organizer}</h2>
         <div className="flex items-center gap-4">
           <div className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 font-display text-xl font-bold text-white shadow-lift">
             {(event.organizer ?? 'TR').charAt(0)}
@@ -114,7 +113,7 @@ export function AboutTab({ event, description, zones, holdMinutes }: Props) {
           <div className="flex-1">
             <h3 className="font-semibold text-stone-900">{event.organizer ?? 'TicketRush Events'}</h3>
             <div className="mt-0.5 flex items-center gap-3 text-xs text-stone-500">
-              <span>Quản lý bán vé qua TicketRush</span>
+              <span>{messages.eventDetail.organizerManaged}</span>
               <span className="inline-flex items-center gap-1">
                 <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Verified
               </span>

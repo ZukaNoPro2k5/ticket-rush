@@ -26,6 +26,7 @@ import {
   EventsListSkeleton,
 } from '@/components/events';
 import { useLocale } from '@/components/providers/LocaleProvider';
+import { categoryLabel, localeTag, type Locale } from '@/lib/i18n';
 
 const VALID_CATEGORIES: EventCategory[] = [
   'music',
@@ -38,17 +39,6 @@ const VALID_CATEGORIES: EventCategory[] = [
   'other',
 ];
 const DAY_MS = 86_400_000;
-const CATEGORY_LABELS: Record<EventCategory, string> = {
-  music: 'Âm nhạc',
-  arts: 'Nghệ thuật',
-  sports: 'Thể thao',
-  food: 'Ẩm thực',
-  entertainment: 'Giải trí',
-  workshop: 'Workshop',
-  stage: 'Sân khấu',
-  other: 'Khác',
-};
-
 function isEventCategory(value: string | null): value is EventCategory {
   return !!value && VALID_CATEGORIES.includes(value as EventCategory);
 }
@@ -63,7 +53,7 @@ function parsePage(value: string | null): number {
   return Number.isInteger(page) && page > 0 ? page : 1;
 }
 
-function deriveCityFromVenue(venue: string): string {
+function deriveCityFromVenue(venue: string, locale: Locale): string {
   const normalized = venue.toLowerCase();
   if (normalized.includes('hà nội') || normalized.includes('ha noi')) return 'Hà Nội';
   if (normalized.includes('hồ chí minh') || normalized.includes('ho chi minh') || normalized.includes('hcm')) return 'TP. HCM';
@@ -71,13 +61,12 @@ function deriveCityFromVenue(venue: string): string {
   if (normalized.includes('hải phòng') || normalized.includes('hai phong')) return 'Hải Phòng';
   if (normalized.includes('huế') || normalized.includes('hue')) return 'Huế';
   const parts = venue.split(',');
-  return parts[parts.length - 1]?.trim() || 'Việt Nam';
+  return parts[parts.length - 1]?.trim() || (locale === 'vi' ? 'Việt Nam' : 'Vietnam');
 }
 
-function toDisplayEvent(e: Event): DisplayEvent {
+function toDisplayEvent(e: Event, locale: Locale): DisplayEvent {
   const date = new Date(e.event_date);
   const pad = (n: number) => String(n).padStart(2, '0');
-  const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
   const total = e.total_seats ?? 0;
   const available = e.available_seats ?? total;
   const soldPercent = total > 0 ? Math.round(((total - available) / total) * 100) : 0;
@@ -91,12 +80,16 @@ function toDisplayEvent(e: Event): DisplayEvent {
   return {
     id: e.id,
     title: e.title,
-    category: CATEGORY_LABELS[e.category],
+    category: categoryLabel(locale, e.category),
     categoryKey: e.category,
     venue: e.venue,
-    city: deriveCityFromVenue(e.venue),
+    city: deriveCityFromVenue(e.venue, locale),
     date: e.event_date,
-    dateLabel: `${weekdays[date.getDay()]}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`,
+    dateLabel: new Intl.DateTimeFormat(localeTag(locale), {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+    }).format(date),
     timeLabel: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
     poster: e.poster_url || 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80',
     priceFrom: e.min_price ?? 0,
@@ -156,7 +149,7 @@ export default function EventsListingPage() {
 
   const [sort, setSort] = useState<SortKey>('trending');
   const [view, setView] = useState<ViewMode>('grid');
-  const { messages } = useLocale();
+  const { locale, messages } = useLocale();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -230,7 +223,7 @@ export default function EventsListingPage() {
         page: currentPage,
         limit: PAGE_SIZE,
       });
-      setApiEvents(result.events.map(toDisplayEvent));
+      setApiEvents(result.events.map((item) => toDisplayEvent(item, locale)));
       setTotalPages(Math.max(1, result.pagination.total_pages));
       setTotalCount(result.pagination.total);
     } catch {
@@ -241,7 +234,7 @@ export default function EventsListingPage() {
     } finally {
       setLoading(false);
     }
-  }, [query, activeCat, city, timeRange, priceMax, sort, currentPage, messages.events.loadError]);
+  }, [query, activeCat, city, timeRange, priceMax, sort, currentPage, locale, messages.events.loadError]);
 
   useEffect(() => {
     if (!urlReady) return;

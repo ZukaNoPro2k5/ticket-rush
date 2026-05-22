@@ -3,6 +3,8 @@
 import { CalendarDays, Clock3, MapPin } from 'lucide-react';
 import type { Seat } from '@/types';
 import { formatMmSs } from '@/lib/utils/seatUtils';
+import { useLocale } from '@/components/providers/LocaleProvider';
+import { localeTag } from '@/lib/i18n';
 
 interface Props {
   selectedSeats: Seat[];
@@ -25,9 +27,12 @@ export function SelectingPanel({
   countdown,
   submitting,
   onContinue,
-  unitLabel = 'ghế',
+  unitLabel,
 }: Props) {
+  const { formatCurrency, locale, messages } = useLocale();
   const count = selectedSeats.length;
+  const selectedSeatUnit = unitLabel ?? messages.seats.seatUnit;
+  const isSeatUnit = selectedSeatUnit === messages.seats.seatUnit;
 
   return (
     <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
@@ -43,7 +48,7 @@ export function SelectingPanel({
           disabled={submitting || count === 0}
           className="ml-auto min-h-11 rounded-xl bg-amber-500 px-4 text-sm font-semibold text-white shadow-soft transition hover:bg-amber-600 disabled:bg-stone-200 disabled:text-stone-400"
         >
-          {submitting ? 'Đang cập nhật...' : 'Tiếp tục thanh toán'}
+          {submitting ? messages.seats.updating : messages.seats.continuePayment}
         </button>
       </div>
 
@@ -56,7 +61,7 @@ export function SelectingPanel({
         <p className="flex gap-2 text-sm text-stone-500">
           <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            {new Intl.DateTimeFormat('vi-VN', {
+            {new Intl.DateTimeFormat(localeTag(locale), {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric',
@@ -67,11 +72,11 @@ export function SelectingPanel({
         </p>
       </div>
 
-      <h2 className="font-semibold text-gray-800">{unitLabel === 'ghế' ? 'Ghế đã chọn' : 'Vé đã chọn'}</h2>
+      <h2 className="font-semibold text-gray-800">{isSeatUnit ? messages.seats.selectedSeats : messages.seats.selectedTickets}</h2>
 
       {count === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400">
-          {unitLabel === 'ghế' ? 'Nhấn vào ghế trên sơ đồ để chọn' : 'Chọn số lượng vé để tiếp tục'}
+          {isSeatUnit ? messages.seats.seatHint : messages.seats.ticketHint}
         </p>
       ) : (
         <div className="max-h-52 space-y-1.5 overflow-y-auto">
@@ -83,7 +88,7 @@ export function SelectingPanel({
                 {seat.col_number}
               </span>
               <span className="shrink-0 font-medium text-gray-800">
-                {seat.zone_price.toLocaleString('vi-VN')}đ
+                {formatCurrency(seat.zone_price)}
               </span>
             </div>
           ))}
@@ -92,8 +97,8 @@ export function SelectingPanel({
 
       {count > 0 && (
         <div className="flex justify-between border-t pt-3 font-bold">
-          <span className="text-gray-700">Tạm tính ({count} {unitLabel})</span>
-          <span className="text-orange-600">{subtotal.toLocaleString('vi-VN')}đ</span>
+          <span className="text-gray-700">{messages.seats.subtotal} ({count} {selectedSeatUnit})</span>
+          <span className="text-orange-600">{formatCurrency(subtotal)}</span>
         </div>
       )}
 

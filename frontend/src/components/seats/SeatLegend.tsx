@@ -1,12 +1,15 @@
 'use client';
 
 import type { ZoneData } from '@/lib/utils/seatUtils';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   zones: ZoneData[];
 }
 
 export function SeatLegend({ zones }: Props) {
+  const { formatCurrency, messages } = useLocale();
+
   return (
     <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 border-y bg-gray-50 px-6 py-3">
       {zones.map((zone) => (
@@ -16,20 +19,20 @@ export function SeatLegend({ zones }: Props) {
             style={{ backgroundColor: zone.color }}
           />
           <span className="font-medium">{zone.name}</span>
-          <span className="text-gray-400">{zone.price.toLocaleString('vi-VN')}đ</span>
+          <span className="text-gray-400">{formatCurrency(zone.price)}</span>
         </div>
       ))}
       <div className="flex items-center gap-1.5 text-xs text-gray-600">
         <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-sm bg-orange-500" />
-        <span>Đã chọn / Của bạn</span>
+        <span>{messages.seats.selectedOrYours}</span>
       </div>
       <div className="flex items-center gap-1.5 text-xs text-gray-600">
         <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-sm bg-gray-400" />
-        <span>Đang giữ</span>
+        <span>{messages.seats.held}</span>
       </div>
       <div className="flex items-center gap-1.5 text-xs text-gray-600">
         <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-sm bg-gray-700" />
-        <span>Đã bán</span>
+        <span>{messages.seats.sold}</span>
       </div>
     </div>
   );

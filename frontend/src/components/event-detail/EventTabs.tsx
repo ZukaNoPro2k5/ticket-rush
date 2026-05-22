@@ -1,22 +1,24 @@
 'use client';
 
 import type { EventTabKey } from '@/data/eventDetailData';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface Props {
   active: EventTabKey;
   onChange: (tab: EventTabKey) => void;
 }
 
-const TABS: { key: EventTabKey; label: string }[] = [
-  { key: 'about', label: 'Giới thiệu' },
-  { key: 'venue', label: 'Địa điểm' },
-];
-
 export function EventTabs({ active, onChange }: Props) {
+  const { messages } = useLocale();
+  const tabs: { key: EventTabKey; label: string }[] = [
+    { key: 'about', label: messages.eventDetail.aboutTab },
+    { key: 'venue', label: messages.eventDetail.venueTab },
+  ];
+
   return (
     <div className="sticky top-16 z-20 -mx-4 mb-6 border-b border-stone-200 bg-stone-50/95 px-4 backdrop-blur-md lg:-mx-8 lg:px-8">
       <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => onChange(t.key)}
